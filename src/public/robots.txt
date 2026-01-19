@@ -1,0 +1,15 @@
+# TwoBeOne - Robots.txt
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://twobeone.app/sitemap.xml
+
+# Disallow admin and private routes
+Disallow: /admin
+Disallow: /api
+Disallow: /functions
+
+# Allow all images
+Allow: /icons/
+Allow: /screenshots/
