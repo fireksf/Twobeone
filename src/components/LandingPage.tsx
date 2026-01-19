@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -8,12 +8,10 @@ import {
   BookOpen, 
   MessageSquare, 
   Users, 
-  Sparkles, 
-  CheckCircle2,
+  Sparkles,
   ArrowRight,
   Star,
   ChevronRight,
-  Mail,
   Facebook,
   Twitter,
   Instagram,
@@ -28,6 +26,108 @@ import {
 import { toast } from 'sonner@2.0.3';
 import { projectId } from '../utils/supabase/info';
 import appScreenshot from 'figma:asset/d5fde893add01b8ea5bf3527897567c586c24a70.png';
+
+// Static data moved outside component for performance
+const FEATURES = [
+  {
+    icon: BookOpen,
+    title: 'Daily Devotionals',
+    description: 'Scripture-based devotions written specifically for couples to strengthen your spiritual foundation together.',
+    color: 'from-amber-500 to-orange-500'
+  },
+  {
+    icon: MessageSquare,
+    title: 'Shared Journaling',
+    description: 'Express your hearts, reflect on your journey, and share intimate thoughts in a private, secure space.',
+    color: 'from-blue-500 to-cyan-500'
+  },
+  {
+    icon: Heart,
+    title: 'Prayer Together',
+    description: 'Create prayer requests, pray for each other daily, and celebrate when God answers. Build faith together.',
+    color: 'from-rose-500 to-pink-500'
+  },
+  {
+    icon: Users,
+    title: '100+ Meaningful Questions',
+    description: 'Deep, faith-based conversation starters across 12 categories to help you truly know each other.',
+    color: 'from-purple-500 to-indigo-500'
+  },
+  {
+    icon: Sparkles,
+    title: 'Learning Modules',
+    description: 'Biblical guidance on communication, conflict resolution, intimacy, and spiritual growth.',
+    color: 'from-green-500 to-emerald-500'
+  },
+  {
+    icon: TrendingUp,
+    title: 'Progress Tracking',
+    description: 'Track devotional streaks, milestones, and spiritual growth. Celebrate your journey together!',
+    color: 'from-violet-500 to-purple-500'
+  }
+];
+
+const TESTIMONIALS = [
+  {
+    name: 'Sarah & Mike',
+    location: 'Austin, TX',
+    image: '💑',
+    quote: 'TwoBeOne transformed our marriage! We pray together daily now and our conversations have never been deeper. This app brought us closer to God and each other.',
+    rating: 5,
+    married: '3 years'
+  },
+  {
+    name: 'Emily & David',
+    location: 'Nashville, TN',
+    image: '👫',
+    quote: 'As a newly engaged couple, TwoBeOne is helping us build a Christ-centered foundation before we say "I do." The questions sparked conversations we never would have had!',
+    rating: 5,
+    married: 'Engaged'
+  },
+  {
+    name: 'Rachel & Jonathan',
+    location: 'Colorado Springs, CO',
+    image: '💏',
+    quote: 'After 10 years of marriage, we thought we knew everything about each other. TwoBeOne proved us wrong in the best way possible. We\'re falling in love all over again!',
+    rating: 5,
+    married: '10 years'
+  }
+];
+
+const FAQS = [
+  {
+    question: 'Is TwoBeOne free?',
+    answer: 'Yes! TwoBeOne is completely free to download and use. We believe every couple deserves access to faith-based relationship tools.'
+  },
+  {
+    question: 'Do we both need to download the app?',
+    answer: 'Yes, both partners need the app. You\'ll connect via a unique invite code, and all your shared content will sync automatically between your devices.'
+  },
+  {
+    question: 'Is our data private and secure?',
+    answer: 'Absolutely! We use bank-level encryption, and your data is only shared between you and your partner. We never sell your information or use it for advertising.'
+  },
+  {
+    question: 'What makes TwoBeOne different from other relationship apps?',
+    answer: 'TwoBeOne is specifically designed for Christian couples with faith at the center. Every feature is rooted in biblical principles, and our content is written with a Christ-centered perspective.'
+  },
+  {
+    question: 'Can we use it if we\'re not married yet?',
+    answer: 'Absolutely! TwoBeOne is perfect for engaged couples, dating couples, newlyweds, and married couples of any duration. If you\'re in a committed Christian relationship, this is for you!'
+  },
+  {
+    question: 'How much time does it take daily?',
+    answer: 'As little or as much as you want! A daily devotional takes 5-10 minutes. Questions and journaling are flexible. The key is consistency, not perfection.'
+  }
+];
+
+const WHY_ITEMS = [
+  { icon: Shield, title: 'Private & Secure', desc: 'Bank-level encryption. Your data stays between you and your partner.' },
+  { icon: Zap, title: 'Real-Time Sync', desc: 'Instant synchronization across all devices. Stay connected anywhere.' },
+  { icon: Globe, title: 'Works Everywhere', desc: 'Web, iOS, and Android. Access from any device, anytime.' }
+];
+
+const COUPLE_EMOJIS = ['💑', '👫', '💏', '👩‍❤️‍👨'];
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -72,99 +172,6 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       setIsSubmitting(false);
     }
   };
-
-  const features = [
-    {
-      icon: <BookOpen className="w-6 h-6" />,
-      title: 'Daily Devotionals',
-      description: 'Scripture-based devotions written specifically for couples to strengthen your spiritual foundation together.',
-      color: 'from-amber-500 to-orange-500'
-    },
-    {
-      icon: <MessageSquare className="w-6 h-6" />,
-      title: 'Shared Journaling',
-      description: 'Express your hearts, reflect on your journey, and share intimate thoughts in a private, secure space.',
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
-      icon: <Heart className="w-6 h-6" />,
-      title: 'Prayer Together',
-      description: 'Create prayer requests, pray for each other daily, and celebrate when God answers. Build faith together.',
-      color: 'from-rose-500 to-pink-500'
-    },
-    {
-      icon: <Users className="w-6 h-6" />,
-      title: '100+ Meaningful Questions',
-      description: 'Deep, faith-based conversation starters across 12 categories to help you truly know each other.',
-      color: 'from-purple-500 to-indigo-500'
-    },
-    {
-      icon: <Sparkles className="w-6 h-6" />,
-      title: 'Learning Modules',
-      description: 'Biblical guidance on communication, conflict resolution, intimacy, and spiritual growth.',
-      color: 'from-green-500 to-emerald-500'
-    },
-    {
-      icon: <TrendingUp className="w-6 h-6" />,
-      title: 'Progress Tracking',
-      description: 'Track devotional streaks, milestones, and spiritual growth. Celebrate your journey together!',
-      color: 'from-violet-500 to-purple-500'
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: 'Sarah & Mike',
-      location: 'Austin, TX',
-      image: '💑',
-      quote: 'TwoBeOne transformed our marriage! We pray together daily now and our conversations have never been deeper. This app brought us closer to God and each other.',
-      rating: 5,
-      married: '3 years'
-    },
-    {
-      name: 'Emily & David',
-      location: 'Nashville, TN',
-      image: '👫',
-      quote: 'As a newly engaged couple, TwoBeOne is helping us build a Christ-centered foundation before we say "I do." The questions sparked conversations we never would have had!',
-      rating: 5,
-      married: 'Engaged'
-    },
-    {
-      name: 'Rachel & Jonathan',
-      location: 'Colorado Springs, CO',
-      image: '💏',
-      quote: 'After 10 years of marriage, we thought we knew everything about each other. TwoBeOne proved us wrong in the best way possible. We\'re falling in love all over again!',
-      rating: 5,
-      married: '10 years'
-    }
-  ];
-
-  const faqs = [
-    {
-      question: 'Is TwoBeOne free?',
-      answer: 'Yes! TwoBeOne is completely free to download and use. We believe every couple deserves access to faith-based relationship tools.'
-    },
-    {
-      question: 'Do we both need to download the app?',
-      answer: 'Yes, both partners need the app. You\'ll connect via a unique invite code, and all your shared content will sync automatically between your devices.'
-    },
-    {
-      question: 'Is our data private and secure?',
-      answer: 'Absolutely! We use bank-level encryption, and your data is only shared between you and your partner. We never sell your information or use it for advertising.'
-    },
-    {
-      question: 'What makes TwoBeOne different from other relationship apps?',
-      answer: 'TwoBeOne is specifically designed for Christian couples with faith at the center. Every feature is rooted in biblical principles, and our content is written with a Christ-centered perspective.'
-    },
-    {
-      question: 'Can we use it if we\'re not married yet?',
-      answer: 'Absolutely! TwoBeOne is perfect for engaged couples, dating couples, newlyweds, and married couples of any duration. If you\'re in a committed Christian relationship, this is for you!'
-    },
-    {
-      question: 'How much time does it take daily?',
-      answer: 'As little or as much as you want! A daily devotional takes 5-10 minutes. Questions and journaling are flexible. The key is consistency, not perfection.'
-    }
-  ];
 
   const scrollToSection = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -274,7 +281,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <div className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start pt-4">
                 <div className="flex items-center gap-2">
                   <div className="flex -space-x-2">
-                    {['💑', '👫', '💏', '👩‍❤️‍👨'].map((emoji, i) => (
+                    {COUPLE_EMOJIS.map((emoji, i) => (
                       <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-purple-100 flex items-center justify-center border-2 border-white text-lg">
                         {emoji}
                       </div>
@@ -341,21 +348,24 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2">
-                <CardContent className="p-6 space-y-4">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white`}>
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold">{feature.title}</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                  <Button variant="ghost" className="group-hover:text-purple-600 p-0">
-                    Learn more
-                    <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+            {FEATURES.map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2">
+                  <CardContent className="p-6 space-y-4">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white`}>
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xl font-semibold">{feature.title}</h3>
+                    <p className="text-gray-600">{feature.description}</p>
+                    <Button variant="ghost" className="group-hover:text-purple-600 p-0">
+                      Learn more
+                      <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -376,21 +386,20 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               </p>
 
               <div className="space-y-6">
-                {[
-                  { icon: <Shield className="w-5 h-5" />, title: 'Private & Secure', desc: 'Bank-level encryption. Your data stays between you and your partner.' },
-                  { icon: <Zap className="w-5 h-5" />, title: 'Real-Time Sync', desc: 'Instant synchronization across all devices. Stay connected anywhere.' },
-                  { icon: <Globe className="w-5 h-5" />, title: 'Works Everywhere', desc: 'Web, iOS, and Android. Access from any device, anytime.' }
-                ].map((item, index) => (
-                  <div key={index} className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white">
-                      {item.icon}
+                {WHY_ITEMS.map((item, index) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <div key={index} className="flex gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white">
+                        <IconComponent className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">{item.title}</h4>
+                        <p className="text-gray-600">{item.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">{item.title}</h4>
-                      <p className="text-gray-600">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -432,7 +441,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
+            {TESTIMONIALS.map((testimonial, index) => (
               <Card key={index} className="relative">
                 <CardContent className="p-6 space-y-4">
                   {/* Stars */}
@@ -477,7 +486,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
 
           <div className="space-y-4">
-            {faqs.map((faq, index) => (
+            {FAQS.map((faq, index) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <details className="group">
@@ -613,7 +622,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p className="font-bold font-normal">© 2025 TwoBeOne. All rights reserved.Manaplus dev for couples growing in faith.</p>
+            <p>© {new Date().getFullYear()} TwoBeOne. All rights reserved. Manaplus dev for couples growing in faith.</p>
           </div>
         </div>
       </footer>
