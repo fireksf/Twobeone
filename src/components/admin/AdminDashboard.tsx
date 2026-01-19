@@ -145,15 +145,17 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl mb-2">Dashboard</h2>
-          <p className="text-gray-600">Overview of your content management system</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Dashboard</h2>
+          <p className="text-sm sm:text-base text-gray-600">Overview of your content management system</p>
         </div>
         <Button 
           variant="outline" 
           onClick={loadDashboardData}
           disabled={isLoading}
+          size="sm"
+          className="w-full sm:w-auto"
         >
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh
@@ -161,40 +163,40 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {displayStats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="p-5">
+            <Card key={stat.label} className="p-4 sm:p-5">
               <div className="flex items-start justify-between mb-3">
-                <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                  <Icon className={`w-6 h-6 ${stat.color}`} />
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
                 </div>
-                <Badge variant={stat.trend === 'up' ? 'default' : 'secondary'} className="bg-green-100 text-green-700">
+                <Badge variant={stat.trend === 'up' ? 'default' : 'secondary'} className="bg-green-100 text-green-700 text-xs">
                   {stat.change}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-              <p className="text-2xl font-semibold">{stat.value}</p>
+              <p className="text-xs sm:text-sm text-gray-600 mb-1">{stat.label}</p>
+              <p className="text-xl sm:text-2xl font-semibold">{stat.value}</p>
             </Card>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Activity */}
-        <Card className="p-6">
-          <h3 className="font-semibold text-lg mb-4">Recent Activity</h3>
+        <Card className="p-4 sm:p-6">
+          <h3 className="font-semibold text-base sm:text-lg mb-4">Recent Activity</h3>
           <div className="space-y-3">
             {recentActivity.length > 0 ? (
               recentActivity.slice(0, 5).map((activity, index) => (
                 <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0">
                   <div className="w-2 h-2 rounded-full bg-purple-600 mt-2 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-gray-600">{activity.user}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium truncate">{activity.action}</p>
+                    <p className="text-xs text-gray-600 truncate">{activity.user}</p>
                   </div>
-                  <span className="text-xs text-gray-500">{activity.time}</span>
+                  <span className="text-xs text-gray-500 flex-shrink-0">{activity.time}</span>
                 </div>
               ))
             ) : (
@@ -206,20 +208,20 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
         </Card>
 
         {/* Content Needed */}
-        <Card className="p-6">
-          <h3 className="font-semibold text-lg mb-4">Content Needed</h3>
+        <Card className="p-4 sm:p-6">
+          <h3 className="font-semibold text-base sm:text-lg mb-4">Content Needed</h3>
           <div className="space-y-3">
             {contentNeeded.map((item, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">{item.type}</p>
-                  <p className="text-xs text-gray-600">
+              <div key={index} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-xs sm:text-sm truncate">{item.type}</p>
+                  <p className="text-xs text-gray-600 truncate">
                     {item.date || item.title || item.category}
                   </p>
                 </div>
                 <Badge 
                   variant={item.status === 'needed' ? 'destructive' : 'secondary'}
-                  className={item.status === 'in-progress' ? 'bg-yellow-100 text-yellow-700' : ''}
+                  className={`text-xs flex-shrink-0 ${item.status === 'in-progress' ? 'bg-yellow-100 text-yellow-700' : ''}`}
                 >
                   {item.status}
                 </Badge>
@@ -230,36 +232,36 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       </div>
 
       {/* Quick Actions */}
-      <Card className="p-6">
-        <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-4 gap-3">
+      <Card className="p-4 sm:p-6">
+        <h3 className="font-semibold text-base sm:text-lg mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <button 
             onClick={() => onNavigate?.('devotionals')}
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
           >
-            <BookOpen className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-sm font-medium">Add Devotional</p>
+            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
+            <p className="text-xs sm:text-sm font-medium">Add Devotional</p>
           </button>
           <button 
             onClick={() => onNavigate?.('questions')}
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
           >
-            <MessageCircle className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-sm font-medium">Add Question</p>
+            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
+            <p className="text-xs sm:text-sm font-medium">Add Question</p>
           </button>
           <button 
             onClick={() => onNavigate?.('modules')}
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
           >
-            <GraduationCap className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-sm font-medium">Create Module</p>
+            <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
+            <p className="text-xs sm:text-sm font-medium">Create Module</p>
           </button>
           <button 
             onClick={() => onNavigate?.('groups')}
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
           >
-            <Users className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-sm font-medium">Add Group</p>
+            <Users className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
+            <p className="text-xs sm:text-sm font-medium">Add Group</p>
           </button>
         </div>
       </Card>
