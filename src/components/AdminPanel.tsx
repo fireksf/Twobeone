@@ -58,17 +58,17 @@ export function AdminPanel({ onSignOut, accessToken, onBackToHome }: AdminPanelP
                     <Menu className="w-6 h-6" />
                   )}
                 </button>
-                <Shield className="w-6 h-6 sm:w-8 sm:h-8" />
+                <Shield className="w-7 h-7 sm:w-8 sm:h-8" />
                 <div>
-                  <h1 className="text-lg sm:text-2xl font-bold">TwoBeOne Admin</h1>
-                  <p className="text-xs sm:text-sm text-purple-100 hidden sm:block">Content Management System</p>
+                  <h1 className="text-xl sm:text-2xl font-bold">TwoBeOne Admin</h1>
+                  <p className="text-sm text-purple-100 hidden sm:block">Content Management System</p>
                 </div>
               </div>
               <Button 
                 variant="secondary" 
                 onClick={onSignOut}
                 size="sm"
-                className="text-xs sm:text-sm"
+                className="text-sm px-4"
               >
                 Sign Out
               </Button>
@@ -92,16 +92,16 @@ export function AdminPanel({ onSignOut, accessToken, onBackToHome }: AdminPanelP
               fixed lg:relative
               inset-y-0 left-0
               z-50 lg:z-0
-              w-64 lg:w-auto
+              w-72 lg:w-auto
               transform lg:transform-none
               transition-transform duration-300 ease-in-out
               ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             `}>
-              <Card className="p-4 h-full lg:sticky lg:top-4 overflow-y-auto">
-                <h3 className="font-semibold mb-4 text-sm text-gray-600 uppercase tracking-wide">
+              <Card className="p-5 h-full lg:sticky lg:top-4 overflow-y-auto">
+                <h3 className="font-semibold mb-5 text-sm text-gray-600 uppercase tracking-wide">
                   Navigation
                 </h3>
-                <nav className="space-y-1">
+                <nav className="space-y-2">
                   {sections.map((section) => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -110,17 +110,17 @@ export function AdminPanel({ onSignOut, accessToken, onBackToHome }: AdminPanelP
                       <button
                         key={section.id}
                         onClick={() => handleNavigate(section.id)}
-                        className={`w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all ${
+                        className={`w-full flex items-center justify-between px-4 py-3.5 rounded-lg transition-all ${
                           isActive
                             ? 'bg-purple-600 text-white shadow-md'
                             : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <Icon className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                          <span className="font-medium text-xs sm:text-sm">{section.label}</span>
+                          <Icon className="w-5 h-5 flex-shrink-0" />
+                          <span className="font-medium text-base">{section.label}</span>
                         </div>
-                        {isActive && <ChevronRight className="w-4 h-4 flex-shrink-0" />}
+                        {isActive && <ChevronRight className="w-5 h-5 flex-shrink-0" />}
                       </button>
                     );
                   })}
@@ -130,11 +130,11 @@ export function AdminPanel({ onSignOut, accessToken, onBackToHome }: AdminPanelP
                         onBackToHome();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all text-gray-700 hover:bg-gray-100"
+                      className="w-full flex items-center justify-between px-4 py-3.5 rounded-lg transition-all text-gray-700 hover:bg-gray-100"
                     >
                       <div className="flex items-center gap-3">
-                        <Home className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                        <span className="font-medium text-xs sm:text-sm">Home</span>
+                        <Home className="w-5 h-5 flex-shrink-0" />
+                        <span className="font-medium text-base">Home</span>
                       </div>
                     </button>
                   )}

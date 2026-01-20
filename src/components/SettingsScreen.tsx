@@ -550,7 +550,7 @@ export function SettingsScreen({
       <div className="sticky top-0 z-20 bg-white border-b">
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 pb-24">
+      <div className="max-w-2xl mx-auto px-[0px] py-[10px] pb-[10px] pt-[10px] pr-[2px] pl-[0px]">
         {/* Profile Header */}
         <Card className="mb-6 overflow-hidden">
           <div className="h-24 bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400"></div>
