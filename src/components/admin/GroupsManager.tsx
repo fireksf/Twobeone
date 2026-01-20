@@ -115,17 +115,17 @@ export function GroupsManager() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Community Groups</h2>
-          <p className="text-sm sm:text-base text-gray-600">Manage community groups and small groups</p>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">Community Groups</h2>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600">Manage community groups and small groups</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto text-xs sm:text-sm"
               size="sm"
               onClick={() => {
                 setEditingGroup(null);
@@ -141,13 +141,13 @@ export function GroupsManager() {
                 });
               }}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               New Group
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] w-full">
             <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">
+              <DialogTitle className="text-base sm:text-lg lg:text-xl">
                 {editingGroup ? 'Edit Group' : 'Create New Group'}
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm">
@@ -155,7 +155,7 @@ export function GroupsManager() {
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-2 sm:pr-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
                 <div>
                   <Label htmlFor="name" className="text-xs sm:text-sm">Group Name</Label>
                   <Input
@@ -181,14 +181,14 @@ export function GroupsManager() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label htmlFor="category" className="text-xs sm:text-sm">Category</Label>
                     <select
                       id="category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
+                      className="w-full h-9 sm:h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                       required
                     >
                       {categories.map(cat => (
@@ -202,7 +202,7 @@ export function GroupsManager() {
                       id="status"
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
+                      className="w-full h-9 sm:h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -222,7 +222,7 @@ export function GroupsManager() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <Label htmlFor="meetingDay" className="text-xs sm:text-sm">Meeting Day & Time</Label>
                     <Input
@@ -247,14 +247,15 @@ export function GroupsManager() {
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <Button type="submit" className="flex-1">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4">
+                  <Button type="submit" className="flex-1 text-xs sm:text-sm">
                     {editingGroup ? 'Update' : 'Create'} Group
                   </Button>
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsDialogOpen(false)}
+                    className="text-xs sm:text-sm"
                   >
                     Cancel
                   </Button>
@@ -266,54 +267,54 @@ export function GroupsManager() {
       </div>
 
       {/* Search */}
-      <Card className="p-4">
+      <Card className="p-3 sm:p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
           <Input
             placeholder="Search groups..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 sm:pl-10 text-xs sm:text-sm"
           />
         </div>
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4">
-          <p className="text-sm text-gray-600 mb-1">Total Groups</p>
-          <p className="text-2xl font-semibold">{groups.length}</p>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Groups</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{groups.length}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600 mb-1">Total Members</p>
-          <p className="text-2xl font-semibold">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Members</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
             {groups.reduce((acc, g) => acc + g.members, 0)}
           </p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600 mb-1">Active Groups</p>
-          <p className="text-2xl font-semibold text-green-600">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">Active Groups</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-green-600">
             {groups.filter(g => g.status === 'active').length}
           </p>
         </Card>
       </div>
 
       {/* Groups List */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {filteredGroups.map((group) => (
-          <Card key={group.id} className="p-5">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <Users className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-semibold text-lg">{group.name}</h3>
-                  <Badge variant="outline">{group.category}</Badge>
-                  <Badge variant={group.status === 'active' ? 'default' : 'secondary'}>
+          <Card key={group.id} className="p-3 sm:p-4 lg:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-0">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />
+                  <h3 className="font-semibold text-base sm:text-lg">{group.name}</h3>
+                  <Badge variant="outline" className="text-xs">{group.category}</Badge>
+                  <Badge variant={group.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                     {group.status}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-700 mb-3">{group.description}</p>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">{group.description}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div>
                     <span className="text-gray-600">Leader:</span>
                     <span className="ml-2 font-medium">{group.leader}</span>
@@ -332,20 +333,24 @@ export function GroupsManager() {
                   </div>
                 </div>
               </div>
-              <div className="flex gap-2 ml-4">
+              <div className="flex gap-2 sm:ml-4">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleEdit(group)}
+                  className="flex-1 sm:flex-none text-xs"
                 >
-                  <Edit className="w-4 h-4" />
+                  <Edit className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-0" />
+                  <span className="sm:hidden ml-1">Edit</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleDelete(group.id)}
+                  className="flex-1 sm:flex-none text-xs"
                 >
-                  <Trash2 className="w-4 h-4 text-red-600" />
+                  <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 sm:mr-0" />
+                  <span className="sm:hidden ml-1">Delete</span>
                 </Button>
               </div>
             </div>

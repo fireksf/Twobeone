@@ -300,17 +300,17 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Learning Modules</h2>
-          <p className="text-sm sm:text-base text-gray-600">Manage pre-marriage guidance and educational content</p>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">Learning Modules</h2>
+          <p className="text-xs sm:text-sm lg:text-base text-gray-600">Manage pre-marriage guidance and educational content</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto text-xs sm:text-sm"
               size="sm"
               onClick={() => {
                 setEditingModule(null);
@@ -326,13 +326,13 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                 });
               }}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
               New Module
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] w-full">
             <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">
+              <DialogTitle className="text-base sm:text-lg lg:text-xl">
                 {editingModule ? 'Edit Module' : 'Create New Module'}
               </DialogTitle>
               <DialogDescription className="text-xs sm:text-sm">
@@ -340,50 +340,53 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[75vh] pr-2 sm:pr-4">
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 {/* Basic Info */}
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <div>
-                    <Label htmlFor="title">Module Title</Label>
+                    <Label htmlFor="title" className="text-xs sm:text-sm">Module Title</Label>
                     <Input
                       id="title"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       placeholder="e.g., God's Design for Marriage"
+                      className="text-xs sm:text-sm"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="subtitle">Subtitle</Label>
+                    <Label htmlFor="subtitle" className="text-xs sm:text-sm">Subtitle</Label>
                     <Input
                       id="subtitle"
                       value={formData.subtitle}
                       onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                       placeholder="e.g., Biblical Foundations"
+                      className="text-xs sm:text-sm"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="description" className="text-xs sm:text-sm">Description</Label>
                     <Textarea
                       id="description"
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Brief description of what this module covers..."
                       rows={3}
+                      className="text-xs sm:text-sm"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="language">Language</Label>
+                    <Label htmlFor="language" className="text-xs sm:text-sm">Language</Label>
                     <select
                       id="language"
                       value={formData.language || 'en'}
                       onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300"
+                      className="w-full h-9 sm:h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                     >
                       <option value="en">🌍 English</option>
                       <option value="am">🌍 አማርኛ (Amharic)</option>
@@ -393,24 +396,25 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div>
-                      <Label htmlFor="icon">Icon (Emoji)</Label>
+                      <Label htmlFor="icon" className="text-xs sm:text-sm">Icon (Emoji)</Label>
                       <Input
                         id="icon"
                         value={formData.icon}
                         onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                         placeholder="📚"
                         maxLength={2}
+                        className="text-xs sm:text-sm"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="color">Color Class</Label>
+                      <Label htmlFor="color" className="text-xs sm:text-sm">Color Class</Label>
                       <select
                         id="color"
                         value={formData.color}
                         onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                        className="w-full h-10 px-3 rounded-md border border-gray-300"
+                        className="w-full h-9 sm:h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                       >
                         <option value="bg-blue-500">Blue</option>
                         <option value="bg-green-500">Green</option>
@@ -421,12 +425,12 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                       </select>
                     </div>
                     <div>
-                      <Label htmlFor="status">Status</Label>
+                      <Label htmlFor="status" className="text-xs sm:text-sm">Status</Label>
                       <select
                         id="status"
                         value={formData.status}
                         onChange={(e) => setFormData({ ...formData, status: e.target.value as 'published' | 'draft' })}
-                        className="w-full h-10 px-3 rounded-md border border-gray-300"
+                        className="w-full h-9 sm:h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                       >
                         <option value="draft">Draft</option>
                         <option value="published">Published</option>
@@ -436,27 +440,28 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                 </div>
 
                 {/* Lessons Section */}
-                <div className="border-t pt-6">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="border-t pt-4 sm:pt-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
                     <div>
-                      <Label className="text-base">Lessons</Label>
-                      <p className="text-sm text-gray-600">Add lessons to this module</p>
+                      <Label className="text-sm sm:text-base">Lessons</Label>
+                      <p className="text-xs sm:text-sm text-gray-600">Add lessons to this module</p>
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={addLesson}
+                      className="text-xs sm:text-sm w-full sm:w-auto"
                     >
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Add Lesson
                     </Button>
                   </div>
 
                   {formData.lessons && formData.lessons.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {formData.lessons.map((lesson, index) => (
-                        <Card key={lesson.id} className="p-4 relative">
+                        <Card key={lesson.id} className="p-3 sm:p-4 relative">
                           <Button
                             type="button"
                             variant="ghost"
@@ -464,19 +469,19 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                             className="absolute top-2 right-2"
                             onClick={() => removeLesson(lesson.id)}
                           >
-                            <X className="w-4 h-4 text-red-600" />
+                            <X className="w-3 h-3 sm:w-4 sm:h-4 text-red-600" />
                           </Button>
                           
-                          <div className="space-y-3 pr-8">
+                          <div className="space-y-2 sm:space-y-3 pr-8">
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-medium">
+                              <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-medium">
                                 {index + 1}
                               </span>
-                              <Label className="text-sm font-medium">Lesson {index + 1}</Label>
+                              <Label className="text-xs sm:text-sm font-medium">Lesson {index + 1}</Label>
                             </div>
 
                             <div>
-                              <Label htmlFor={`lesson-title-${lesson.id}`} className="text-sm">
+                              <Label htmlFor={`lesson-title-${lesson.id}`} className="text-xs sm:text-sm">
                                 Lesson Title
                               </Label>
                               <Input
@@ -484,12 +489,13 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                                 value={lesson.title}
                                 onChange={(e) => updateLesson(lesson.id, 'title', e.target.value)}
                                 placeholder="e.g., The Covenant of Marriage"
+                                className="text-xs sm:text-sm"
                                 required
                               />
                             </div>
 
                             <div>
-                              <Label htmlFor={`lesson-duration-${lesson.id}`} className="text-sm">
+                              <Label htmlFor={`lesson-duration-${lesson.id}`} className="text-xs sm:text-sm">
                                 Duration
                               </Label>
                               <Input
@@ -497,12 +503,13 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                                 value={lesson.duration}
                                 onChange={(e) => updateLesson(lesson.id, 'duration', e.target.value)}
                                 placeholder="e.g., 15 min"
+                                className="text-xs sm:text-sm"
                                 required
                               />
                             </div>
 
                             <div>
-                              <Label htmlFor={`lesson-content-${lesson.id}`} className="text-sm">
+                              <Label htmlFor={`lesson-content-${lesson.id}`} className="text-xs sm:text-sm">
                                 Content
                               </Label>
                               <Textarea
@@ -511,6 +518,7 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                                 onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
                                 placeholder="Lesson content, scripture references, discussion questions..."
                                 rows={4}
+                                className="text-xs sm:text-sm"
                                 required
                               />
                             </div>
@@ -519,24 +527,25 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                       ))}
                     </div>
                   ) : (
-                    <Card className="p-8 text-center">
-                      <GraduationCap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-600 mb-2">No lessons added yet</p>
-                      <p className="text-sm text-gray-500 mb-4">
+                    <Card className="p-6 sm:p-8 text-center">
+                      <GraduationCap className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-2 sm:mb-3" />
+                      <p className="text-gray-600 mb-1 sm:mb-2 text-xs sm:text-sm">No lessons added yet</p>
+                      <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
                         Click "Add Lesson" to create your first lesson
                       </p>
                     </Card>
                   )}
                 </div>
 
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button type="submit" className="flex-1">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t">
+                  <Button type="submit" className="flex-1 text-xs sm:text-sm">
                     {editingModule ? 'Update' : 'Create'} Module
                   </Button>
                   <Button 
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsDialogOpen(false)}
+                    className="text-xs sm:text-sm"
                   >
                     Cancel
                   </Button>
@@ -548,33 +557,33 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
       </div>
 
       {/* Search */}
-      <Card className="p-4">
+      <Card className="p-3 sm:p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
           <Input
             placeholder="Search modules..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 sm:pl-10 text-xs sm:text-sm"
           />
         </div>
       </Card>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4">
-          <p className="text-sm text-gray-600 mb-1">Total Modules</p>
-          <p className="text-2xl font-semibold">{modules.length}</p>
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Modules</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{modules.length}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600 mb-1">Total Lessons</p>
-          <p className="text-2xl font-semibold">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Lessons</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
             {modules.reduce((acc, m) => acc + m.lessons.length, 0)}
           </p>
         </Card>
-        <Card className="p-4">
-          <p className="text-sm text-gray-600 mb-1">Published</p>
-          <p className="text-2xl font-semibold text-green-600">
+        <Card className="p-3 sm:p-4">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1">Published</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-green-600">
             {modules.filter(m => m.status === 'published').length}
           </p>
         </Card>
@@ -582,71 +591,75 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
 
       {/* Modules List */}
       {isLoading ? (
-        <Card className="p-8 text-center">
-          <p className="text-gray-600">Loading modules...</p>
+        <Card className="p-6 sm:p-8 text-center">
+          <p className="text-gray-600 text-xs sm:text-sm">Loading modules...</p>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {filteredModules.map((module) => (
-            <Card key={module.id} className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className={`w-14 h-14 rounded-xl ${module.color} flex items-center justify-center text-2xl flex-shrink-0`}>
+            <Card key={module.id} className="p-3 sm:p-4 lg:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-3 sm:mb-4">
+                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl ${module.color} flex items-center justify-center text-xl sm:text-2xl flex-shrink-0`}>
                     {module.icon}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-semibold text-lg">{module.title}</h3>
-                      <Badge variant={module.status === 'published' ? 'default' : 'secondary'}>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-base sm:text-lg">{module.title}</h3>
+                      <Badge variant={module.status === 'published' ? 'default' : 'secondary'} className="text-xs">
                         {module.status}
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{module.subtitle}</p>
-                    <p className="text-sm text-gray-700 mb-3">{module.description}</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <GraduationCap className="w-4 h-4" />
+                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{module.subtitle}</p>
+                    <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">{module.description}</p>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                      <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>{module.lessons.length} lessons</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2 ml-4">
+                <div className="flex gap-2 sm:ml-4">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(module)}
+                    className="flex-1 sm:flex-none text-xs"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-0" />
+                    <span className="sm:hidden ml-1">Edit</span>
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(module.id)}
+                    className="flex-1 sm:flex-none text-xs"
                   >
-                    <Trash2 className="w-4 h-4 text-red-600" />
+                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 sm:mr-0" />
+                    <span className="sm:hidden ml-1">Delete</span>
                   </Button>
                 </div>
               </div>
 
               {/* Lessons */}
               {module.lessons.length > 0 && (
-                <div className="border-t pt-4 space-y-2">
+                <div className="border-t pt-3 sm:pt-4 space-y-2">
                   <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-2">
                     Lessons
                   </p>
                   {module.lessons.map((lesson, index) => (
                     <div
                       key={lesson.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-xs font-medium">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-xs font-medium flex-shrink-0">
                           {index + 1}
                         </span>
-                        <span className="text-sm font-medium">{lesson.title}</span>
+                        <span className="text-xs sm:text-sm font-medium truncate">{lesson.title}</span>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                         <span className="text-xs text-gray-600">{lesson.duration}</span>
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                        <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
                       </div>
                     </div>
                   ))}
