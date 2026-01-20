@@ -373,13 +373,13 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Daily Devotionals</h2>
-          <p className="text-sm sm:text-base text-gray-600">Manage daily devotional content for couples</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[24px]">Daily Devotionals</h2>
+          <p className="text-sm text-gray-600 text-[15px]">Manage daily devotional content for couples</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto text-sm"
               size="sm"
               onClick={() => {
                 setEditingDevotional(null);
@@ -401,10 +401,10 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
           </DialogTrigger>
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] w-full">
             <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">
+              <DialogTitle className="text-xl sm:text-2xl font-bold">
                 {editingDevotional ? 'Edit Devotional' : 'Create New Devotional'}
               </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm">
+              <DialogDescription className="text-sm">
                 {editingDevotional ? 'Update the details of this devotional.' : 'Enter the details for the new devotional.'}
               </DialogDescription>
             </DialogHeader>
@@ -524,7 +524,7 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
               <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-600">Total Devotionals</p>
+              <p className="text-xs sm:text-sm text-gray-600 text-[14px] font-bold">Total Devotionals</p>
               <p className="text-xl sm:text-2xl font-semibold">{devotionals.length}</p>
             </div>
           </div>
@@ -535,7 +535,7 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
               <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-600">Published</p>
+              <p className="text-xs sm:text-sm text-gray-600 font-bold text-[14px]">Published</p>
               <p className="text-xl sm:text-2xl font-semibold">{devotionals.filter(d => d.status === 'published').length}</p>
             </div>
           </div>
@@ -546,7 +546,7 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
               <Music className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-xs sm:text-sm text-gray-600">With Audio</p>
+              <p className="text-xs sm:text-sm text-gray-600 text-[14px] font-bold">With Audio</p>
               <p className="text-xl sm:text-2xl font-semibold">{devotionals.filter(d => d.audioUrl).length}</p>
             </div>
           </div>
@@ -561,7 +561,7 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
             placeholder="Search devotionals..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 text-xs sm:text-sm"
+            className="pl-10 text-xs sm:text-sm text-[14px]"
           />
         </div>
         <Button variant="outline" onClick={loadDevotionals} size="sm" className="w-full sm:w-auto">

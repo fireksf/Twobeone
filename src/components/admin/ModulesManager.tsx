@@ -304,13 +304,13 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">Learning Modules</h2>
-          <p className="text-xs sm:text-sm lg:text-base text-gray-600">Manage pre-marriage guidance and educational content</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[24px]">Learning Modules</h2>
+          <p className="text-sm text-gray-600 text-[16px]">Manage pre-marriage guidance and educational content</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto text-xs sm:text-sm"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto text-xs sm:text-sm text-[14px] font-bold"
               size="sm"
               onClick={() => {
                 setEditingModule(null);
@@ -564,7 +564,7 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
             placeholder="Search modules..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 sm:pl-10 text-xs sm:text-sm"
+            className="pl-9 sm:pl-10 text-xs sm:text-sm text-[14px]"
           />
         </div>
       </Card>
@@ -572,18 +572,18 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Modules</p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{modules.length}</p>
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Total Modules</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-[20px] font-bold">{modules.length}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Lessons</p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Total Lessons</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-[20px] font-bold">
             {modules.reduce((acc, m) => acc + m.lessons.length, 0)}
           </p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Published</p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-green-600">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Published</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-green-600 text-[20px] font-bold">
             {modules.filter(m => m.status === 'published').length}
           </p>
         </Card>
@@ -605,16 +605,16 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-base sm:text-lg">{module.title}</h3>
+                      <h3 className="font-semibold text-base sm:text-lg font-bold">{module.title}</h3>
                       <Badge variant={module.status === 'published' ? 'default' : 'secondary'} className="text-xs">
                         {module.status}
                       </Badge>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{module.subtitle}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2 text-[14px] font-bold">{module.subtitle}</p>
                     <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">{module.description}</p>
                     <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
                       <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span>{module.lessons.length} lessons</span>
+                      <span className="font-bold">{module.lessons.length} lessons</span>
                     </div>
                   </div>
                 </div>
@@ -623,7 +623,7 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(module)}
-                    className="flex-1 sm:flex-none text-xs"
+                    className="flex-1 sm:flex-none text-xs text-[14px] font-bold"
                   >
                     <Edit className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-0" />
                     <span className="sm:hidden ml-1">Edit</span>
@@ -632,7 +632,7 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                     variant="outline"
                     size="sm"
                     onClick={() => handleDelete(module.id)}
-                    className="flex-1 sm:flex-none text-xs"
+                    className="flex-1 sm:flex-none text-xs text-[13px] font-bold"
                   >
                     <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 sm:mr-0" />
                     <span className="sm:hidden ml-1">Delete</span>
@@ -643,7 +643,7 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
               {/* Lessons */}
               {module.lessons.length > 0 && (
                 <div className="border-t pt-3 sm:pt-4 space-y-2">
-                  <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-2">
+                  <p className="text-xs text-gray-600 font-medium uppercase tracking-wide mb-2 text-[14px] font-bold">
                     Lessons
                   </p>
                   {module.lessons.map((lesson, index) => (
@@ -652,13 +652,13 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                       className="flex items-center justify-between p-2 sm:p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                        <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center text-xs font-medium flex-shrink-0 text-[14px] font-bold">
                           {index + 1}
                         </span>
-                        <span className="text-xs sm:text-sm font-medium truncate">{lesson.title}</span>
+                        <span className="text-xs sm:text-sm font-medium truncate text-[14px]">{lesson.title}</span>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                        <span className="text-xs text-gray-600">{lesson.duration}</span>
+                        <span className="text-xs text-gray-600 text-[14px] font-bold">{lesson.duration} Min</span>
                         <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
                       </div>
                     </div>

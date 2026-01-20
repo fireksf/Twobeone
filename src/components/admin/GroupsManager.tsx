@@ -119,13 +119,13 @@ export function GroupsManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">Community Groups</h2>
-          <p className="text-xs sm:text-sm lg:text-base text-gray-600">Manage community groups and small groups</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[24px]">Community Groups</h2>
+          <p className="text-sm text-gray-600 text-[16px]">Manage community groups and small groups</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto text-xs sm:text-sm"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto text-xs sm:text-sm text-[14px]"
               size="sm"
               onClick={() => {
                 setEditingGroup(null);
@@ -274,7 +274,7 @@ export function GroupsManager() {
             placeholder="Search groups..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 sm:pl-10 text-xs sm:text-sm"
+            className="pl-9 sm:pl-10 text-xs sm:text-sm text-[14px]"
           />
         </div>
       </Card>
@@ -282,18 +282,18 @@ export function GroupsManager() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Groups</p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{groups.length}</p>
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Total Groups</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold font-bold">{groups.length}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Members</p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Total Members</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold font-bold">
             {groups.reduce((acc, g) => acc + g.members, 0)}
           </p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Active Groups</p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-green-600">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Active Groups</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold text-green-600 font-bold">
             {groups.filter(g => g.status === 'active').length}
           </p>
         </Card>
@@ -307,29 +307,29 @@ export function GroupsManager() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />
-                  <h3 className="font-semibold text-base sm:text-lg">{group.name}</h3>
-                  <Badge variant="outline" className="text-xs">{group.category}</Badge>
+                  <h3 className="font-semibold text-base sm:text-lg font-bold">{group.name}</h3>
+                  <Badge variant="outline" className="text-xs text-[13px]">{group.category}</Badge>
                   <Badge variant={group.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                     {group.status}
                   </Badge>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3">{group.description}</p>
+                <p className="text-xs sm:text-sm text-gray-700 mb-2 sm:mb-3 text-[15px]">{group.description}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                   <div>
-                    <span className="text-gray-600">Leader:</span>
-                    <span className="ml-2 font-medium">{group.leader}</span>
+                    <span className="text-gray-600 text-[14px]">Leader:</span>
+                    <span className="ml-2 font-medium text-[14px] font-bold">{group.leader}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Members:</span>
-                    <span className="ml-2 font-medium">{group.members}</span>
+                    <span className="text-gray-600 text-[14px] text-[13px]">Members:</span>
+                    <span className="ml-2 font-medium text-[14px] font-bold">{group.members}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Meeting:</span>
-                    <span className="ml-2 font-medium">{group.meetingDay}</span>
+                    <span className="text-gray-600 text-[14px] text-[13px]">Meeting:</span>
+                    <span className="ml-2 font-medium font-bold text-[14px] text-[13px]">{group.meetingDay}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Location:</span>
-                    <span className="ml-2 font-medium">{group.location}</span>
+                    <span className="text-gray-600 text-[14px] text-[13px]">Location:</span>
+                    <span className="ml-2 font-medium text-[13px] font-bold">{group.location}</span>
                   </div>
                 </div>
               </div>
@@ -338,7 +338,7 @@ export function GroupsManager() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleEdit(group)}
-                  className="flex-1 sm:flex-none text-xs"
+                  className="flex-1 sm:flex-none text-xs text-[14px] font-bold"
                 >
                   <Edit className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-0" />
                   <span className="sm:hidden ml-1">Edit</span>
@@ -347,7 +347,7 @@ export function GroupsManager() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleDelete(group.id)}
-                  className="flex-1 sm:flex-none text-xs"
+                  className="flex-1 sm:flex-none text-xs text-[13px] font-bold"
                 >
                   <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 sm:mr-0" />
                   <span className="sm:hidden ml-1">Delete</span>

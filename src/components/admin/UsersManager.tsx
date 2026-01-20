@@ -167,51 +167,51 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">User Management</h2>
-        <p className="text-xs sm:text-sm lg:text-base text-gray-600">View and manage registered users and couples</p>
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">User Management</h2>
+        <p className="text-sm text-gray-600">View and manage registered users and couples</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <Card className="p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-1 sm:mb-2">
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
-            <p className="text-xs sm:text-sm text-gray-600 truncate">Total Users</p>
+            <Users className="w-5 h-5 text-blue-600 flex-shrink-0" />
+            <p className="text-sm font-medium text-gray-600 truncate">Total Users</p>
           </div>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.totalUsers}</p>
+          <p className="text-2xl font-bold">{stats.totalUsers}</p>
         </Card>
         <Card className="p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-1 sm:mb-2">
-            <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 flex-shrink-0" />
-            <p className="text-xs sm:text-sm text-gray-600 truncate">Active Couples</p>
+            <Heart className="w-5 h-5 text-rose-600 flex-shrink-0" />
+            <p className="text-sm font-medium text-gray-600 truncate">Active Couples</p>
           </div>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.activeCouples}</p>
+          <p className="text-2xl font-bold">{stats.activeCouples}</p>
         </Card>
         <Card className="p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-1 sm:mb-2">
-            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
-            <p className="text-xs sm:text-sm text-gray-600 truncate">Active Today</p>
+            <TrendingUp className="w-5 h-5 text-green-600 flex-shrink-0" />
+            <p className="text-sm font-medium text-gray-600 truncate">Active Today</p>
           </div>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.activeToday}</p>
+          <p className="text-2xl font-bold">{stats.activeToday}</p>
         </Card>
         <Card className="p-3 sm:p-4">
           <div className="flex items-center gap-2 mb-1 sm:mb-2">
-            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />
-            <p className="text-xs sm:text-sm text-gray-600 truncate">Avg Completion</p>
+            <Calendar className="w-5 h-5 text-purple-600 flex-shrink-0" />
+            <p className="text-sm font-medium text-gray-600 truncate">Avg Completion</p>
           </div>
-          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.avgCompletion} days</p>
+          <p className="text-2xl font-bold">{stats.avgCompletion} days</p>
         </Card>
       </div>
 
       {/* Search */}
       <Card className="p-3 sm:p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
             placeholder="Search users by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 sm:pl-10 text-xs sm:text-sm"
+            className="pl-10 text-base"
           />
         </div>
       </Card>
@@ -219,13 +219,13 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
       {/* Tabs */}
       <Tabs defaultValue="couples">
         <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="couples" className="text-xs sm:text-sm">
-            <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <TabsTrigger value="couples" className="text-sm font-medium">
+            <Heart className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Couples View</span>
             <span className="sm:hidden">Couples</span>
           </TabsTrigger>
-          <TabsTrigger value="individuals" className="text-xs sm:text-sm">
-            <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          <TabsTrigger value="individuals" className="text-sm font-medium">
+            <Users className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Individual Users</span>
             <span className="sm:hidden">Individual</span>
           </TabsTrigger>

@@ -236,54 +236,60 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <Card className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
-        <CardHeader className="p-4 sm:p-6">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Shield className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
-            <div className="min-w-0">
-              <CardTitle className="text-lg sm:text-2xl">User Privilege Management</CardTitle>
-              <CardDescription className="text-purple-100 text-xs sm:text-sm">
-                Manage admin privileges and monitor access control
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">User Privilege Management</h2>
+        <p className="text-sm text-gray-600">Manage admin privileges and monitor access control</p>
+      </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <Card>
-          <CardContent className="p-4 sm:p-6">
+      {/* Stats Overview - Enhanced Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="overflow-hidden border-2 border-gray-200 hover:border-blue-300 transition-all hover:shadow-lg">
+          <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600">Total Users</p>
-                <p className="text-2xl sm:text-3xl font-bold mt-1">{users.length}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900">{users.length}</p>
               </div>
-              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 opacity-75" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                <Users className="w-6 h-6 text-blue-700" />
+              </div>
+            </div>
+            <div className="mt-3 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full" style={{ width: '75%' }} />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
+        <Card className="overflow-hidden border-2 border-gray-200 hover:border-purple-300 transition-all hover:shadow-lg">
+          <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600">Active Admins</p>
-                <p className="text-2xl sm:text-3xl font-bold mt-1">{admins.length}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">Active Admins</p>
+                <p className="text-3xl font-bold text-gray-900">{admins.length}</p>
               </div>
-              <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 opacity-75" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6 text-purple-700" />
+              </div>
+            </div>
+            <div className="mt-3 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-purple-500 to-purple-600 rounded-full" style={{ width: '60%' }} />
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
+        <Card className="overflow-hidden border-2 border-gray-200 hover:border-green-300 transition-all hover:shadow-lg">
+          <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600">Recent Changes</p>
-                <p className="text-2xl sm:text-3xl font-bold mt-1">{activityLog.length}</p>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 mb-1">Recent Changes</p>
+                <p className="text-3xl font-bold text-gray-900">{activityLog.length}</p>
               </div>
-              <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 opacity-75" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-green-700" />
+              </div>
+            </div>
+            <div className="mt-3 h-1 bg-gray-200 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full" style={{ width: '85%' }} />
             </div>
           </CardContent>
         </Card>
@@ -292,145 +298,246 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
       {/* Search */}
       <Card className="p-3 sm:p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
             type="text"
             placeholder="Search users by email or name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 sm:pl-10 text-xs sm:text-sm"
+            className="pl-10 text-base"
           />
         </div>
       </Card>
 
       {/* Tabs */}
-      <Card>
-        <CardHeader className="p-3 sm:p-6">
-          <div className="flex flex-col sm:flex-row gap-2 border-b pb-2">
+      <Card className="overflow-hidden">
+        <div className="bg-gray-50 border-b-2 border-gray-300 px-4 py-3">
+          <div className="flex gap-2">
             <Button
               variant={selectedTab === 'users' ? 'default' : 'ghost'}
               onClick={() => setSelectedTab('users')}
-              className="flex-1 text-xs sm:text-sm"
+              className="text-sm font-medium"
               size="sm"
             >
-              <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">All Users</span>
-              <span className="sm:hidden">Users</span>
+              <UserCheck className="w-4 h-4 mr-2" />
+              All Users
             </Button>
             <Button
               variant={selectedTab === 'admins' ? 'default' : 'ghost'}
               onClick={() => setSelectedTab('admins')}
-              className="flex-1 text-xs sm:text-sm"
+              className="text-sm font-medium"
               size="sm"
             >
-              <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Admins ({admins.length})</span>
-              <span className="sm:hidden">Admins ({admins.length})</span>
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              Admins ({admins.length})
             </Button>
             <Button
               variant={selectedTab === 'activity' ? 'default' : 'ghost'}
               onClick={() => setSelectedTab('activity')}
-              className="flex-1 text-xs sm:text-sm"
+              className="text-sm font-medium"
               size="sm"
             >
-              <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Activity Log</span>
-              <span className="sm:hidden">Activity</span>
+              <Clock className="w-4 h-4 mr-2" />
+              Activity Log
             </Button>
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className="p-3 sm:p-6">
+        <CardContent className="p-0">
           {isLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-              <p className="text-gray-600 mt-2 text-xs sm:text-sm">Loading...</p>
+              <p className="text-gray-600 mt-2 text-sm">Loading...</p>
             </div>
           ) : (
             <>
-              {/* All Users Tab */}
+              {/* All Users Tab - Table View */}
               {selectedTab === 'users' && (
-                <div className="space-y-2">
-                  {filteredUsers.length === 0 ? (
-                    <div className="text-center py-12">
-                      <UserX className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-600 text-xs sm:text-sm">No users found</p>
-                    </div>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                            <p className="font-medium text-sm sm:text-base truncate">{user.email}</p>
-                            {user.isAdmin && (
-                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center gap-1 flex-shrink-0">
-                                <ShieldCheck className="w-3 h-3" />
-                                Admin
-                              </span>
-                            )}
+                <div className="overflow-x-auto">
+                  {/* Desktop Table */}
+                  <div className="hidden lg:block">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gradient-to-b from-gray-100 to-gray-200 border-b-2 border-gray-400">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300">Email</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-800 border-r border-gray-300">Name</th>
+                          <th className="px-4 py-3 text-center text-sm font-bold text-gray-800 border-r border-gray-300">Status</th>
+                          <th className="px-4 py-3 text-center text-sm font-bold text-gray-800 border-r border-gray-300">Joined</th>
+                          <th className="px-4 py-3 text-center text-sm font-bold text-gray-800">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="text-center py-12 bg-gray-50 border-t border-gray-300">
+                              <UserX className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                              <p className="text-base font-semibold text-gray-700">No users found</p>
+                              <p className="text-sm text-gray-600">Try adjusting your search</p>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredUsers.map((user, index) => (
+                            <tr
+                              key={user.id}
+                              className={`border-b border-gray-300 transition-colors hover:bg-blue-50 ${
+                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                              }`}
+                            >
+                              <td className="px-4 py-3 border-r border-gray-300">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-sm text-gray-900 truncate">{user.email}</p>
+                                  {user.hasPartner && (
+                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0 font-medium">
+                                      Coupled
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 border-r border-gray-300">
+                                <p className="text-sm text-gray-900 truncate">{user.name}</p>
+                              </td>
+                              <td className="px-4 py-3 border-r border-gray-300 text-center">
+                                {user.isAdmin ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-700 text-white text-xs rounded-full font-semibold border border-purple-800">
+                                    <ShieldCheck className="w-3 h-3" />
+                                    Admin
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-gray-500 italic">User</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 border-r border-gray-300 text-center bg-gray-50">
+                                <p className="text-xs text-gray-600">{formatDate(user.createdAt)}</p>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {user.isAdmin ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => revokeAdminPrivilege(user.id)}
+                                    disabled={processingUserId === user.id}
+                                    className="text-red-700 hover:text-red-800 hover:bg-red-100 font-medium"
+                                  >
+                                    {processingUserId === user.id ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-1"></div>
+                                        Revoking...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ShieldOff className="w-4 h-4 mr-1" />
+                                        Revoke Admin
+                                      </>
+                                    )}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => grantAdminPrivilege(user.id)}
+                                    disabled={processingUserId === user.id}
+                                    className="text-green-700 hover:text-green-800 hover:bg-green-100 font-medium"
+                                  >
+                                    {processingUserId === user.id ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-1"></div>
+                                        Granting...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <ShieldCheck className="w-4 h-4 mr-1" />
+                                        Grant Admin
+                                      </>
+                                    )}
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="lg:hidden divide-y divide-gray-200">
+                    {filteredUsers.length === 0 ? (
+                      <div className="text-center py-12 text-gray-500">
+                        <UserX className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-base font-medium">No users found</p>
+                        <p className="text-sm">Try adjusting your search</p>
+                      </div>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <div key={user.id} className="p-4">
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold text-base truncate">{user.email}</p>
+                                {user.isAdmin && (
+                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center gap-1 flex-shrink-0 font-medium">
+                                    <ShieldCheck className="w-3 h-3" />
+                                    Admin
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600 truncate">{user.name}</p>
+                              <p className="text-xs text-gray-400 mt-1">Joined {formatDate(user.createdAt)}</p>
+                            </div>
                             {user.hasPartner && (
-                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0">
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0 font-medium">
                                 Coupled
                               </span>
                             )}
                           </div>
-                          <p className="text-xs sm:text-sm text-gray-600 truncate">{user.name}</p>
-                          <p className="text-xs text-gray-400">Joined {formatDate(user.createdAt)}</p>
-                        </div>
 
-                        <div className="flex gap-2">
-                          {user.isAdmin ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => revokeAdminPrivilege(user.id)}
-                              disabled={processingUserId === user.id}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs flex-1 sm:flex-none"
-                            >
-                              {processingUserId === user.id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-red-600 mr-1 sm:mr-2"></div>
-                                  <span className="hidden sm:inline">Revoking...</span>
-                                  <span className="sm:hidden">...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <ShieldOff className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                                  <span className="hidden sm:inline">Revoke Admin</span>
-                                  <span className="sm:hidden">Revoke</span>
-                                </>
-                              )}
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => grantAdminPrivilege(user.id)}
-                              disabled={processingUserId === user.id}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs flex-1 sm:flex-none"
-                            >
-                              {processingUserId === user.id ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-green-600 mr-1 sm:mr-2"></div>
-                                  <span className="hidden sm:inline">Granting...</span>
-                                  <span className="sm:hidden">...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-                                  <span className="hidden sm:inline">Grant Admin</span>
-                                  <span className="sm:hidden">Grant</span>
-                                </>
-                              )}
-                            </Button>
-                          )}
+                          <div className="flex gap-2">
+                            {user.isAdmin ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => revokeAdminPrivilege(user.id)}
+                                disabled={processingUserId === user.id}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 text-sm flex-1"
+                              >
+                                {processingUserId === user.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-1"></div>
+                                    Revoking...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ShieldOff className="w-4 h-4 mr-1" />
+                                    Revoke Admin
+                                  </>
+                                )}
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => grantAdminPrivilege(user.id)}
+                                disabled={processingUserId === user.id}
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50 text-sm flex-1"
+                              >
+                                {processingUserId === user.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-1"></div>
+                                    Granting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <ShieldCheck className="w-4 h-4 mr-1" />
+                                    Grant Admin
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
 

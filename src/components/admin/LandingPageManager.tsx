@@ -332,7 +332,7 @@ export function LandingPageManager({ accessToken }: LandingPageManagerProps) {
           <div className="flex items-center gap-3">
             <Mail className="w-8 h-8 text-purple-600" />
             <div>
-              <p className="text-sm text-gray-600">Newsletter Subscribers</p>
+              <p className="text-sm text-gray-600 font-bold">Newsletter Subscribers</p>
               <p className="text-2xl font-semibold">{subscribersCount}</p>
             </div>
           </div>
@@ -341,7 +341,7 @@ export function LandingPageManager({ accessToken }: LandingPageManagerProps) {
           <div className="flex items-center gap-3">
             <Eye className="w-8 h-8 text-blue-600" />
             <div>
-              <p className="text-sm text-gray-600">Sections</p>
+              <p className="text-sm text-gray-600 font-bold">Sections</p>
               <p className="text-2xl font-semibold">7</p>
             </div>
           </div>
@@ -350,7 +350,7 @@ export function LandingPageManager({ accessToken }: LandingPageManagerProps) {
           <div className="flex items-center gap-3">
             <Star className="w-8 h-8 text-amber-600" />
             <div>
-              <p className="text-sm text-gray-600">Testimonials</p>
+              <p className="text-sm text-gray-600 font-bold">Testimonials</p>
               <p className="text-2xl font-semibold">{content.testimonials.length}</p>
             </div>
           </div>

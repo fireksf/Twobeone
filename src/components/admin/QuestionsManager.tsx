@@ -359,8 +359,8 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Q&A Discussion Questions</h2>
-          <p className="text-sm sm:text-base text-gray-600">Manage conversation topics with flexible question types</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2">Q&A Discussion Questions</h2>
+          <p className="text-sm text-gray-600">Manage conversation topics with flexible question types</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -642,7 +642,7 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Questions</p>
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Total Questions</p>
           <p className="text-xl sm:text-2xl font-semibold">{questions.length}</p>
         </Card>
         <Card className="p-3 sm:p-4">
