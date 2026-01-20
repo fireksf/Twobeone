@@ -234,15 +234,15 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <Card className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8" />
-            <div>
-              <CardTitle className="text-2xl">User Privilege Management</CardTitle>
-              <CardDescription className="text-purple-100">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Shield className="w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0" />
+            <div className="min-w-0">
+              <CardTitle className="text-lg sm:text-2xl">User Privilege Management</CardTitle>
+              <CardDescription className="text-purple-100 text-xs sm:text-sm">
                 Manage admin privileges and monitor access control
               </CardDescription>
             </div>
@@ -251,7 +251,7 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
       </Card>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
@@ -305,40 +305,46 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
 
       {/* Tabs */}
       <Card>
-        <CardHeader>
-          <div className="flex gap-2 border-b pb-2">
+        <CardHeader className="p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-2 border-b pb-2">
             <Button
               variant={selectedTab === 'users' ? 'default' : 'ghost'}
               onClick={() => setSelectedTab('users')}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm"
+              size="sm"
             >
-              <UserCheck className="w-4 h-4 mr-2" />
-              All Users
+              <UserCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">All Users</span>
+              <span className="sm:hidden">Users</span>
             </Button>
             <Button
               variant={selectedTab === 'admins' ? 'default' : 'ghost'}
               onClick={() => setSelectedTab('admins')}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm"
+              size="sm"
             >
-              <ShieldCheck className="w-4 h-4 mr-2" />
-              Admins ({admins.length})
+              <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Admins ({admins.length})</span>
+              <span className="sm:hidden">Admins ({admins.length})</span>
             </Button>
             <Button
               variant={selectedTab === 'activity' ? 'default' : 'ghost'}
               onClick={() => setSelectedTab('activity')}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm"
+              size="sm"
             >
-              <Clock className="w-4 h-4 mr-2" />
-              Activity Log
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Activity Log</span>
+              <span className="sm:hidden">Activity</span>
             </Button>
           </div>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {isLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-              <p className="text-gray-600 mt-2">Loading...</p>
+              <p className="text-gray-600 mt-2 text-xs sm:text-sm">Loading...</p>
             </div>
           ) : (
             <>
@@ -347,31 +353,31 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
                 <div className="space-y-2">
                   {filteredUsers.length === 0 ? (
                     <div className="text-center py-12">
-                      <UserX className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-600">No users found</p>
+                      <UserX className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-600 text-xs sm:text-sm">No users found</p>
                     </div>
                   ) : (
                     filteredUsers.map((user) => (
                       <div
                         key={user.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors gap-3"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{user.email}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                            <p className="font-medium text-sm sm:text-base truncate">{user.email}</p>
                             {user.isAdmin && (
-                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center gap-1">
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center gap-1 flex-shrink-0">
                                 <ShieldCheck className="w-3 h-3" />
                                 Admin
                               </span>
                             )}
                             {user.hasPartner && (
-                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full flex-shrink-0">
                                 Coupled
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-gray-600">{user.name}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 truncate">{user.name}</p>
                           <p className="text-xs text-gray-400">Joined {formatDate(user.createdAt)}</p>
                         </div>
 
@@ -382,17 +388,19 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
                               size="sm"
                               onClick={() => revokeAdminPrivilege(user.id)}
                               disabled={processingUserId === user.id}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs flex-1 sm:flex-none"
                             >
                               {processingUserId === user.id ? (
                                 <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-2"></div>
-                                  Revoking...
+                                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-red-600 mr-1 sm:mr-2"></div>
+                                  <span className="hidden sm:inline">Revoking...</span>
+                                  <span className="sm:hidden">...</span>
                                 </>
                               ) : (
                                 <>
-                                  <ShieldOff className="w-4 h-4 mr-1" />
-                                  Revoke Admin
+                                  <ShieldOff className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                                  <span className="hidden sm:inline">Revoke Admin</span>
+                                  <span className="sm:hidden">Revoke</span>
                                 </>
                               )}
                             </Button>
@@ -402,17 +410,19 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
                               size="sm"
                               onClick={() => grantAdminPrivilege(user.id)}
                               disabled={processingUserId === user.id}
-                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs flex-1 sm:flex-none"
                             >
                               {processingUserId === user.id ? (
                                 <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
-                                  Granting...
+                                  <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-green-600 mr-1 sm:mr-2"></div>
+                                  <span className="hidden sm:inline">Granting...</span>
+                                  <span className="sm:hidden">...</span>
                                 </>
                               ) : (
                                 <>
-                                  <ShieldCheck className="w-4 h-4 mr-1" />
-                                  Grant Admin
+                                  <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                                  <span className="hidden sm:inline">Grant Admin</span>
+                                  <span className="sm:hidden">Grant</span>
                                 </>
                               )}
                             </Button>
@@ -429,8 +439,8 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
                 <div className="space-y-2">
                   {admins.length === 0 ? (
                     <div className="text-center py-12">
-                      <ShieldOff className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-600">No admins found</p>
+                      <ShieldOff className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-600 text-xs sm:text-sm">No admins found</p>
                     </div>
                   ) : (
                     admins
@@ -441,15 +451,15 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
                       .map((admin) => (
                         <div
                           key={admin.id}
-                          className="flex items-center justify-between p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-indigo-50"
+                          className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-indigo-50 gap-3"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center">
-                              <ShieldCheck className="w-5 h-5 text-purple-700" />
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0">
+                              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-purple-700" />
                             </div>
-                            <div>
-                              <p className="font-medium">{admin.email}</p>
-                              <p className="text-sm text-gray-600">{admin.name}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-sm sm:text-base truncate">{admin.email}</p>
+                              <p className="text-xs sm:text-sm text-gray-600 truncate">{admin.name}</p>
                               <p className="text-xs text-gray-400">Admin since {formatDate(admin.addedAt)}</p>
                             </div>
                           </div>
@@ -459,16 +469,17 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
                             size="sm"
                             onClick={() => revokeAdminPrivilege(admin.id)}
                             disabled={processingUserId === admin.id}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs w-full sm:w-auto"
                           >
                             {processingUserId === admin.id ? (
                               <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-2"></div>
-                                Revoking...
+                                <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-b-2 border-red-600 mr-1 sm:mr-2"></div>
+                                <span className="hidden sm:inline">Revoking...</span>
+                                <span className="sm:hidden">...</span>
                               </>
                             ) : (
                               <>
-                                <ShieldOff className="w-4 h-4 mr-1" />
+                                <ShieldOff className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
                                 Revoke
                               </>
                             )}
@@ -484,29 +495,29 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
                 <div className="space-y-2">
                   {activityLog.length === 0 ? (
                     <div className="text-center py-12">
-                      <Clock className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-600">No activity recorded</p>
+                      <Clock className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-600 text-xs sm:text-sm">No activity recorded</p>
                     </div>
                   ) : (
                     activityLog.map((log, index) => (
                       <div
                         key={index}
-                        className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                        className="flex items-start gap-2 sm:gap-4 p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                           log.action === 'granted' ? 'bg-green-100' : 'bg-red-100'
                         }`}>
                           {log.action === 'granted' ? (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                           ) : (
-                            <XCircle className="w-5 h-5 text-red-600" />
+                            <XCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" />
                           )}
                         </div>
-                        <div className="flex-1">
-                          <p className="font-medium">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm sm:text-base">
                             {log.action === 'granted' ? 'Admin Privileges Granted' : 'Admin Privileges Revoked'}
                           </p>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1">
                             <span className="font-medium">{log.performedBy.email}</span>
                             {' '}{log.action === 'granted' ? 'granted' : 'revoked'} admin privileges
                             {' '}{log.action === 'granted' ? 'to' : 'from'}{' '}
@@ -526,10 +537,10 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
 
       {/* Warning Notice */}
       <Card className="border-orange-300 bg-orange-50">
-        <CardContent className="p-4">
-          <div className="flex gap-3">
-            <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex gap-2 sm:gap-3">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm min-w-0">
               <p className="font-medium text-orange-900">Important Security Notice</p>
               <p className="text-orange-700 mt-1">
                 Admin privileges grant full access to all system features including content management, 

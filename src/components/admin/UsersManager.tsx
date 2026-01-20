@@ -164,54 +164,54 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">User Management</h2>
-        <p className="text-sm sm:text-base text-gray-600">View and manage registered users and couples</p>
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">User Management</h2>
+        <p className="text-xs sm:text-sm lg:text-base text-gray-600">View and manage registered users and couples</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
         <Card className="p-3 sm:p-4">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-            <p className="text-xs sm:text-sm text-gray-600">Total Users</p>
+          <div className="flex items-center gap-2 mb-1 sm:mb-2">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-gray-600 truncate">Total Users</p>
           </div>
-          <p className="text-xl sm:text-2xl font-semibold">{stats.totalUsers}</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.totalUsers}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
-            <p className="text-xs sm:text-sm text-gray-600">Active Couples</p>
+          <div className="flex items-center gap-2 mb-1 sm:mb-2">
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-gray-600 truncate">Active Couples</p>
           </div>
-          <p className="text-xl sm:text-2xl font-semibold">{stats.activeCouples}</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.activeCouples}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-            <p className="text-xs sm:text-sm text-gray-600">Active Today</p>
+          <div className="flex items-center gap-2 mb-1 sm:mb-2">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-gray-600 truncate">Active Today</p>
           </div>
-          <p className="text-xl sm:text-2xl font-semibold">{stats.activeToday}</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.activeToday}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
-            <p className="text-xs sm:text-sm text-gray-600">Avg Completion</p>
+          <div className="flex items-center gap-2 mb-1 sm:mb-2">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />
+            <p className="text-xs sm:text-sm text-gray-600 truncate">Avg Completion</p>
           </div>
-          <p className="text-xl sm:text-2xl font-semibold">{stats.avgCompletion} days</p>
+          <p className="text-lg sm:text-xl lg:text-2xl font-semibold">{stats.avgCompletion} days</p>
         </Card>
       </div>
 
       {/* Search */}
-      <Card className="p-4">
+      <Card className="p-3 sm:p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
           <Input
             placeholder="Search users by name or email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-9 sm:pl-10 text-xs sm:text-sm"
           />
         </div>
       </Card>
@@ -219,42 +219,50 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
       {/* Tabs */}
       <Tabs defaultValue="couples">
         <TabsList className="w-full grid grid-cols-2">
-          <TabsTrigger value="couples">Couples View</TabsTrigger>
-          <TabsTrigger value="individuals">Individual Users</TabsTrigger>
+          <TabsTrigger value="couples" className="text-xs sm:text-sm">
+            <Heart className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Couples View</span>
+            <span className="sm:hidden">Couples</span>
+          </TabsTrigger>
+          <TabsTrigger value="individuals" className="text-xs sm:text-sm">
+            <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Individual Users</span>
+            <span className="sm:hidden">Individual</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Couples View */}
-        <TabsContent value="couples" className="space-y-4 mt-4">
+        <TabsContent value="couples" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
           {filteredCouples.map((couple) => (
-            <Card key={couple.id} className="p-5">
-              <div className="flex items-center gap-4 mb-4">
-                <Heart className="w-6 h-6 text-rose-600 fill-rose-600" />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">
+            <Card key={couple.id} className="p-3 sm:p-4 lg:p-5">
+              <div className="flex items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-4">
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-rose-600 fill-rose-600 flex-shrink-0 mt-1 sm:mt-0" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm sm:text-base lg:text-lg">
                     {couple.user1.name} & {couple.user2.name}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     Together since {new Date(couple.user1.joinedDate).toLocaleDateString()}
                   </p>
                 </div>
-                <Badge variant="default" className="bg-green-600">Active</Badge>
+                <Badge variant="default" className="bg-green-600 text-xs flex-shrink-0">Active</Badge>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 border-t pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 border-t pt-3 sm:pt-4">
                 {/* User 1 */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-purple-100 text-purple-700">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Avatar className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+                      <AvatarFallback className="bg-purple-100 text-purple-700 text-xs sm:text-sm">
                         {couple.user1.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium">{couple.user1.name}</p>
-                      <p className="text-xs text-gray-600">{couple.user1.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm sm:text-base truncate">{couple.user1.name}</p>
+                      <p className="text-xs text-gray-600 truncate">{couple.user1.email}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm">
                     <div>
                       <p className="text-gray-600">Days</p>
                       <p className="font-semibold">{couple.user1.completedDays}</p>
@@ -274,19 +282,19 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
                 </div>
 
                 {/* User 2 */}
-                <div className="space-y-3 border-l pl-6">
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback className="bg-rose-100 text-rose-700">
+                <div className="space-y-2 sm:space-y-3 md:border-l md:pl-4 lg:pl-6 border-t md:border-t-0 pt-4 md:pt-0">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Avatar className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0">
+                      <AvatarFallback className="bg-rose-100 text-rose-700 text-xs sm:text-sm">
                         {couple.user2.name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium">{couple.user2.name}</p>
-                      <p className="text-xs text-gray-600">{couple.user2.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm sm:text-base truncate">{couple.user2.name}</p>
+                      <p className="text-xs text-gray-600 truncate">{couple.user2.email}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm">
                     <div>
                       <p className="text-gray-600">Days</p>
                       <p className="font-semibold">{couple.user2.completedDays}</p>
@@ -310,65 +318,63 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
         </TabsContent>
 
         {/* Individual Users View */}
-        <TabsContent value="individuals" className="space-y-4 mt-4">
+        <TabsContent value="individuals" className="space-y-3 sm:space-y-4 mt-3 sm:mt-4">
           {filteredUsers.map((user) => (
-            <Card key={user.id} className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <Avatar className="w-12 h-12">
-                    <AvatarFallback className="bg-purple-100 text-purple-700">
-                      {user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="font-semibold text-lg">{user.name}</h3>
-                      <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                        {user.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">{user.email}</p>
-                    
-                    {user.partnerId && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-                        <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-                        <span>Partnered with {user.partnerName}</span>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Joined</p>
-                        <p className="font-medium">
-                          {new Date(user.joinedDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Completed Days</p>
-                        <p className="font-medium">{user.completedDays}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Journal Entries</p>
-                        <p className="font-medium">{user.journalEntries}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Prayer Requests</p>
-                        <p className="font-medium">{user.prayerRequests}</p>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-gray-500 mt-3">
-                      Last active: {new Date(user.lastActive).toLocaleDateString()}
-                    </p>
+            <Card key={user.id} className="p-3 sm:p-4 lg:p-5">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <Avatar className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
+                  <AvatarFallback className="bg-purple-100 text-purple-700 text-sm sm:text-base">
+                    {user.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-base sm:text-lg">{user.name}</h3>
+                    <Badge variant={user.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                      {user.status}
+                    </Badge>
                   </div>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 truncate">{user.email}</p>
+                  
+                  {user.partnerId && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
+                      <Heart className="w-3 h-3 sm:w-4 sm:h-4 text-rose-500 fill-rose-500 flex-shrink-0" />
+                      <span className="truncate">Partnered with {user.partnerName}</span>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm">
+                    <div>
+                      <p className="text-gray-600 text-xs">Joined</p>
+                      <p className="font-medium">
+                        {new Date(user.joinedDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-xs">Completed Days</p>
+                      <p className="font-medium">{user.completedDays}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-xs">Journal Entries</p>
+                      <p className="font-medium">{user.journalEntries}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-xs">Prayer Requests</p>
+                      <p className="font-medium">{user.prayerRequests}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-2 sm:mt-3">
+                    Last active: {new Date(user.lastActive).toLocaleDateString()}
+                  </p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0"
                   onClick={() => setUserToDelete(user)}
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
                 </Button>
               </div>
             </Card>
@@ -378,15 +384,15 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
+            <AlertDialogTitle className="text-base sm:text-lg">Delete User</AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div>
+              <div className="text-xs sm:text-sm">
                 <p>
                   Are you sure you want to delete <strong>{userToDelete?.name}</strong> ({userToDelete?.email})?
                 </p>
-                <p className="mt-4">This will permanently delete:</p>
+                <p className="mt-3 sm:mt-4">This will permanently delete:</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>User profile and account</li>
                   <li>All journal entries</li>
@@ -401,18 +407,20 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
                     </li>
                   )}
                 </ul>
-                <p className="mt-4">
+                <p className="mt-3 sm:mt-4">
                   <strong className="text-red-600">This action cannot be undone.</strong>
                 </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <AlertDialogCancel disabled={isDeleting} className="text-xs sm:text-sm">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => userToDelete && handleDeleteUser(userToDelete.id)}
               disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-xs sm:text-sm"
             >
               {isDeleting ? 'Deleting...' : 'Delete User'}
             </AlertDialogAction>
