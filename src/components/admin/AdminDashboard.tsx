@@ -86,7 +86,8 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       trend: 'up',
       icon: Users,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-100'
+      bgColor: 'bg-blue-100',
+      link: 'users'
     },
     { 
       label: 'Active Couples', 
@@ -95,7 +96,8 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       trend: 'up',
       icon: Heart,
       color: 'text-rose-600',
-      bgColor: 'bg-rose-100'
+      bgColor: 'bg-rose-100',
+      link: 'users'
     },
     { 
       label: 'Devotionals', 
@@ -104,7 +106,8 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       trend: 'up',
       icon: BookOpen,
       color: 'text-purple-600',
-      bgColor: 'bg-purple-100'
+      bgColor: 'bg-purple-100',
+      link: 'devotionals'
     },
     { 
       label: 'Q&A Questions', 
@@ -113,7 +116,8 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       trend: 'up',
       icon: MessageCircle,
       color: 'text-green-600',
-      bgColor: 'bg-green-100'
+      bgColor: 'bg-green-100',
+      link: 'questions'
     },
     { 
       label: 'Journal Entries', 
@@ -122,7 +126,8 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       trend: 'up',
       icon: GraduationCap,
       color: 'text-indigo-600',
-      bgColor: 'bg-indigo-100'
+      bgColor: 'bg-indigo-100',
+      link: 'modules'
     },
     { 
       label: 'Completion Rate', 
@@ -131,7 +136,8 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       trend: 'up',
       icon: TrendingUp,
       color: 'text-amber-600',
-      bgColor: 'bg-amber-100'
+      bgColor: 'bg-amber-100',
+      link: 'dashboard'
     },
   ];
 
@@ -167,9 +173,10 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
         {displayStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div
+            <button
               key={stat.label}
-              className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+              onClick={() => onNavigate?.(stat.link)}
+              className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 hover:border-purple-400 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer text-left w-full"
             >
               {/* Background Gradient Accent */}
               <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} opacity-20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:opacity-30 transition-opacity`} />
@@ -201,7 +208,7 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
                   />
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
