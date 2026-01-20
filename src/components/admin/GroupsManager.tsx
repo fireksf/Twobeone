@@ -117,15 +117,16 @@ export function GroupsManager() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl mb-2">Community Groups</h2>
-          <p className="text-gray-600">Manage community groups and small groups</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Community Groups</h2>
+          <p className="text-sm sm:text-base text-gray-600">Manage community groups and small groups</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              size="sm"
               onClick={() => {
                 setEditingGroup(null);
                 setFormData({
@@ -144,30 +145,31 @@ export function GroupsManager() {
               New Group
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] w-full">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">
                 {editingGroup ? 'Edit Group' : 'Create New Group'}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 {editingGroup ? 'Update the details of this community group.' : 'Create a new community group for couples to connect and grow together.'}
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-4">
+            <ScrollArea className="max-h-[70vh] pr-2 sm:pr-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Group Name</Label>
+                  <Label htmlFor="name" className="text-xs sm:text-sm">Group Name</Label>
                   <Input
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g., Pre-Marriage Couples"
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-xs sm:text-sm">Description</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
@@ -175,17 +177,18 @@ export function GroupsManager() {
                     placeholder="Brief description of the group..."
                     rows={3}
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="category">Category</Label>
+                    <Label htmlFor="category" className="text-xs sm:text-sm">Category</Label>
                     <select
                       id="category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300"
+                      className="w-full h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                       required
                     >
                       {categories.map(cat => (
@@ -194,12 +197,12 @@ export function GroupsManager() {
                     </select>
                   </div>
                   <div>
-                    <Label htmlFor="status">Status</Label>
+                    <Label htmlFor="status" className="text-xs sm:text-sm">Status</Label>
                     <select
                       id="status"
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300"
+                      className="w-full h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -208,35 +211,38 @@ export function GroupsManager() {
                 </div>
 
                 <div>
-                  <Label htmlFor="leader">Group Leader</Label>
+                  <Label htmlFor="leader" className="text-xs sm:text-sm">Group Leader</Label>
                   <Input
                     id="leader"
                     value={formData.leader}
                     onChange={(e) => setFormData({ ...formData, leader: e.target.value })}
                     placeholder="e.g., Pastor Mike"
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="meetingDay">Meeting Day & Time</Label>
+                    <Label htmlFor="meetingDay" className="text-xs sm:text-sm">Meeting Day & Time</Label>
                     <Input
                       id="meetingDay"
                       value={formData.meetingDay}
                       onChange={(e) => setFormData({ ...formData, meetingDay: e.target.value })}
                       placeholder="e.g., Sundays, 6:00 PM"
                       required
+                      className="text-xs sm:text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="location" className="text-xs sm:text-sm">Location</Label>
                     <Input
                       id="location"
                       value={formData.location}
                       onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       placeholder="e.g., Online or Building A"
                       required
+                      className="text-xs sm:text-sm"
                     />
                   </div>
                 </div>

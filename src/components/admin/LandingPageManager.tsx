@@ -280,23 +280,48 @@ export function LandingPageManager({ accessToken }: LandingPageManagerProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl mb-2">Landing Page Content</h2>
-          <p className="text-gray-600">Manage all content displayed on the landing page</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Landing Page Content</h2>
+          <p className="text-sm sm:text-base text-gray-600">Manage all content displayed on the landing page</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={loadContent} disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Button 
+            variant="outline" 
+            onClick={loadContent}
+            disabled={isLoading}
+            className="w-full sm:w-auto"
+            size="sm"
+          >
+            {isLoading ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Reload
+              </>
+            )}
           </Button>
-          <Button variant="outline" onClick={handleReset} disabled={isSaving}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Reset to Default
-          </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save Changes'}
+          <Button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+            size="sm"
+          >
+            {isSaving ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </>
+            )}
           </Button>
         </div>
       </div>

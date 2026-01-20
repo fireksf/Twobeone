@@ -371,15 +371,16 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl mb-2">Daily Devotionals</h2>
-          <p className="text-gray-600">Manage daily devotional content for couples</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Daily Devotionals</h2>
+          <p className="text-sm sm:text-base text-gray-600">Manage daily devotional content for couples</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              size="sm"
               onClick={() => {
                 setEditingDevotional(null);
                 setFormData({
@@ -398,38 +399,39 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
               New Devotional
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] w-full">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">
                 {editingDevotional ? 'Edit Devotional' : 'Create New Devotional'}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 {editingDevotional ? 'Update the details of this devotional.' : 'Enter the details for the new devotional.'}
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[70vh] pr-4">
+            <ScrollArea className="max-h-[70vh] pr-2 sm:pr-4">
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Content Language Selector */}
                 <ContentLanguageSelector />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="date">Date</Label>
+                    <Label htmlFor="date" className="text-xs sm:text-sm">Date</Label>
                     <Input
                       id="date"
                       type="date"
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       required
+                      className="text-xs sm:text-sm"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="status">Status</Label>
+                    <Label htmlFor="status" className="text-xs sm:text-sm">Status</Label>
                     <select
                       id="status"
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as 'published' | 'draft' })}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300"
+                      className="w-full h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
                     >
                       <option value="draft">Draft</option>
                       <option value="published">Published</option>
@@ -438,18 +440,19 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                 </div>
 
                 <div>
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="title" className="text-xs sm:text-sm">Title</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g., Love is Patient"
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="verse">Bible Verse</Label>
+                  <Label htmlFor="verse" className="text-xs sm:text-sm">Bible Verse</Label>
                   <Textarea
                     id="verse"
                     value={formData.verse}
@@ -457,22 +460,24 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                     placeholder="Enter the full Bible verse text"
                     rows={3}
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="reference">Reference</Label>
+                  <Label htmlFor="reference" className="text-xs sm:text-sm">Reference</Label>
                   <Input
                     id="reference"
                     value={formData.reference}
                     onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
                     placeholder="e.g., 1 Corinthians 13:4"
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="reflection">Reflection</Label>
+                  <Label htmlFor="reflection" className="text-xs sm:text-sm">Reflection</Label>
                   <Textarea
                     id="reflection"
                     value={formData.reflection}
@@ -480,11 +485,12 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                     placeholder="Write the main reflection content..."
                     rows={6}
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="prayerPrompt">Prayer Prompt</Label>
+                  <Label htmlFor="prayerPrompt" className="text-xs sm:text-sm">Prayer Prompt</Label>
                   <Textarea
                     id="prayerPrompt"
                     value={formData.prayerPrompt}
@@ -492,14 +498,15 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                     placeholder="Suggest how couples can pray together..."
                     rows={3}
                     required
+                    className="text-xs sm:text-sm"
                   />
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-full sm:w-auto" size="sm">
                     Cancel
                   </Button>
-                  <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+                  <Button type="submit" className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto" size="sm">
                     {editingDevotional ? 'Update' : 'Create'} Devotional
                   </Button>
                 </div>
@@ -510,54 +517,54 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <BookOpen className="w-6 h-6 text-purple-600" />
+            <div className="p-2 sm:p-3 bg-purple-100 rounded-lg">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Devotionals</p>
-              <p className="text-2xl">{devotionals.length}</p>
+              <p className="text-xs sm:text-sm text-gray-600">Total Devotionals</p>
+              <p className="text-xl sm:text-2xl font-semibold">{devotionals.length}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Calendar className="w-6 h-6 text-green-600" />
+            <div className="p-2 sm:p-3 bg-green-100 rounded-lg">
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">Published</p>
-              <p className="text-2xl">{devotionals.filter(d => d.status === 'published').length}</p>
+              <p className="text-xs sm:text-sm text-gray-600">Published</p>
+              <p className="text-xl sm:text-2xl font-semibold">{devotionals.filter(d => d.status === 'published').length}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Music className="w-6 h-6 text-blue-600" />
+            <div className="p-2 sm:p-3 bg-blue-100 rounded-lg">
+              <Music className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600">With Audio</p>
-              <p className="text-2xl">{devotionals.filter(d => d.audioUrl).length}</p>
+              <p className="text-xs sm:text-sm text-gray-600">With Audio</p>
+              <p className="text-xl sm:text-2xl font-semibold">{devotionals.filter(d => d.audioUrl).length}</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Search & Filter */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             placeholder="Search devotionals..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 text-xs sm:text-sm"
           />
         </div>
-        <Button variant="outline" onClick={loadDevotionals}>
+        <Button variant="outline" onClick={loadDevotionals} size="sm" className="w-full sm:w-auto">
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
@@ -572,29 +579,29 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
       ) : (
         <div className="space-y-4">
           {filteredDevotionals.map((devotional) => (
-            <Card key={devotional.id} className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl">{devotional.title}</h3>
-                    <Badge variant={devotional.status === 'published' ? 'default' : 'secondary'}>
+            <Card key={devotional.id} className="p-4 sm:p-6">
+              <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <h3 className="text-base sm:text-xl font-semibold">{devotional.title}</h3>
+                    <Badge variant={devotional.status === 'published' ? 'default' : 'secondary'} className="text-xs">
                       {devotional.status}
                     </Badge>
                     {devotional.audioUrl && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                         <Music className="w-3 h-3 mr-1" />
                         Audio
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{devotional.reference}</p>
-                  <p className="text-sm text-gray-700 line-clamp-2 mb-3">{devotional.verse}</p>
+                  <p className="text-xs sm:text-sm text-gray-600 mb-2">{devotional.reference}</p>
+                  <p className="text-xs sm:text-sm text-gray-700 line-clamp-2 mb-3">{devotional.verse}</p>
                   <p className="text-xs text-gray-500">
                     Scheduled for: {new Date(devotional.date).toLocaleDateString()}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 ml-4">
+                <div className="flex flex-wrap lg:flex-nowrap items-center gap-2">
                   {/* Audio Management */}
                   {devotional.audioUrl ? (
                     <div className="flex items-center gap-2">
@@ -602,21 +609,21 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                         size="sm"
                         variant="outline"
                         onClick={() => toggleAudioPreview(devotional.audioUrl!)}
-                        className="bg-blue-50 hover:bg-blue-100 text-blue-700"
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs"
                       >
                         {isPlayingPreview && audioPreviewUrl === devotional.audioUrl ? (
-                          <Pause className="w-4 h-4" />
+                          <Pause className="w-3 h-3 sm:w-4 sm:h-4" />
                         ) : (
-                          <Play className="w-4 h-4" />
+                          <Play className="w-3 h-3 sm:w-4 sm:h-4" />
                         )}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeleteAudio(devotional.id)}
-                        className="text-red-600 hover:bg-red-50"
+                        className="text-red-600 hover:bg-red-50 text-xs"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3 h-3 sm:w-4 sm:h-4" />
                       </Button>
                     </div>
                   ) : (
@@ -635,14 +642,14 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                         size="sm"
                         variant="outline"
                         disabled={uploadingAudioFor === devotional.id}
-                        className="bg-purple-50 hover:bg-purple-100 text-purple-700"
+                        className="bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs whitespace-nowrap"
                       >
                         {uploadingAudioFor === devotional.id ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
                         ) : (
                           <>
-                            <Upload className="w-4 h-4 mr-2" />
-                            Add Audio
+                            <Upload className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Add Audio</span>
                           </>
                         )}
                       </Button>
@@ -653,16 +660,17 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                     size="sm"
                     variant="outline"
                     onClick={() => handleEdit(devotional)}
+                    className="text-xs"
                   >
-                    <Edit className="w-4 h-4" />
+                    <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleDelete(devotional.id)}
-                    className="text-red-600 hover:bg-red-50"
+                    className="text-red-600 hover:bg-red-50 text-xs"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
               </div>

@@ -302,15 +302,16 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl mb-2">Learning Modules</h2>
-          <p className="text-gray-600">Manage pre-marriage guidance and educational content</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Learning Modules</h2>
+          <p className="text-sm sm:text-base text-gray-600">Manage pre-marriage guidance and educational content</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+              size="sm"
               onClick={() => {
                 setEditingModule(null);
                 setFormData({
@@ -329,16 +330,16 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
               New Module
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] w-full">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">
                 {editingModule ? 'Edit Module' : 'Create New Module'}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-xs sm:text-sm">
                 {editingModule ? 'Update the details of this learning module.' : 'Create a new learning module with lessons and resources.'}
               </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="max-h-[75vh] pr-4">
+            <ScrollArea className="max-h-[75vh] pr-2 sm:pr-4">
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Basic Info */}
                 <div className="space-y-4">

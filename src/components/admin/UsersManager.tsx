@@ -167,39 +167,39 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-3xl mb-2">User Management</h2>
-        <p className="text-gray-600">View and manage registered users and couples</p>
+        <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">User Management</h2>
+        <p className="text-sm sm:text-base text-gray-600">View and manage registered users and couples</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Users className="w-5 h-5 text-blue-600" />
-            <p className="text-sm text-gray-600">Total Users</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <Card className="p-3 sm:p-4">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+            <p className="text-xs sm:text-sm text-gray-600">Total Users</p>
           </div>
-          <p className="text-2xl font-semibold">{stats.totalUsers}</p>
+          <p className="text-xl sm:text-2xl font-semibold">{stats.totalUsers}</p>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Heart className="w-5 h-5 text-rose-600" />
-            <p className="text-sm text-gray-600">Active Couples</p>
+        <Card className="p-3 sm:p-4">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
+            <p className="text-xs sm:text-sm text-gray-600">Active Couples</p>
           </div>
-          <p className="text-2xl font-semibold">{stats.activeCouples}</p>
+          <p className="text-xl sm:text-2xl font-semibold">{stats.activeCouples}</p>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-5 h-5 text-green-600" />
-            <p className="text-sm text-gray-600">Active Today</p>
+        <Card className="p-3 sm:p-4">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+            <p className="text-xs sm:text-sm text-gray-600">Active Today</p>
           </div>
-          <p className="text-2xl font-semibold">{stats.activeToday}</p>
+          <p className="text-xl sm:text-2xl font-semibold">{stats.activeToday}</p>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <Calendar className="w-5 h-5 text-purple-600" />
-            <p className="text-sm text-gray-600">Avg Completion</p>
+        <Card className="p-3 sm:p-4">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+            <p className="text-xs sm:text-sm text-gray-600">Avg Completion</p>
           </div>
-          <p className="text-2xl font-semibold">{stats.avgCompletion} days</p>
+          <p className="text-xl sm:text-2xl font-semibold">{stats.avgCompletion} days</p>
         </Card>
       </div>
 

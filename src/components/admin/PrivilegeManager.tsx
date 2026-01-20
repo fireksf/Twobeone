@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Shield, ShieldCheck, ShieldOff, UserCheck, UserX, Search, Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Shield, ShieldCheck, ShieldOff, UserCheck, UserX, Search, Clock, AlertCircle, CheckCircle, XCircle, Users } from 'lucide-react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
 
@@ -250,44 +250,58 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
         </CardHeader>
       </Card>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Users</p>
-                <p className="text-3xl font-bold mt-1">{users.length}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total Users</p>
+                <p className="text-2xl sm:text-3xl font-bold mt-1">{users.length}</p>
               </div>
-              <UserCheck className="w-8 h-8 text-blue-500" />
+              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 opacity-75" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Active Admins</p>
-                <p className="text-3xl font-bold mt-1">{admins.length}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Active Admins</p>
+                <p className="text-2xl sm:text-3xl font-bold mt-1">{admins.length}</p>
               </div>
-              <ShieldCheck className="w-8 h-8 text-green-500" />
+              <ShieldCheck className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 opacity-75" />
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Recent Changes</p>
-                <p className="text-3xl font-bold mt-1">{activityLog.length}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Recent Changes</p>
+                <p className="text-2xl sm:text-3xl font-bold mt-1">{activityLog.length}</p>
               </div>
-              <Clock className="w-8 h-8 text-purple-500" />
+              <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 opacity-75" />
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Search */}
+      <Card className="p-3 sm:p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search users by email or name..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 sm:pl-10 text-xs sm:text-sm"
+          />
+        </div>
+      </Card>
 
       {/* Tabs */}
       <Card>
@@ -321,21 +335,6 @@ export function PrivilegeManager({ accessToken }: PrivilegeManagerProps) {
         </CardHeader>
 
         <CardContent>
-          {/* Search Bar (for users and admins tabs) */}
-          {(selectedTab === 'users' || selectedTab === 'admins') && (
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search by email or name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          )}
-
           {isLoading ? (
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
