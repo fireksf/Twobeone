@@ -147,8 +147,8 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Dashboard</h2>
-          <p className="text-sm sm:text-base text-gray-600">Overview of your content management system</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Dashboard</h2>
+          <p className="text-sm text-gray-600">Overview of your content management system</p>
         </div>
         <Button 
           variant="outline" 
@@ -162,38 +162,61 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
         </Button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        {displayStats.map((stat) => {
+      {/* Stats Grid - Enhanced Design */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        {displayStats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label} className="p-4 sm:p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
+            <div
+              key={stat.label}
+              className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 border border-gray-200 hover:border-purple-300 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+            >
+              {/* Background Gradient Accent */}
+              <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bgColor} opacity-20 rounded-full blur-3xl -mr-16 -mt-16 group-hover:opacity-30 transition-opacity`} />
+              
+              <div className="relative p-6">
+                {/* Icon and Badge Row */}
+                <div className="flex items-center justify-between mb-5">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.bgColor} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                    <Icon className={`w-7 h-7 ${stat.color}`} />
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-sm text-xs font-semibold px-2.5 py-1">
+                      {stat.change}
+                    </Badge>
+                  </div>
                 </div>
-                <Badge variant={stat.trend === 'up' ? 'default' : 'secondary'} className="bg-green-100 text-green-700 text-xs">
-                  {stat.change}
-                </Badge>
+
+                {/* Stats Content */}
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-4xl font-bold text-gray-900 tracking-tight">{stat.value}</p>
+                </div>
+
+                {/* Progress Bar (optional visual element) */}
+                <div className="mt-4 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full bg-gradient-to-r ${stat.color.replace('text-', 'from-')} to-purple-500 rounded-full transition-all duration-500`}
+                    style={{ width: `${65 + index * 5}%` }}
+                  />
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-gray-600 mb-1">{stat.label}</p>
-              <p className="text-xl sm:text-2xl font-semibold">{stat.value}</p>
-            </Card>
+            </div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity */}
-        <Card className="p-4 sm:p-6">
-          <h3 className="font-semibold text-base sm:text-lg mb-4">Recent Activity</h3>
+        <Card className="p-6">
+          <h3 className="font-semibold text-lg mb-4">Recent Activity</h3>
           <div className="space-y-3">
             {recentActivity.length > 0 ? (
               recentActivity.slice(0, 5).map((activity, index) => (
                 <div key={index} className="flex items-start gap-3 pb-3 border-b last:border-0">
                   <div className="w-2 h-2 rounded-full bg-purple-600 mt-2 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium truncate">{activity.action}</p>
+                    <p className="text-sm font-medium truncate">{activity.action}</p>
                     <p className="text-xs text-gray-600 truncate">{activity.user}</p>
                   </div>
                   <span className="text-xs text-gray-500 flex-shrink-0">{activity.time}</span>
@@ -208,13 +231,13 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
         </Card>
 
         {/* Content Needed */}
-        <Card className="p-4 sm:p-6">
-          <h3 className="font-semibold text-base sm:text-lg mb-4">Content Needed</h3>
+        <Card className="p-6">
+          <h3 className="font-semibold text-lg mb-4">Content Needed</h3>
           <div className="space-y-3">
             {contentNeeded.map((item, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-xs sm:text-sm truncate">{item.type}</p>
+                  <p className="font-medium text-sm truncate">{item.type}</p>
                   <p className="text-xs text-gray-600 truncate">
                     {item.date || item.title || item.category}
                   </p>
@@ -232,36 +255,36 @@ export function AdminDashboard({ accessToken, onNavigate }: AdminDashboardProps)
       </div>
 
       {/* Quick Actions */}
-      <Card className="p-4 sm:p-6">
-        <h3 className="font-semibold text-base sm:text-lg mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <Card className="p-6">
+        <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
           <button 
             onClick={() => onNavigate?.('devotionals')}
-            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-4 lg:p-5 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center group"
           >
-            <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-xs sm:text-sm font-medium">Add Devotional</p>
+            <BookOpen className="w-6 h-6 lg:w-7 lg:h-7 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+            <p className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Add Devotional</p>
           </button>
           <button 
             onClick={() => onNavigate?.('questions')}
-            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-4 lg:p-5 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center group"
           >
-            <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-xs sm:text-sm font-medium">Add Question</p>
+            <MessageCircle className="w-6 h-6 lg:w-7 lg:h-7 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+            <p className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Add Question</p>
           </button>
           <button 
             onClick={() => onNavigate?.('modules')}
-            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-4 lg:p-5 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center group"
           >
-            <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-xs sm:text-sm font-medium">Create Module</p>
+            <GraduationCap className="w-6 h-6 lg:w-7 lg:h-7 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+            <p className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Create Module</p>
           </button>
           <button 
             onClick={() => onNavigate?.('groups')}
-            className="p-3 sm:p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center"
+            className="p-4 lg:p-5 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all text-center group"
           >
-            <Users className="w-5 h-5 sm:w-6 sm:h-6 mx-auto mb-2 text-purple-600" />
-            <p className="text-xs sm:text-sm font-medium">Add Group</p>
+            <Users className="w-6 h-6 lg:w-7 lg:h-7 mx-auto mb-2 text-purple-600 group-hover:scale-110 transition-transform" />
+            <p className="text-sm font-medium text-gray-700 group-hover:text-purple-700">Add Group</p>
           </button>
         </div>
       </Card>

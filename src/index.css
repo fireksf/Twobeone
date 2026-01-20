@@ -960,6 +960,10 @@
     margin-top: calc(var(--spacing) * -12);
   }
 
+  .-mt-16 {
+    margin-top: calc(var(--spacing) * -16);
+  }
+
   .mt-0\.5 {
     margin-top: calc(var(--spacing) * .5);
   }
@@ -1000,6 +1004,10 @@
     margin-top: calc(var(--spacing) * 24);
   }
 
+  .-mr-16 {
+    margin-right: calc(var(--spacing) * -16);
+  }
+
   .mr-1 {
     margin-right: calc(var(--spacing) * 1);
   }
@@ -1030,6 +1038,10 @@
 
   .mb-4 {
     margin-bottom: calc(var(--spacing) * 4);
+  }
+
+  .mb-5 {
+    margin-bottom: calc(var(--spacing) * 5);
   }
 
   .mb-6 {
@@ -1162,6 +1174,10 @@
 
   .h-0\.5 {
     height: calc(var(--spacing) * .5);
+  }
+
+  .h-1\.5 {
+    height: calc(var(--spacing) * 1.5);
   }
 
   .h-2 {
@@ -3255,6 +3271,11 @@
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
 
+  .to-gray-50 {
+    --tw-gradient-to: var(--color-gray-50);
+    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
+  }
+
   .to-gray-200 {
     --tw-gradient-to: var(--color-gray-200);
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
@@ -4618,6 +4639,15 @@
   }
 
   @media (hover: hover) {
+    .group-hover\:scale-110:is(:where(.group):hover *) {
+      --tw-scale-x: 110%;
+      --tw-scale-y: 110%;
+      --tw-scale-z: 110%;
+      scale: var(--tw-scale-x) var(--tw-scale-y);
+    }
+  }
+
+  @media (hover: hover) {
     .group-hover\:scale-125:is(:where(.group):hover *) {
       --tw-scale-x: 125%;
       --tw-scale-y: 125%;
@@ -4635,6 +4665,12 @@
   @media (hover: hover) {
     .group-hover\:text-purple-700:is(:where(.group):hover *) {
       color: var(--color-purple-700);
+    }
+  }
+
+  @media (hover: hover) {
+    .group-hover\:opacity-30:is(:where(.group):hover *) {
+      opacity: .3;
     }
   }
 
@@ -6292,6 +6328,18 @@
   @media (width >= 64rem) {
     .lg\:hidden {
       display: none;
+    }
+  }
+
+  @media (width >= 64rem) {
+    .lg\:h-7 {
+      height: calc(var(--spacing) * 7);
+    }
+  }
+
+  @media (width >= 64rem) {
+    .lg\:w-7 {
+      width: calc(var(--spacing) * 7);
     }
   }
 
