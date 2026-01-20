@@ -359,8 +359,8 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold mb-2">Q&A Discussion Questions</h2>
-          <p className="text-sm text-gray-600">Manage conversation topics with flexible question types</p>
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[24px]">Q&A Discussion Questions</h2>
+          <p className="text-sm text-gray-600 text-[16px]">Manage conversation topics with flexible question types</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -619,7 +619,7 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
               placeholder="Search questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 sm:pl-10 text-xs sm:text-sm"
+              className="pl-9 sm:pl-10 text-xs sm:text-sm text-[14px]"
             />
           </div>
         </Card>
@@ -627,7 +627,7 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm"
+            className="w-full h-10 px-3 rounded-md border border-gray-300 text-xs sm:text-sm text-[14px]"
           >
             <option value="all">All Categories</option>
             {categories.map(cat => (
@@ -643,21 +643,21 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="p-3 sm:p-4">
           <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Total Questions</p>
-          <p className="text-xl sm:text-2xl font-semibold">{questions.length}</p>
+          <p className="text-xl sm:text-2xl font-semibold font-bold">{questions.length}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Active</p>
-          <p className="text-xl sm:text-2xl font-semibold text-green-600">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Active</p>
+          <p className="text-xl sm:text-2xl font-semibold text-green-600 font-bold">
             {questions.filter(q => q.status === 'active').length}
           </p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Categories</p>
-          <p className="text-xl sm:text-2xl font-semibold">{categories.length}</p>
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[14px] font-bold">Categories</p>
+          <p className="text-xl sm:text-2xl font-semibold font-bold">{categories.length}</p>
         </Card>
         <Card className="p-3 sm:p-4">
-          <p className="text-xs sm:text-sm text-gray-600 mb-1">Total Prompts</p>
-          <p className="text-xl sm:text-2xl font-semibold">
+          <p className="text-xs sm:text-sm text-gray-600 mb-1 text-[13px] font-bold">Total Prompts</p>
+          <p className="text-xl sm:text-2xl font-semibold font-bold">
             {questions.reduce((sum, q) => sum + q.prompts.length, 0)}
           </p>
         </Card>
@@ -671,7 +671,7 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />
-                  <h3 className="font-semibold text-base sm:text-lg">{question.title}</h3>
+                  <h3 className="font-semibold text-base sm:text-lg font-bold">{question.title}</h3>
                   <Badge variant="outline" className="text-xs">
                     {question.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
                   </Badge>
@@ -679,12 +679,12 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
                     {question.status}
                   </Badge>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-600 italic mb-3">{question.verseReference}</p>
+                <p className="text-xs sm:text-sm text-gray-600 italic mb-3 font-bold">{question.verseReference}</p>
                 <div className="space-y-2">
                   {question.prompts.map((prompt, index) => (
                     <div key={prompt.id} className="text-xs sm:text-sm">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium">{index + 1}.</span>
+                        <span className="font-medium font-bold">{index + 1}.</span>
                         <span className="text-gray-700">{prompt.text}</span>
                         <Badge variant="secondary" className="text-xs">
                           {getQuestionTypeLabel(prompt.type)}
