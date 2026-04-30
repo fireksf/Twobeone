@@ -40,7 +40,6 @@ import { ComprehensiveBibleReader } from './ComprehensiveBibleReader';
 import { LearningModulesCard } from './LearningModulesCard';
 import { PushNotificationSetup } from './PushNotificationSetup';
 import { DistanceConnector } from './DistanceConnector';
-import { getTodaysDevotional } from '../data/devotionals';
 import { projectId } from '../utils/supabase/info';
 import { sendNotification } from '../utils/notifications';
 import { toast } from 'sonner';

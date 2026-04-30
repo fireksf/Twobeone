@@ -1640,5 +1640,3 @@ import { RecentMilestones } from './components/RecentMilestones';
 import { PreMarriageGuidance } from './components/PreMarriageGuidance';
 import { MoodTracker } from './components/MoodTracker';
 import { MoodAnalytics } from './components/MoodAnalytics';
-import { QuestionsSection } from './components/QuestionsSection';
-import { ProgressSection } from './components/ProgressSection';

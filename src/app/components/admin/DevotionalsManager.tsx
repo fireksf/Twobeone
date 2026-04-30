@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '../ui/scroll-area';
 import { toast } from 'sonner@2.0.3';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
-import { devotionals as staticDevotionals } from '../../data/devotionals';
 import { useContentLanguage } from '../../contexts/ContentLanguageContext';
 import { ContentLanguageSelector } from './ContentLanguageSelector';
 
@@ -80,36 +79,13 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
             audioFileName: d.audioFileName
           })));
         } else {
-          // Use static data as fallback
-          setDevotionals(staticDevotionals.slice(0, 10).map((d, idx) => ({
-            id: d.id,
-            date: new Date(Date.now() + idx * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            title: d.title,
-            verse: d.verse,
-            reference: d.reference,
-            reflection: d.reflection,
-            prayerPrompt: `Pray together about ${d.title.toLowerCase()}`,
-            tags: ['Faith', 'Love', 'Growth'],
-            status: 'published' as const
-          })));
+          setDevotionals([]);
         }
       }
     } catch (error) {
       console.error('Failed to load devotionals:', error);
       toast.error('Failed to load devotionals');
-      
-      // Use static data as fallback
-      setDevotionals(staticDevotionals.slice(0, 10).map((d, idx) => ({
-        id: d.id,
-        date: new Date(Date.now() + idx * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        title: d.title,
-        verse: d.verse,
-        reference: d.reference,
-        reflection: d.reflection,
-        prayerPrompt: `Pray together about ${d.title.toLowerCase()}`,
-        tags: ['Faith', 'Love', 'Growth'],
-        status: 'published' as const
-      })));
+      setDevotionals([]);
     } finally {
       setIsLoading(false);
     }
