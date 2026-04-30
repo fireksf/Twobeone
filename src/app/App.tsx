@@ -32,6 +32,7 @@ import { PWAUpdateNotification } from './components/PWAUpdateNotification';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import { PWADebugInfo } from './components/PWADebugInfo';
 import { IconsMissingNotice } from './components/IconsMissingNotice';
+import { InstallBanner } from './components/InstallBanner';
 import { Button } from './components/ui/button';
 import { Heart, Loader2, AlertCircle } from 'lucide-react';
 import { DailyQuestion } from './components/DailyQuestion';
@@ -1208,22 +1209,25 @@ export default function App() {
           
           {/* PWA Welcome Screen */}
           <PWAWelcome />
-          
+
+          {/* Modern Install Banner - Beautiful automatic installation prompt */}
+          <InstallBanner />
+
           {/* Offline Indicator */}
           <OfflineIndicator />
-          
+
           {/* PWA Install Prompt */}
           <InstallPrompt />
-          
+
           {/* PWA Update Available */}
           <PWAUpdateAvailable />
-          
+
           {/* Icons Missing Notice */}
           <IconsMissingNotice />
-          
+
           {/* PWA Install Prompt (old) */}
           <PWAInstallPrompt />
-          
+
           {/* iOS Install Prompt (old) */}
           <IOSInstallPrompt />
           
