@@ -37,6 +37,11 @@ export function NotificationCenter({
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchNotifications = async () => {
+    // Don't fetch if no access token
+    if (!accessToken) {
+      return;
+    }
+
     try {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications`,
@@ -48,6 +53,10 @@ export function NotificationCenter({
       );
 
       if (!response.ok) {
+        // Silently fail for auth errors (expected when not logged in)
+        if (response.status === 401) {
+          return;
+        }
         console.warn('Failed to fetch notifications (status:', response.status, ')');
         // Don't throw error, just use empty array
         setNotifications([]);
@@ -67,6 +76,8 @@ export function NotificationCenter({
   };
 
   useEffect(() => {
+    if (!accessToken) return;
+
     fetchNotifications();
 
     // Poll for new notifications every 30 seconds
