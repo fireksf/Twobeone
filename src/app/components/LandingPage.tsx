@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
@@ -27,106 +28,8 @@ import { toast } from 'sonner@2.0.3';
 import { projectId } from '../utils/supabase/info';
 import appScreenshot from 'figma:asset/d5fde893add01b8ea5bf3527897567c586c24a70.png';
 
-// Static data moved outside component for performance
-const FEATURES = [
-  {
-    icon: BookOpen,
-    title: 'Daily Devotionals',
-    description: 'Scripture-based devotions written specifically for couples to strengthen your spiritual foundation together.',
-    color: 'from-amber-500 to-orange-500'
-  },
-  {
-    icon: MessageSquare,
-    title: 'Shared Journaling',
-    description: 'Express your hearts, reflect on your journey, and share intimate thoughts in a private, secure space.',
-    color: 'from-blue-500 to-cyan-500'
-  },
-  {
-    icon: Heart,
-    title: 'Prayer Together',
-    description: 'Create prayer requests, pray for each other daily, and celebrate when God answers. Build faith together.',
-    color: 'from-rose-500 to-pink-500'
-  },
-  {
-    icon: Users,
-    title: '100+ Meaningful Questions',
-    description: 'Deep, faith-based conversation starters across 12 categories to help you truly know each other.',
-    color: 'from-purple-500 to-indigo-500'
-  },
-  {
-    icon: Sparkles,
-    title: 'Learning Modules',
-    description: 'Biblical guidance on communication, conflict resolution, intimacy, and spiritual growth.',
-    color: 'from-green-500 to-emerald-500'
-  },
-  {
-    icon: TrendingUp,
-    title: 'Progress Tracking',
-    description: 'Track devotional streaks, milestones, and spiritual growth. Celebrate your journey together!',
-    color: 'from-violet-500 to-purple-500'
-  }
-];
-
-const TESTIMONIALS = [
-  {
-    name: 'Sarah & Mike',
-    location: 'Austin, TX',
-    image: '💑',
-    quote: 'TwoBeOne transformed our marriage! We pray together daily now and our conversations have never been deeper. This app brought us closer to God and each other.',
-    rating: 5,
-    married: '3 years'
-  },
-  {
-    name: 'Emily & David',
-    location: 'Nashville, TN',
-    image: '👫',
-    quote: 'As a newly engaged couple, TwoBeOne is helping us build a Christ-centered foundation before we say "I do." The questions sparked conversations we never would have had!',
-    rating: 5,
-    married: 'Engaged'
-  },
-  {
-    name: 'Rachel & Jonathan',
-    location: 'Colorado Springs, CO',
-    image: '💏',
-    quote: 'After 10 years of marriage, we thought we knew everything about each other. TwoBeOne proved us wrong in the best way possible. We\'re falling in love all over again!',
-    rating: 5,
-    married: '10 years'
-  }
-];
-
-const FAQS = [
-  {
-    question: 'Is TwoBeOne free?',
-    answer: 'Yes! TwoBeOne is completely free to download and use. We believe every couple deserves access to faith-based relationship tools.'
-  },
-  {
-    question: 'Do we both need to download the app?',
-    answer: 'Yes, both partners need the app. You\'ll connect via a unique invite code, and all your shared content will sync automatically between your devices.'
-  },
-  {
-    question: 'Is our data private and secure?',
-    answer: 'Absolutely! We use bank-level encryption, and your data is only shared between you and your partner. We never sell your information or use it for advertising.'
-  },
-  {
-    question: 'What makes TwoBeOne different from other relationship apps?',
-    answer: 'TwoBeOne is specifically designed for Christian couples with faith at the center. Every feature is rooted in biblical principles, and our content is written with a Christ-centered perspective.'
-  },
-  {
-    question: 'Can we use it if we\'re not married yet?',
-    answer: 'Absolutely! TwoBeOne is perfect for engaged couples, dating couples, newlyweds, and married couples of any duration. If you\'re in a committed Christian relationship, this is for you!'
-  },
-  {
-    question: 'How much time does it take daily?',
-    answer: 'As little or as much as you want! A daily devotional takes 5-10 minutes. Questions and journaling are flexible. The key is consistency, not perfection.'
-  }
-];
-
-const WHY_ITEMS = [
-  { icon: Shield, title: 'Private & Secure', desc: 'Bank-level encryption. Your data stays between you and your partner.' },
-  { icon: Zap, title: 'Real-Time Sync', desc: 'Instant synchronization across all devices. Stay connected anywhere.' },
-  { icon: Globe, title: 'Works Everywhere', desc: 'Web, iOS, and Android. Access from any device, anytime.' }
-];
-
+const FEATURE_ICONS = [BookOpen, MessageSquare, Heart, Users, Sparkles, TrendingUp];
+const WHY_ICONS = [Shield, Zap, Globe];
 const COUPLE_EMOJIS = ['💑', '👫', '💏', '👩‍❤️‍👨'];
 
 interface LandingPageProps {
@@ -136,12 +39,18 @@ interface LandingPageProps {
 export function LandingPage({ onGetStarted }: LandingPageProps) {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLanguage();
+
+  const features = t.landing.features;
+  const testimonials = t.landing.testimonials;
+  const faqs = t.landing.faq;
+  const whyItems = t.landing.whyItems;
 
   const handleNewsletterSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !email.includes('@')) {
-      toast.error('Please enter a valid email address');
+      toast.error(t.landing.newsletterInvalidEmail);
       return;
     }
 
@@ -163,11 +72,11 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         throw new Error('Failed to subscribe');
       }
 
-      toast.success('🎉 Thanks for subscribing! Check your email soon.');
+      toast.success(t.landing.newsletterSubscribeSuccess);
       setEmail('');
     } catch (error) {
       console.error('Newsletter signup error:', error);
-      toast.error('Failed to subscribe. Please try again.');
+      toast.error(t.landing.newsletterSubscribeFailure);
     } finally {
       setIsSubmitting(false);
     }
@@ -197,20 +106,20 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
               <button onClick={() => scrollToSection('features')} className="text-gray-600 hover:text-purple-600 transition-colors">
-                Features
+                {t.landing.navFeatures}
               </button>
               <button onClick={() => scrollToSection('testimonials')} className="text-gray-600 hover:text-purple-600 transition-colors">
-                Testimonials
+                {t.landing.navTestimonials}
               </button>
               <button onClick={() => scrollToSection('faq')} className="text-gray-600 hover:text-purple-600 transition-colors">
-                FAQ
+                {t.landing.navFaq}
               </button>
               <Button 
                 onClick={onGetStarted}
                 className="bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700"
               >
                 <LogIn className="w-4 h-4 mr-2" />
-                Get Started Free
+                {t.landing.getStarted}
               </Button>
             </div>
 
@@ -245,14 +154,11 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               </Badge>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl">
-                <span className="block mb-2">Grow Together</span>
-                <span className="block bg-gradient-to-r from-rose-500 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  In Faith & Love
-                </span>
+                <span className="block mb-2">{t.landing.heroTitle}</span>
               </h1>
 
               <p className="text-xl text-gray-600 max-w-2xl">
-                TwoBeOne helps Christian couples strengthen their relationship through daily devotionals, shared prayers, and meaningful conversations rooted in Scripture.
+                {t.landing.heroSubtitle}
               </p>
 
               {/* CTA Buttons */}
@@ -263,7 +169,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                   className="bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-lg px-8 py-6"
                 >
                   <Smartphone className="w-5 h-5 mr-2" />
-                  Get Started Free
+                  {t.landing.getStarted}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 <Button 
@@ -273,7 +179,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                   className="border-2 border-purple-300 hover:bg-purple-50 text-lg px-8 py-6"
                 >
                   <Play className="w-5 h-5 mr-2" />
-                  Learn More
+                  {t.landing.learnMore}
                 </Button>
               </div>
 
@@ -337,29 +243,29 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="bg-purple-100 text-purple-700 mb-4">
-              Everything You Need
+              {t.landing.featuresSectionTitle}
             </Badge>
             <h2 className="text-4xl md:text-5xl mb-4">
-              Built for <span className="bg-gradient-to-r from-rose-500 to-purple-600 bg-clip-text text-transparent">Christian Couples</span>
+              <span className="bg-gradient-to-r from-rose-500 to-purple-600 bg-clip-text text-transparent">{t.landing.featuresSectionTitle}</span>
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Every feature is designed to help you grow closer to God and each other. No fluff, just meaningful tools for your relationship.
+              {t.landing.heroSubtitle}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {FEATURES.map((feature, index) => {
-              const IconComponent = feature.icon;
+            {features.map((feature, index) => {
+              const IconComponent = FEATURE_ICONS[index] || BookOpen;
               return (
                 <Card key={index} className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-2">
                   <CardContent className="p-6 space-y-4">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white`}>
-                      <IconComponent className="w-6 h-6" />
+                      <span className="text-lg">{feature.image}</span>
                     </div>
                     <h3 className="text-xl font-semibold">{feature.title}</h3>
                     <p className="text-gray-600">{feature.description}</p>
                     <Button variant="ghost" className="group-hover:text-purple-600 p-0">
-                      Learn more
+                      {t.landing.learnMore}
                       <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </CardContent>
@@ -376,18 +282,18 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <Badge className="bg-purple-100 text-purple-700 mb-4">
-                Why TwoBeOne?
+                {t.landing.whySectionTitle}
               </Badge>
               <h2 className="text-4xl md:text-5xl mb-6">
-                More Than Just an App
+                {t.landing.whySectionTitle}
               </h2>
               <p className="text-xl text-gray-600 mb-8">
-                We built TwoBeOne because we believe that when Christ is at the center of a relationship, that relationship becomes unbreakable. But staying connected spiritually requires intentionality.
+                {t.landing.heroSubtitle}
               </p>
 
               <div className="space-y-6">
-                {WHY_ITEMS.map((item, index) => {
-                  const IconComponent = item.icon;
+                {whyItems.map((item, index) => {
+                  const IconComponent = WHY_ICONS[index] || Shield;
                   return (
                     <div key={index} className="flex gap-4">
                       <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white">
@@ -430,23 +336,23 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="bg-purple-100 text-purple-700 mb-4">
-              Real Stories, Real Impact
+              {t.landing.testimonialsSectionTitle}
             </Badge>
             <h2 className="text-4xl md:text-5xl mb-4">
-              What Couples Are Saying
+              {t.landing.testimonialsSectionTitle}
             </h2>
             <p className="text-xl text-gray-600">
-              Don't just take our word for it. Here's how TwoBeOne is transforming marriages.
+              {t.landing.heroSubtitle}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {TESTIMONIALS.map((testimonial, index) => (
+            {testimonials.map((testimonial, index) => (
               <Card key={index} className="relative">
                 <CardContent className="p-6 space-y-4">
                   {/* Stars */}
                   <div className="flex gap-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
+                    {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
@@ -475,18 +381,18 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <Badge className="bg-purple-100 text-purple-700 mb-4">
-              Got Questions?
+              {t.landing.faqSectionTitle}
             </Badge>
             <h2 className="text-4xl md:text-5xl mb-4">
-              Frequently Asked Questions
+              {t.landing.faqSectionTitle}
             </h2>
             <p className="text-xl text-gray-600">
-              Everything you need to know about TwoBeOne
+              {t.landing.heroSubtitle}
             </p>
           </div>
 
           <div className="space-y-4">
-            {FAQS.map((faq, index) => (
+            {faqs.map((faq, index) => (
               <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <details className="group">
@@ -521,11 +427,11 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
               <form onSubmit={handleNewsletterSignup} className="space-y-4">
                 <div>
                   <label className="text-sm text-gray-600 block mb-2 text-left">
-                    Get notified about updates and tips
+                    {t.landing.newsletterTitle}
                   </label>
                   <Input
                     type="email"
-                    placeholder="your@email.com"
+                    placeholder={t.landing.newsletterEmailPlaceholder}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -538,7 +444,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
                   className="w-full bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700"
                   size="lg"
                 >
-                  {isSubmitting ? 'Subscribing...' : 'Subscribe Free'}
+                  {isSubmitting ? `${t.landing.newsletterButton}...` : t.landing.newsletterButton}
                 </Button>
               </form>
             </CardContent>
@@ -557,7 +463,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
 
           <p className="text-sm text-white/70">
-            ✨ Free forever. No credit card required. ✨
+            ✨ {t.landing.newsletterSubtitle} ✨
           </p>
         </div>
       </section>
@@ -592,10 +498,10 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><button onClick={() => scrollToSection('features')} className="hover:text-white transition-colors">Features</button></li>
-                <li><button onClick={() => scrollToSection('testimonials')} className="hover:text-white transition-colors">Testimonials</button></li>
-                <li><button onClick={() => scrollToSection('faq')} className="hover:text-white transition-colors">FAQ</button></li>
-                <li><button onClick={onGetStarted} className="hover:text-white transition-colors">Get Started</button></li>
+                <li><button onClick={() => scrollToSection('features')} className="hover:text-white transition-colors">{t.landing.navFeatures}</button></li>
+                <li><button onClick={() => scrollToSection('testimonials')} className="hover:text-white transition-colors">{t.landing.navTestimonials}</button></li>
+                <li><button onClick={() => scrollToSection('faq')} className="hover:text-white transition-colors">{t.landing.navFaq}</button></li>
+                <li><button onClick={onGetStarted} className="hover:text-white transition-colors">{t.landing.getStarted}</button></li>
               </ul>
             </div>
 

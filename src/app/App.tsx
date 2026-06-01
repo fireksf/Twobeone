@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { LanguageSelector } from './components/LanguageSelector';
 import { SplashScreen } from './components/SplashScreen';
 import { AuthPage } from './components/AuthPage';
@@ -80,6 +80,7 @@ export default function App() {
   const [devotionals, setDevotionals] = useState<any[]>([]);
   const [todaysDevotional, setTodaysDevotional] = useState<any | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { t } = useLanguage();
   
   // TEMPORARILY DISABLED - devotional system being migrated to API
   // const devotional = getTodaysDevotional();
@@ -1078,7 +1079,7 @@ export default function App() {
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-purple-50 via-white to-pink-50">
           <div className="text-center space-y-4">
             <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto" />
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-gray-600">{t.common.loading}</p>
           </div>
         </div>
       </LanguageProvider>
@@ -1286,7 +1287,7 @@ export default function App() {
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <h3 className="text-sm text-red-900">Error Loading Profile</h3>
+                    <h3 className="text-sm text-red-900">{t.messages.errorOccurred}</h3>
                     <p className="text-xs text-red-700 mt-1">{loadError}</p>
                     <Button 
                       variant="outline" 
@@ -1294,7 +1295,7 @@ export default function App() {
                       className="mt-2 text-xs" 
                       onClick={() => loadUserData()}
                     >
-                      Retry
+                      {t.common.retry}
                     </Button>
                   </div>
                 </div>
