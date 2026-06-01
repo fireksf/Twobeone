@@ -59,24 +59,10 @@ export interface Translations {
     passwordMismatch: string;
     invalidEmail: string;
     weakPassword: string;
-  };
-
-  // Dashboard
-  dashboard: {
-    title: string;
-    growingTogetherInFaith: string;
-    daysTogether: string;
-    devotionalStreak: string;
-    journalEntries: string;
-    prayers: string;
-    questions: string;
-    answered: string;
-    shared: string;
-    quickActions: string;
-    continueJourney: string;
-    dailyVerse: string;
-    readFullChapter: string;
-    todaysMood: string;
+      welcomeBack: string;
+      createAccountPrompt: string;
+      termsOfService: string;
+      privacyPolicy: string;
     yourMood: string;
     partnersMood: string;
     relationshipMilestones: string;
@@ -189,6 +175,75 @@ export interface Translations {
     version: string;
   };
 
+  // Landing / marketing content
+  landing: {
+    heroBadge: string;
+    featuresHeadline: string;
+    featuresSubtitle: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    downloadFree: string;
+    watchDemo: string;
+    socialProof: string;
+    mockupGreeting: string;
+    mockupStatus: string;
+    devotionalCardTitle: string;
+    devotionalCardQuote: string;
+    devotionalCardButton: string;
+    statsDevotionals: string;
+    statsPrayers: string;
+    statsQuestions: string;
+    prayerRequestTitle: string;
+    prayerRequestDescription: string;
+    getStarted: string;
+    learnMore: string;
+    navFeatures: string;
+    navTestimonials: string;
+    navFaq: string;
+    featuresSectionTitle: string;
+    testimonialsSectionTitle: string;
+    faqSectionTitle: string;
+    whySectionTitle: string;
+    whyHeadline: string;
+    whySubtitle: string;
+    testimonialsBadge: string;
+    testimonialsSubtitle: string;
+    faqBadge: string;
+    faqSubtitle: string;
+    ctaTitle: string;
+    ctaText: string;
+    freeForever: string;
+    newsletterTitle: string;
+    newsletterSubtitle: string;
+    newsletterEmailPlaceholder: string;
+    newsletterButton: string;
+    newsletterInvalidEmail: string;
+    newsletterSubscribeSuccess: string;
+    newsletterSubscribeFailure: string;
+    features: Array<{
+      title: string;
+      description: string;
+      color: string;
+      image: string;
+    }>;
+    testimonials: Array<{
+      name: string;
+      location: string;
+      image: string;
+      quote: string;
+      married: string;
+    }>;
+    faq: Array<{
+      question: string;
+      answer: string;
+    }>;
+    whyItems: Array<{
+      title: string;
+      desc: string;
+      icon: string;
+    }>;
+  };
+
   // Bible
   bible: {
     title: string;
@@ -263,6 +318,132 @@ export interface Translations {
     confirmDelete: string;
     areYouSure: string;
     cannotUndo: string;
+    moodRecorded: string;
+    prayerTime: string;
+    openingPrayer: string;
+    failedToOpenPrayer: string;
+    profileUpdatedSynced: string;
+    profileUpdated: string;
+    failedToUpdateProfile: string;
+    failedToLoadJournal: string;
+    codeCopied: string;
+    copyFailed: string;
+    generating: string;
+    link: string;
+    inviteCode: string;
+    createPartnerAccount: string;
+    connectedWithPartner: string;
+    pleaseEnterPartnerEmail: string;
+    failedToConnectPartner: string;
+    failedToCreatePartnerAccount: string;
+    pleaseFillAllFields: string;
+  };
+
+  settings: {
+    profileHeaderPlaceholder: string;
+    connectedWith: string;
+    tabs: {
+      personal: string;
+      couple: string;
+      privacy: string;
+      notifications: string;
+      app: string;
+    };
+    personalInfoTitle: string;
+    personalInfoDescription: string;
+    fullName: string;
+    emailAddress: string;
+    emailCannotChange: string;
+    phoneNumber: string;
+    location: string;
+    bio: string;
+    tellUsAboutYourself: string;
+    saveChanges: string;
+    saving: string;
+    accountActionsTitle: string;
+    adminPanel: string;
+    debugQuestions: string;
+    debugResponses: string;
+    testingDashboard: string;
+    exportData: string;
+    helpSupport: string;
+    contactUs: string;
+    signOut: string;
+    coupleInfoTitle: string;
+    coupleInfoDescription: string;
+    partnerStatus: string;
+    noPartnerConnected: string;
+    linkByCodeTitle: string;
+    linkByCodeDescription: string;
+    enterPartnerCode: string;
+    link: string;
+    myInviteCodeTitle: string;
+    shareThisCode: string;
+    copy: string;
+    generateInviteCode: string;
+    relationshipStarted: string;
+    dangerZoneTitle: string;
+    dangerZoneDescription: string;
+    requestPartnerDisconnect: string;
+    deleteAccount: string;
+    deleteWarning: string;
+    deleteConfirmPrompt: string;
+    typeDeleteToConfirm: string;
+    deleteMyAccount: string;
+    deleting: string;
+    needAssistance: string;
+    getInTouch: string;
+    subject: string;
+    message: string;
+    sendMessage: string;
+    notificationPreferencesTitle: string;
+    notificationPreferencesDescription: string;
+    dailyDevotional: string;
+    prayerReminders: string;
+    partnerActivity: string;
+    communityUpdates: string;
+    saveNotificationSettings: string;
+    notificationChannelsTitle: string;
+    notificationChannelsDescription: string;
+    pushNotifications: string;
+    emailNotifications: string;
+    legalDocumentsTitle: string;
+    legalDocumentsDescription: string;
+    privacyPolicy: string;
+    termsOfService: string;
+    legalAgreementNotice: string;
+    dataSecurityTitle: string;
+    dataSecurityDescription: string;
+    changePassword: string;
+    downloadMyData: string;
+    twoFactorAuthentication: string;
+    helpAndSupport: string;
+    adminPanelDescription: string;
+  };
+
+  partnerSetup: {
+    connectWithYourPartner: string;
+    addPartnerToStart: string;
+    connectPartner: string;
+    enterPartnerEmail: string;
+    enterPartnersName: string;
+    relationshipStarted: string;
+    tempPasswordCreated: string;
+    temporaryPassword: string;
+    back: string;
+    creating: string;
+    createAndConnect: string;
+    allSet: string;
+    nowConnectedWith: string;
+    relationshipStartedDate: string;
+    createPartnerAccount: string;
+    partnerEmailNotFound: string;
+    createAccountForPartner: string;
+    createdAccountFor: string;
+    failedToConnect: string;
+    failedToCreateAccount: string;
+    pleaseEnterPartnerEmail: string;
+    pleaseFillAllFields: string;
   };
 
   // Time
@@ -341,6 +522,11 @@ export const translations: Record<Language, Translations> = {
       passwordMismatch: 'Passwords do not match',
       invalidEmail: 'Invalid email address',
       weakPassword: 'Password must be at least 6 characters',
+      fixErrors: 'Please fix the errors below',
+      welcomeBack: 'Welcome back! Sign in to continue.',
+      createAccountPrompt: 'Create an account to get started.',
+      termsOfService: 'Terms of Service',
+      privacyPolicy: 'Privacy Policy',
     },
 
     dashboard: {
@@ -473,10 +659,35 @@ export const translations: Record<Language, Translations> = {
       navFeatures: 'Features',
       navTestimonials: 'Testimonials',
       navFaq: 'FAQ',
+      heroBadge: 'Where Faith Meets Love',
+      featuresHeadline: 'Built for Christian Couples',
+      featuresSubtitle: 'Every feature is designed to help you grow closer to God and each other. No fluff, just meaningful tools for your relationship.',
+      downloadFree: 'Download Free',
+      watchDemo: 'Watch Demo',
+      socialProof: 'Loved by 10,000+ couples',
+      mockupGreeting: 'Good Morning! ☀️',
+      mockupStatus: 'Sarah & Mike • Day 45 Streak 🔥',
+      devotionalCardTitle: "Today's Devotional",
+      devotionalCardQuote: 'Love is patient and kind; love does not envy or boast...',
+      devotionalCardButton: 'Read Together',
+      statsDevotionals: 'Devotionals',
+      statsPrayers: 'Prayers',
+      statsQuestions: 'Questions',
+      prayerRequestTitle: 'New Prayer Request',
+      prayerRequestDescription: 'Mike needs prayer for work project',
       featuresSectionTitle: 'Built for Couples Who Want to Grow Together',
       testimonialsSectionTitle: 'What Couples Are Saying',
       faqSectionTitle: 'Frequently Asked Questions',
       whySectionTitle: 'Why Couples Love TwoBeOne',
+      whyHeadline: 'More Than Just an App',
+      whySubtitle: 'We built TwoBeOne because we believe that when Christ is at the center of a relationship, that relationship becomes unbreakable. But staying connected spiritually requires intentionality.',
+      testimonialsBadge: 'Real Stories, Real Impact',
+      testimonialsSubtitle: "Don't just take our word for it. Here's how TwoBeOne is transforming marriages.",
+      faqBadge: 'Got Questions?',
+      faqSubtitle: 'Everything you need to know about TwoBeOne',
+      ctaTitle: 'Ready to Grow Together?',
+      ctaText: 'Join thousands of Christian couples who are building stronger, faith-centered relationships with TwoBeOne.',
+      freeForever: '✨ Free forever. No credit card required. ✨',
       newsletterTitle: 'Stay connected with updates and relationship growth tips',
       newsletterSubtitle: 'Weekly inspiration, new features, and encouragement sent straight to your inbox.',
       newsletterEmailPlaceholder: 'Enter your email',
@@ -722,6 +933,11 @@ export const translations: Record<Language, Translations> = {
       passwordMismatch: 'የይለፍ ቃሎች አይዛመዱም',
       invalidEmail: 'የተሳሳተ ኢሜይል አድራሻ',
       weakPassword: 'የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት',
+      fixErrors: 'እባክዎን በታች ያሉትን እብድነቶች ያስተካክሉ',
+      welcomeBack: 'ወደ ቀድሞ እንኳን በደህና መጡ! እባክዎን ይግቡ።',
+      createAccountPrompt: 'መለያ ለመፍጠር ይጀምሩ።',
+      termsOfService: 'የአገልግሎት ውሎታዎች',
+      privacyPolicy: 'የግል ደህንነት ፖሊሲ',
     },
 
     dashboard: {
@@ -854,10 +1070,35 @@ export const translations: Record<Language, Translations> = {
       navFeatures: 'ባለስልጣናት',
       navTestimonials: 'ማስረጃዎች',
       navFaq: 'ብዙ የሚጠየቁ ጥያቄዎች',
+      heroBadge: 'በእምነት እና በፍቅር የሚቀርበው',
+      featuresHeadline: 'ለክሪስቲያን ጋብቻዎች የተሠራ',
+      featuresSubtitle: 'ሁሉም ባለስልጣናችን እንዲረዱና እንዲያገኙ የተዘጋጅቷ ነው። ምንም ማስተካከያ የለም፣ እውነተኛ ስራዎች ብቻ ነው።',
+      downloadFree: 'ነፃ ይውሰዱ',
+      watchDemo: 'የሚያሳየንን ቪዲዎ ተመልከቱ',
+      socialProof: '10,000+ ጋብቻዎች ወደእኛ ፈለጉ',
+      mockupGreeting: 'እንደምን አደርኩ! ☀️',
+      mockupStatus: 'ሳራ እና ማይክ • ቀን 45 ስትሪክ 🔥',
+      devotionalCardTitle: 'የዛሬ ጥናት',
+      devotionalCardQuote: 'ፍቅር ታደጋ እና ሻምራ ነው፤ ፍቅር አይስነስን ወይም አይጧልም...',
+      devotionalCardButton: 'አብረን ንብብ',
+      statsDevotionals: 'ጥናቶች',
+      statsPrayers: 'ጸሎቶች',
+      statsQuestions: 'ጥያቄዎች',
+      prayerRequestTitle: 'አዲስ የጸሎት ጥያቄ',
+      prayerRequestDescription: 'ማይክ ለየት ጋር ስራ እንዲሠራ ጸሎት ይፈልጋሉ',
       featuresSectionTitle: 'ለእርስዎ እና ለባልደረባዎ የተሰራ',
       testimonialsSectionTitle: 'ጥምረታችንን የሚያሳዩ ባለጌዎች',
       faqSectionTitle: 'ብዙ የሚጠየቁ ጥያቄዎች',
       whySectionTitle: 'የለምንም ምክንያት',
+      whyHeadline: 'ከአፕ በላይ ነን',
+      whySubtitle: 'TwoBeOne ምንም ሳይኖረው እንዲገንባ እና እምነት ከልብ ውስጥ ያለ ሲሆን መገናኘት ይሻላል።',
+      testimonialsBadge: 'እውነተኛ ታሪኮች፣ እውነት ተፅዕኖ',
+      testimonialsSubtitle: 'የእኛን ታሪክ እንዲገልጹ አይችሉም። ይህንን እንዴት እንጠቀም እንረዳዋለን።',
+      faqBadge: 'ጥያቄዎች አሉ?',
+      faqSubtitle: 'TwoBeOne ስለ ምን እንደሚሰራ ሁሉንም እውቀት እንሰጥዎታለን',
+      ctaTitle: 'እርስዎን ከእንዲሁ ጋር ወደፊት ለማስገባት ዝግጁ ነን?',
+      ctaText: 'ከአንድ ሺ የሚበልጡ ክሪስቲያን ጋብቻዎች ጋር በእምነት ተያይዞ የተዋረደ የግንኙነት ጥሩ ርዕስ በማድረግ እየኖረዋቸው ነው።',
+      freeForever: '✨ ለዘላለም ነፃ። የብድር ካርድ የለም። ✨',
       newsletterTitle: 'ማስታወቂያዎችን እና የግንኙነት ምክርን ይቀበሉ',
       newsletterSubtitle: 'ሳምንታዊ ማስታወቂያዎች፣ አዲስ ስራዎችና ምክር በኢሜይልዎ ይደርሳሉ።',
       newsletterEmailPlaceholder: 'ኢሜይልዎን ያስገቡ',
