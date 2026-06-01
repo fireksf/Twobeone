@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -13,6 +14,7 @@ interface PartnerSetupProps {
 }
 
 export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
+  const { t } = useLanguage();
   const [partnerEmail, setPartnerEmail] = useState('');
   const [partnerName, setPartnerName] = useState('Lensa');
   const [relationshipStart, setRelationshipStart] = useState('2023-06-04');
@@ -21,7 +23,7 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
 
   const handleConnectExistingPartner = async () => {
     if (!partnerEmail) {
-      toast.error('Please enter partner email');
+      toast.error(t.messages.pleaseEnterPartnerEmail);
       return;
     }
 
@@ -43,22 +45,22 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to connect with partner');
+        throw new Error(t.messages.failedToConnectPartner);
       }
 
       const result = await response.json();
       
       if (result.partnerFound) {
-        toast.success(`Connected with ${partnerEmail}!`);
+        toast.success(`${t.messages.connectedWithPartner} ${partnerEmail}!`);
         setStep('done');
         setTimeout(onSuccess, 1500);
       } else {
-        toast.info('Partner account not found. Create one for them?');
+        toast.info(t.partnerSetup.partnerEmailNotFound);
         setStep('create');
       }
     } catch (error) {
       console.error('Failed to connect partner:', error);
-      toast.error('Failed to connect with partner');
+      toast.error(t.messages.failedToConnectPartner);
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +68,7 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
 
   const handleCreatePartnerAccount = async () => {
     if (!partnerEmail || !partnerName) {
-      toast.error('Please fill in all fields');
+      toast.error(t.messages.pleaseFillAllFields);
       return;
     }
 
@@ -91,16 +93,16 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
 
       if (!signupResponse.ok) {
         const errorData = await signupResponse.json();
-        throw new Error(errorData.error || 'Failed to create partner account');
+        throw new Error(errorData.error || t.messages.failedToCreatePartnerAccount);
       }
 
       // Now connect with the newly created account
       await handleConnectExistingPartner();
       
-      toast.success(`Created account for ${partnerName}!`);
+      toast.success(`${t.partnerSetup.createdAccountFor} ${partnerName}!`);
     } catch (error: any) {
       console.error('Failed to create partner account:', error);
-      toast.error(error.message || 'Failed to create partner account');
+      toast.error(error.message || t.messages.failedToCreatePartnerAccount);
       setIsLoading(false);
     }
   };
@@ -113,12 +115,12 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-6">
               <Check className="w-10 h-10 text-white" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">All Set! 💕</h2>
+            <h2 className="text-2xl font-bold mb-2">{t.partnerSetup.allSet}</h2>
             <p className="text-gray-600 mb-4">
-              You're now connected with {partnerName}
+              {t.partnerSetup.nowConnectedWith} {partnerName}
             </p>
             <p className="text-sm text-gray-500">
-              Relationship started: {new Date(relationshipStart).toLocaleDateString('en-US', { 
+              {t.partnerSetup.relationshipStartedDate} {new Date(relationshipStart).toLocaleDateString('en-US', { 
                 month: 'long', 
                 day: 'numeric', 
                 year: 'numeric' 
@@ -137,25 +139,25 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="w-6 h-6 text-pink-500" />
-              Create Partner Account
+              {t.partnerSetup.createPartnerAccount}
             </CardTitle>
             <CardDescription>
-              Create an account for {partnerEmail} so you can connect
+              {t.partnerSetup.createAccountForPartner} {partnerEmail}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="partner-name">Partner's Name</Label>
+              <Label htmlFor="partner-name">{t.partnerSetup.enterPartnersName}</Label>
               <Input
                 id="partner-name"
                 value={partnerName}
                 onChange={(e) => setPartnerName(e.target.value)}
-                placeholder="Enter partner's name"
+                placeholder={t.partnerSetup.enterPartnersName}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="partner-email-confirm">Partner's Email</Label>
+              <Label htmlFor="partner-email-confirm">{t.partnerSetup.enterPartnerEmail}</Label>
               <Input
                 id="partner-email-confirm"
                 type="email"
@@ -166,7 +168,7 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="relationship-start-confirm">Relationship Started</Label>
+              <Label htmlFor="relationship-start-confirm">{t.partnerSetup.relationshipStarted}</Label>
               <Input
                 id="relationship-start-confirm"
                 type="date"
@@ -177,10 +179,10 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-900">
-                📧 A temporary password will be created. Share it with {partnerName} so they can sign in and change it.
+                📧 {t.partnerSetup.tempPasswordCreated}
               </p>
               <p className="text-xs text-blue-700 mt-2">
-                Temporary password: <code className="bg-blue-100 px-2 py-1 rounded">TempPassword123!</code>
+                {t.partnerSetup.temporaryPassword}: <code className="bg-blue-100 px-2 py-1 rounded">TempPassword123!</code>
               </p>
             </div>
 
@@ -191,7 +193,7 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
                 disabled={isLoading}
                 className="flex-1"
               >
-                Back
+                {t.partnerSetup.back}
               </Button>
               <Button
                 onClick={handleCreatePartnerAccount}
@@ -206,7 +208,7 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
                 ) : (
                   <>
                     <UserPlus className="w-4 h-4 mr-2" />
-                    Create & Connect
+                    {t.partnerSetup.createAndConnect}
                   </>
                 )}
               </Button>
@@ -224,25 +226,25 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
             <Heart className="w-8 h-8 text-white" />
           </div>
-          <CardTitle>Connect with Your Partner</CardTitle>
+          <CardTitle>{t.partnerSetup.connectWithYourPartner}</CardTitle>
           <CardDescription>
-            Add your partner to start your journey together
+            {t.partnerSetup.addPartnerToStart}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="partner-email">Partner's Email</Label>
+            <Label htmlFor="partner-email">{t.partnerSetup.enterPartnerEmail}</Label>
             <Input
               id="partner-email"
               type="email"
               value={partnerEmail}
               onChange={(e) => setPartnerEmail(e.target.value)}
-              placeholder="partner@example.com"
+              placeholder={t.partnerSetup.partnerEmailPlaceholder}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="relationship-start">Relationship Started</Label>
+            <Label htmlFor="relationship-start">{t.partnerSetup.relationshipStarted}</Label>
             <Input
               id="relationship-start"
               type="date"
@@ -259,21 +261,22 @@ export function PartnerSetup({ accessToken, onSuccess }: PartnerSetupProps) {
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Connecting...
+                {t.partnerSetup.creating}
               </>
             ) : (
               <>
                 <Heart className="w-4 h-4 mr-2" />
-                Connect with Partner
+                {t.partnerSetup.connectPartner}
               </>
             )}
           </Button>
 
           <p className="text-xs text-center text-gray-500">
-            If your partner doesn't have an account yet, we'll help you create one for them
+            {t.partnerSetup.partnerAccountHelp}
           </p>
         </CardContent>
       </Card>
     </div>
   );
 }
+
