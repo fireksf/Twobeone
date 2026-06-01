@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -74,6 +75,7 @@ export function PrayerBoard({
   onMarkPrayed,
   onBackToHome
 }: PrayerBoardProps) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [editingPrayer, setEditingPrayer] = useState<Prayer | null>(null);
@@ -117,17 +119,17 @@ export function PrayerBoard({
 
       if (editingPrayer) {
         await onUpdatePrayer(editingPrayer.id, prayerData);
-        toast.success('Prayer updated!');
+        toast.success(t.prayers.prayerUpdated);
       } else {
         await onAddPrayer(prayerData);
-        toast.success('Prayer request added!');
+        toast.success(t.prayers.prayerRequestAdded);
       }
 
       resetForm();
       setIsOpen(false);
     } catch (error) {
       console.error('Failed to save prayer:', error);
-      toast.error('Failed to save prayer request');
+      toast.error(t.messages.failedToSavePrayer);
     } finally {
       setIsLoading(false);
     }
@@ -154,16 +156,16 @@ export function PrayerBoard({
         await onUpdatePrayer(prayer.id, { partnerPrayed: !prayer.partnerPrayed });
       }
     } catch (error) {
-      toast.error('Failed to update prayer');
+      toast.error(t.messages.errorOccurred);
     }
   };
 
   const handleToggleAnswered = async (prayer: Prayer) => {
     try {
       await onUpdatePrayer(prayer.id, { isAnswered: !prayer.isAnswered });
-      toast.success(prayer.isAnswered ? 'Marked as ongoing' : 'Praise God! Prayer answered! 🎉');
+      toast.success(prayer.isAnswered ? t.prayers.markedAsOngoing : t.prayers.praiseGodAnswered);
     } catch (error) {
-      toast.error('Failed to update prayer');
+      toast.error(t.messages.errorOccurred);
     }
   };
 
@@ -220,7 +222,7 @@ export function PrayerBoard({
             }`}
           >
             <MessageCircle className="w-4 h-4" />
-            Requests
+            {t.prayers.requests}
             {activeTab === 'requests' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-700"></div>
             )}
@@ -234,7 +236,7 @@ export function PrayerBoard({
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />
-            Answered
+            {t.prayers.answered}
             {activeTab === 'answered' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-700"></div>
             )}
@@ -248,7 +250,7 @@ export function PrayerBoard({
             }`}
           >
             <Heart className="w-4 h-4" />
-            Together
+            {t.prayers.together}
             {activeTab === 'together' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-700"></div>
             )}
@@ -261,7 +263,7 @@ export function PrayerBoard({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Search prayer requests..."
+            placeholder={t.prayers.searchPrayerRequests}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-gray-50 border-0"
@@ -277,10 +279,10 @@ export function PrayerBoard({
               <Users className="w-10 h-10 text-purple-400" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">
-              Connect with Your Partner
+              {t.prayers.connectWithYourPartner}
             </h3>
             <p className="text-sm text-gray-500 mb-6 px-6">
-              Prayer sharing is available when you're connected as a couple. Share your invite code or enter your partner's code to start praying together.
+              {t.prayers.prayerSharingAvailable}
             </p>
           </div>
         ) : filteredPrayers.length === 0 ? (
@@ -289,14 +291,14 @@ export function PrayerBoard({
               <Heart className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">
-              {activeTab === 'together' ? 'No Prayers Together Yet' : 
-               activeTab === 'answered' ? 'No Answered Prayers' : 
-               'No Prayer Requests'}
+              {activeTab === 'together' ? t.prayers.noPrayersTogether : 
+               activeTab === 'answered' ? t.prayers.noAnsweredPrayers : 
+               t.prayers.noPrayerRequests}
             </h3>
             <p className="text-sm text-gray-500 mb-6">
-              {activeTab === 'together' ? 'Pray together as a couple to strengthen your bond' :
-               activeTab === 'answered' ? 'Answered prayers will appear here' :
-               'Start by adding a prayer request'}
+              {activeTab === 'together' ? t.prayers.prayTogetherAsCouple :
+               activeTab === 'answered' ? t.prayers.answeredPrayersWillAppear :
+               t.prayers.startByAddingPrayer}
             </p>
           </div>
         ) : (
@@ -401,7 +403,7 @@ export function PrayerBoard({
                         onClick={() => handleEdit(prayer)}
                         className="flex-1 text-xs"
                       >
-                        Edit
+                        {t.prayers.edit}
                       </Button>
                       <Button
                         variant="outline"
@@ -409,19 +411,19 @@ export function PrayerBoard({
                         onClick={() => handleToggleAnswered(prayer)}
                         className="flex-1 text-xs"
                       >
-                        {prayer.isAnswered ? 'Mark Active' : 'Mark Answered'}
+                        {prayer.isAnswered ? t.prayers.markActive : t.prayers.markAnswered}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          if (confirm('Delete this prayer?')) {
+                          if (confirm(t.prayers.deleteConfirm)) {
                             onDeletePrayer(prayer.id);
                           }
                         }}
                         className="flex-1 text-xs text-red-600 hover:text-red-700"
                       >
-                        Delete
+                        {t.prayers.delete}
                       </Button>
                     </div>
                   )}
@@ -447,16 +449,16 @@ export function PrayerBoard({
       }}>
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
-            <DialogTitle>{editingPrayer ? 'Edit Prayer' : 'New Prayer Request'}</DialogTitle>
+            <DialogTitle>{editingPrayer ? t.prayers.editPrayer : t.prayers.newPrayerRequest}</DialogTitle>
             <DialogDescription>
-              Bring your needs and concerns before God. Pray together as a couple.
+              {t.prayers.bringYourNeeds}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Category Selection */}
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>{t.prayers.category}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {CATEGORIES.map((cat) => (
                   <button
@@ -478,10 +480,10 @@ export function PrayerBoard({
 
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Prayer Title</Label>
+              <Label htmlFor="title">{t.prayers.prayerTitle}</Label>
               <Input
                 id="title"
-                placeholder="What are you praying for?"
+                placeholder={t.prayers.whatAreYouPrayingFor}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
@@ -490,10 +492,10 @@ export function PrayerBoard({
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Details</Label>
+              <Label htmlFor="description">{t.prayers.details}</Label>
               <Textarea
                 id="description"
-                placeholder="Share more about this prayer request..."
+                placeholder={t.prayers.shareMoreAboutPrayer}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
@@ -505,7 +507,7 @@ export function PrayerBoard({
             <div className="space-y-2">
               <Label htmlFor="reminder">
                 <Bell className="w-4 h-4 inline mr-1" />
-                Set Reminder (Optional)
+                {t.prayers.setReminder}
               </Label>
               <Input
                 id="reminder"
@@ -520,10 +522,10 @@ export function PrayerBoard({
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
               <div className="flex-1">
                 <Label htmlFor="community" className="cursor-pointer font-medium">
-                  Share with Community
+                  {t.prayers.shareWithCommunity}
                 </Label>
                 <p className="text-xs text-gray-600 mt-1">
-                  Allow other couples to see and pray for this request
+                  {t.prayers.allowOtherCouplesToSee}
                 </p>
               </div>
               <Switch
@@ -535,14 +537,14 @@ export function PrayerBoard({
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
-                Cancel
+                {t.prayers.cancel}
               </Button>
               <Button 
                 type="submit" 
                 disabled={isLoading}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
-                {isLoading ? 'Saving...' : editingPrayer ? 'Update' : 'Add Prayer'}
+                {isLoading ? t.prayers.saving : editingPrayer ? t.prayers.update : t.prayers.addPrayer}
               </Button>
             </DialogFooter>
           </form>

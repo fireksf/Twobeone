@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -111,6 +112,7 @@ export function CoupleDashboard({
   accessToken,
   devotionalStreak
 }: CoupleDashboardProps) {
+  const { t } = useLanguage();
   const [timeTogether, setTimeTogether] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [showMoodDialog, setShowMoodDialog] = useState(false);
   const [todayMood, setTodayMood] = useState<string | null>(null);
@@ -578,12 +580,12 @@ export function CoupleDashboard({
               </h2>
               <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4 text-yellow-500" />
-                Growing together in faith
+                {t.dashboard.growingTogetherInFaith}
               </p>
             </div>
           ) : (
             <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-3">Connect with your partner to begin your journey together</p>
+              <p className="text-sm text-muted-foreground mb-3">{t.dashboard.connectWithYourPartnerBegin}</p>
               <Button 
                 size="sm" 
                 variant="outline"
@@ -591,7 +593,7 @@ export function CoupleDashboard({
                 className="bg-white/80 backdrop-blur-sm"
               >
                 <Users className="w-4 h-4 mr-2" />
-                Add Partner
+                {t.dashboard.addPartner}
               </Button>
             </div>
           )}
@@ -621,9 +623,9 @@ export function CoupleDashboard({
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <p className="text-sm text-purple-700">Devotional Streak</p>
+                <p className="text-sm text-purple-700">{t.dashboard.devotionalStreak}</p>
                 <p className="text-3xl font-bold text-purple-900">{devotionalStreakValue}</p>
-                <p className="text-xs text-purple-600">{devotionalStreakValue === 1 ? 'day' : 'days'}</p>
+                <p className="text-xs text-purple-600">{devotionalStreakValue === 1 ? t.dashboard.day : t.dashboard.days}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-purple-200 flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-purple-700" />
@@ -640,9 +642,9 @@ export function CoupleDashboard({
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <p className="text-sm text-rose-700">Journal Entries</p>
+                <p className="text-sm text-rose-700">{t.dashboard.journalEntries}</p>
                 <p className="text-3xl font-bold text-rose-900">{sharedJournalEntries}</p>
-                <p className="text-xs text-rose-600">shared</p>
+                <p className="text-xs text-rose-600">{t.dashboard.shared}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-rose-200 flex items-center justify-center">
                 <BookHeart className="w-6 h-6 text-rose-700" />
@@ -659,9 +661,9 @@ export function CoupleDashboard({
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <p className="text-sm text-blue-700">Prayers</p>
+                <p className="text-sm text-blue-700">{t.dashboard.prayers}</p>
                 <p className="text-3xl font-bold text-blue-900">{answeredPrayers}/{totalPrayers}</p>
-                <p className="text-xs text-blue-600">answered</p>
+                <p className="text-xs text-blue-600">{t.dashboard.answered}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-blue-200 flex items-center justify-center">
                 <HandHeart className="w-6 h-6 text-blue-700" />
@@ -678,9 +680,9 @@ export function CoupleDashboard({
           <CardContent className="pt-6">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <p className="text-sm text-green-700">Questions</p>
+                <p className="text-sm text-green-700">{t.dashboard.questions}</p>
                 <p className="text-3xl font-bold text-green-900">{questionsAnswered}/{totalQuestionsCount}</p>
-                <p className="text-xs text-green-600">answered</p>
+                <p className="text-xs text-green-600">{t.dashboard.answered}</p>
               </div>
               <div className="w-12 h-12 rounded-full bg-green-200 flex items-center justify-center">
                 <MessageCircleHeart className="w-6 h-6 text-green-700" />
@@ -698,7 +700,7 @@ export function CoupleDashboard({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-amber-600" />
-            Daily Verse
+            {t.dashboard.dailyVerse}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -731,7 +733,7 @@ export function CoupleDashboard({
                 }}
               >
                 <BookOpen className="w-4 h-4 mr-2" />
-                Read Full Chapter
+                {t.dashboard.readFullChapter}
               </Button>
             </div>
           ) : (
@@ -803,9 +805,9 @@ export function CoupleDashboard({
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Heart className="w-5 h-5 text-pink-600" />
-                  Today's Mood
+                  {t.dashboard.todaysMood}
                 </CardTitle>
-                <CardDescription>Share how you're feeling with your partner</CardDescription>
+                <CardDescription>{t.dashboard.shareHowYouFeelingWithPartner}</CardDescription>
               </div>
               <Button
                 variant="ghost"
@@ -822,7 +824,7 @@ export function CoupleDashboard({
             <div className="grid sm:grid-cols-2 gap-6">
               {/* Your Mood */}
               <div className="space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">Your Mood</p>
+                <p className="text-sm font-medium text-muted-foreground">{t.dashboard.yourMood}</p>
                 <div className="grid grid-cols-4 gap-2">
                   <Button
                     variant="outline"
@@ -858,13 +860,13 @@ export function CoupleDashboard({
                   </Button>
                 </div>
                 {!todaysMood && (
-                  <p className="text-xs text-muted-foreground">Tap an emoji to set your mood</p>
+                  <p className="text-xs text-muted-foreground">{t.dashboard.tapEmojiToSetMood}</p>
                 )}
               </div>
 
               {/* Partner's Mood */}
               <div className="space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">{partner.name}'s Mood</p>
+                <p className="text-sm font-medium text-muted-foreground">{partner.name}{t.dashboard.moodLabel}</p>
                 {partnerMood ? (
                   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg h-14">
                     {partnerMood.mood === 'great' && <Smile className="w-8 h-8 text-green-600" />}
@@ -873,12 +875,12 @@ export function CoupleDashboard({
                     {partnerMood.mood === 'sad' && <Frown className="w-8 h-8 text-gray-600" />}
                     <div>
                       <p className="text-sm font-medium capitalize">{partnerMood.mood}</p>
-                      <p className="text-xs text-muted-foreground">Today</p>
+                      <p className="text-xs text-muted-foreground">{t.dashboard.today}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center h-14 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Not set yet</p>
+                    <p className="text-xs text-muted-foreground">{t.dashboard.moodNotSetYet}</p>
                   </div>
                 )}
               </div>
@@ -894,13 +896,13 @@ export function CoupleDashboard({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Star className="w-5 h-5 text-yellow-600" />
-                Relationship Milestones
+                {t.dashboard.relationshipMilestones}
               </CardTitle>
               <AddMilestoneDialog
                 onAddMilestone={handleMilestoneAdd}
               />
             </div>
-            <CardDescription>Celebrate your journey together</CardDescription>
+            <CardDescription>{t.dashboard.celebrateYourJourneyTogether}</CardDescription>
           </CardHeader>
           <CardContent>
             {milestones.length > 0 ? (
@@ -933,7 +935,7 @@ export function CoupleDashboard({
             ) : (
               <div className="text-center py-6">
                 <Star className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">No milestones yet</p>
+                <p className="text-sm text-muted-foreground mb-3">{t.dashboard.noMilestonesYet}</p>
                 <Button
                   variant="outline"
                   size="sm"
@@ -942,8 +944,8 @@ export function CoupleDashboard({
                       // Add first milestone via API
                       const firstDate = profile?.relationshipStart || new Date().toISOString();
                       const { milestone } = await milestonesApi.create({
-                        title: 'First Day Together',
-                        description: 'The beginning of your beautiful journey',
+                        title: t.dashboard.firstDayTogether,
+                        description: t.dashboard.beginningOfJourney,
                         date: firstDate,
                         category: 'relationship'
                       });
@@ -956,15 +958,15 @@ export function CoupleDashboard({
                         description: milestone.description || '',
                         icon: 'heart'
                       }]);
-                      toast.success('First milestone added!');
+                      toast.success(t.dashboard.firstMilestoneAdded);
                     } catch (error) {
                       console.error('Error adding first milestone:', error);
-                      toast.error('Failed to add milestone');
+                      toast.error(t.messages.errorOccurred);
                     }
                   }}
                 >
                   <Gift className="w-4 h-4 mr-2" />
-                  Add Your First Milestone
+                  {t.dashboard.addYourFirstMilestone}
                 </Button>
               </div>
             )}
@@ -978,9 +980,9 @@ export function CoupleDashboard({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-purple-600" />
-              Your Journey Together
+              {t.dashboard.yourJourneyTogether}
             </CardTitle>
-            <CardDescription>Building a strong foundation in faith</CardDescription>
+            <CardDescription>{t.dashboard.buildingStrongFoundationInFaith}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Devotionals Progress */}
@@ -992,8 +994,8 @@ export function CoupleDashboard({
               }}
             >
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Daily Devotionals</span>
-                <span className="font-medium">{devotionalStreakValue} {devotionalStreakValue === 1 ? 'day' : 'days'}</span>
+                <span className="text-muted-foreground">{t.dashboard.dailyDevotionals}</span>
+                <span className="font-medium">{devotionalStreakValue} {devotionalStreakValue === 1 ? t.dashboard.day : t.dashboard.days}</span>
               </div>
               <Progress value={Math.min((devotionalStreakValue / 30) * 100, 100)} className="h-2" />
             </div>
@@ -1007,7 +1009,7 @@ export function CoupleDashboard({
               }}
             >
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Know Each Other Questions</span>
+                <span className="text-muted-foreground">{t.dashboard.knowEachOtherQuestions}</span>
                 <span className="font-medium">{questionsAnswered}/{totalQuestionsCount}</span>
               </div>
               <Progress value={(questionsAnswered / totalQuestionsCount) * 100} className="h-2" />
@@ -1022,7 +1024,7 @@ export function CoupleDashboard({
               }}
             >
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Shared Journal Entries</span>
+                <span className="text-muted-foreground">{t.dashboard.sharedJournalEntries}</span>
                 <span className="font-medium">{sharedJournalEntries}/50</span>
               </div>
               <Progress value={Math.min((sharedJournalEntries / 50) * 100, 100)} className="h-2" />
@@ -1038,14 +1040,14 @@ export function CoupleDashboard({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <BookHeart className="w-5 h-5 text-rose-600" />
-                Recent Journal Entries
+                {t.dashboard.recentJournalEntries}
               </CardTitle>
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => onNavigate?.('journal')}
               >
-                View All
+                {t.dashboard.viewAll}
               </Button>
             </div>
           </CardHeader>

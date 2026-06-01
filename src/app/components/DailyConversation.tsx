@@ -1,4 +1,5 @@
 import { Card } from './ui/card';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from './ui/button';
 import { Mic, ChevronRight, Flame, Clock } from 'lucide-react';
 import { User, UserPlus } from 'lucide-react';
@@ -20,11 +21,12 @@ export function DailyConversation({
   userName,
   partnerName
 }: DailyConversationProps) {
+  const { t } = useLanguage();
   return (
     <Card className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 border-orange-100">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold">Daily Conversation</h3>
+        <h3 className="font-semibold">{t.conversation.dailyConversation}</h3>
         <div className="flex items-center gap-1 bg-pink-100 px-3 py-1 rounded-full">
           <span className="text-sm font-medium text-pink-600">{streak}</span>
           <Flame className="w-4 h-4 text-pink-600 fill-pink-600" />
@@ -35,7 +37,7 @@ export function DailyConversation({
       <div className="flex items-center gap-2 mb-3">
         <Clock className="w-4 h-4 text-orange-600" />
         <span className="text-xs text-orange-600 uppercase tracking-wide">
-          Next in {timeUntilNext}
+          {t.conversation.nextIn} {timeUntilNext}
         </span>
       </div>
 
@@ -72,7 +74,7 @@ export function DailyConversation({
           className="text-orange-600 hover:text-orange-700 hover:bg-orange-100"
           onClick={onViewResults}
         >
-          <span className="uppercase tracking-wide">Results</span>
+          <span className="uppercase tracking-wide">{t.conversation.results}</span>
           <ChevronRight className="w-4 h-4 ml-1" />
         </Button>
       </div>
