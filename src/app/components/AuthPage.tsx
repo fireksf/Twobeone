@@ -348,12 +348,12 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 <div className="space-y-2">
                   <Label htmlFor="signin-email">
                     <Mail className="w-4 h-4 inline mr-2" />
-                    {t.auth.email}
+                    Email
                   </Label>
                   <Input
                     id="signin-email"
                     type="email"
-                    placeholder={t.auth.enterEmail}
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -363,12 +363,12 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 <div className="space-y-2">
                   <Label htmlFor="signin-password">
                     <Key className="w-4 h-4 inline mr-2" />
-                    {t.auth.password}
+                    Password
                   </Label>
                   <Input
                     id="signin-password"
                     type="password"
-                    placeholder={t.auth.enterPassword}
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -394,7 +394,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t.auth.signIn}
+                  Sign In
                 </Button>
               </form>
             </TabsContent>
@@ -403,11 +403,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
             <TabsContent value="signup" className="space-y-4 mt-4">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">{t.auth.name}</Label>
+                  <Label htmlFor="signup-name">Your Name</Label>
                   <Input
                     id="signup-name"
                     type="text"
-                    placeholder={t.auth.enterName}
+                    placeholder="John Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -417,12 +417,12 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">
                     <Mail className="w-4 h-4 inline mr-2" />
-                    {t.auth.email}
+                    Email
                   </Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder={t.auth.enterEmail}
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -432,19 +432,19 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">
                     <Key className="w-4 h-4 inline mr-2" />
-                    {t.auth.password}
+                    Password
                   </Label>
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder={t.auth.enterPassword}
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {t.auth.weakPassword}
+                    Minimum 6 characters
                   </p>
                 </div>
 
@@ -488,7 +488,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {t.auth.signUp}
+                  Create Account
                 </Button>
               </form>
             </TabsContent>
@@ -504,11 +504,11 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
 
               <form onSubmit={handleLinkCouple} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="link-email">{t.auth.email}</Label>
+                  <Label htmlFor="link-email">Your Email</Label>
                   <Input
                     id="link-email"
                     type="email"
-                    placeholder={t.auth.enterEmail}
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -516,7 +516,7 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="link-password">{t.auth.password}</Label>
+                  <Label htmlFor="link-password">Your Password</Label>
                   <Input
                     id="link-password"
                     type="password"

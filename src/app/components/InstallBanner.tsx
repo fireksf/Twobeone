@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Download, Share, Plus } from 'lucide-react';
 import { Button } from './ui/button';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -8,6 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallBanner() {
+  const { t } = useLanguage();
   const [showBanner, setShowBanner] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
@@ -126,10 +128,10 @@ export function InstallBanner() {
             {/* Text Content */}
             <div className="flex-1 min-w-0">
               <h3 className="text-white font-semibold text-lg mb-1">
-                Install TwoBeOne
+                {t.install.title}
               </h3>
               <p className="text-white/90 text-sm mb-3">
-                Add to your home screen for the best experience
+                {t.install.subtitle}
               </p>
 
               {/* Platform-specific instructions */}
@@ -138,11 +140,11 @@ export function InstallBanner() {
                   <div className="flex items-start gap-2 text-white/95 text-xs">
                     <Share className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium mb-1">To install on iOS:</p>
+                      <p className="font-medium mb-1">{t.install.iosInstructions}</p>
                       <ol className="list-decimal list-inside space-y-1 text-white/80">
-                        <li>Tap the <Share className="w-3 h-3 inline mx-1" /> Share button below</li>
-                        <li>Scroll and tap "Add to Home Screen"</li>
-                        <li>Tap "Add" to confirm</li>
+                        <li>{t.install.iosStep1}</li>
+                        <li>{t.install.iosStep2}</li>
+                        <li>{t.install.iosStep3}</li>
                       </ol>
                     </div>
                   </div>
@@ -153,7 +155,7 @@ export function InstallBanner() {
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-3 border border-white/20">
                   <div className="flex items-start gap-2 text-white/95 text-xs">
                     <Download className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <p>Tap the button below to install TwoBeOne on your device</p>
+                    <p>{t.install.androidInstructions}</p>
                   </div>
                 </div>
               )}
@@ -166,13 +168,13 @@ export function InstallBanner() {
                     className="bg-white text-purple-600 hover:bg-white/90 font-semibold shadow-lg flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
-                    Install App
+                    {t.install.installButton}
                   </Button>
                 )}
 
                 {!deferredPrompt && !isIOS && (
                   <div className="text-white/80 text-xs">
-                    Open menu <span className="inline-block">⋮</span> and select "Install app" or "Add to Home screen"
+                    {t.install.androidInstructions}
                   </div>
                 )}
 
@@ -181,7 +183,7 @@ export function InstallBanner() {
                     onClick={handleDismiss}
                     className="bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm border border-white/30"
                   >
-                    Got it!
+                    {t.install.gotIt}
                   </Button>
                 )}
               </div>
@@ -192,16 +194,16 @@ export function InstallBanner() {
           <div className="mt-4 pt-4 border-t border-white/20">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>
-                <div className="text-white/90 font-semibold text-xs">⚡ Faster</div>
-                <div className="text-white/70 text-xs">Instant access</div>
+                <div className="text-white/90 font-semibold text-xs">⚡ {t.install.benefit1Title}</div>
+                <div className="text-white/70 text-xs">{t.install.benefit1Desc}</div>
               </div>
               <div>
-                <div className="text-white/90 font-semibold text-xs">📱 Native</div>
-                <div className="text-white/70 text-xs">App-like feel</div>
+                <div className="text-white/90 font-semibold text-xs">📱 {t.install.benefit2Title}</div>
+                <div className="text-white/70 text-xs">{t.install.benefit2Desc}</div>
               </div>
               <div>
-                <div className="text-white/90 font-semibold text-xs">🔔 Alerts</div>
-                <div className="text-white/70 text-xs">Get notified</div>
+                <div className="text-white/90 font-semibold text-xs">🔔 {t.install.benefit3Title}</div>
+                <div className="text-white/70 text-xs">{t.install.benefit3Desc}</div>
               </div>
             </div>
           </div>

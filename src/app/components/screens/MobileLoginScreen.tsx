@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useLanguage } from '../../contexts/LanguageContext';
 import { MobileButton } from '../mobile-ui/MobileButton';
 import { MobileInput } from '../mobile-ui/MobileInput';
 import { MobileAlert } from '../mobile-ui/MobileFeedback';
@@ -16,7 +15,6 @@ import { Mail, Lock, Eye, EyeOff, Heart } from 'lucide-react';
  * - Bottom CTA elevated above safe area
  */
 export function MobileLoginScreen() {
-  const { t } = useLanguage();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -78,9 +76,9 @@ export function MobileLoginScreen() {
             </h1>
             
             <p className="text-base text-neutral-600 dark:text-neutral-400">
-              {mode === 'login'
-                ? t.auth.welcomeBack
-                : t.auth.createAccountPrompt}
+              {mode === 'login' 
+                ? 'Welcome back! Sign in to continue.' 
+                : 'Create an account to get started.'}
             </p>
           </div>
           
@@ -96,7 +94,7 @@ export function MobileLoginScreen() {
                 }
               `}
             >
-              {t.auth.signIn}
+              Sign In
             </button>
             
             <button
@@ -109,7 +107,7 @@ export function MobileLoginScreen() {
                 }
               `}
             >
-              {t.auth.signUp}
+              Sign Up
             </button>
           </div>
           
@@ -117,7 +115,7 @@ export function MobileLoginScreen() {
           {Object.keys(errors).length > 0 && (
             <MobileAlert
               type="error"
-              message={t.auth.fixErrors}
+              message="Please fix the errors below"
               className="mb-6"
             />
           )}
@@ -126,9 +124,9 @@ export function MobileLoginScreen() {
           <div className="space-y-4 mb-6">
             {mode === 'signup' && (
               <MobileInput
-                label={t.auth.name}
+                label="Full Name"
                 type="text"
-                placeholder={t.auth.enterName}
+                placeholder="John Doe"
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                 error={errors.name}
@@ -137,9 +135,9 @@ export function MobileLoginScreen() {
             )}
             
             <MobileInput
-              label={t.auth.email}
+              label="Email Address"
               type="email"
-              placeholder={t.auth.enterEmail}
+              placeholder="your@email.com"
               icon={<Mail className="w-5 h-5" />}
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -148,9 +146,9 @@ export function MobileLoginScreen() {
             />
             
             <MobileInput
-              label={t.auth.password}
+              label="Password"
               type={showPassword ? 'text' : 'password'}
-              placeholder={t.auth.enterPassword}
+              placeholder="Enter password"
               icon={<Lock className="w-5 h-5" />}
               iconPosition="left"
               value={formData.password}
@@ -170,7 +168,7 @@ export function MobileLoginScreen() {
             {mode === 'login' && (
               <div className="text-right">
                 <button className="text-sm text-rose-600 dark:text-rose-400 font-medium hover:underline">
-                  {t.auth.forgotPassword}
+                  Forgot password?
                 </button>
               </div>
             )}
@@ -181,11 +179,11 @@ export function MobileLoginScreen() {
             <p className="text-xs text-neutral-500 dark:text-neutral-400 text-center mb-6">
               By signing up, you agree to our{' '}
               <button className="text-rose-600 dark:text-rose-400 hover:underline">
-                {t.auth.termsOfService}
+                Terms of Service
               </button>
               {' '}and{' '}
               <button className="text-rose-600 dark:text-rose-400 hover:underline">
-                {t.auth.privacyPolicy}
+                Privacy Policy
               </button>
             </p>
           )}
@@ -201,17 +199,17 @@ export function MobileLoginScreen() {
               loading={loading}
               onClick={handleSubmit}
             >
-              {mode === 'login' ? t.auth.signIn : t.auth.createAccount}
+              {mode === 'login' ? 'Sign In' : 'Create Account'}
             </MobileButton>
             
             {/* Secondary action */}
             <div className="text-center">
               <button className="text-sm text-neutral-600 dark:text-neutral-400">
-                {mode === 'login'
-                  ? `${t.auth.dontHaveAccount} `
-                  : `${t.auth.alreadyHaveAccount} `}
+                {mode === 'login' 
+                  ? "Don't have an account? " 
+                  : 'Already have an account? '}
                 <span className="text-rose-600 dark:text-rose-400 font-medium hover:underline">
-                  {mode === 'login' ? t.auth.signUp : t.auth.signIn}
+                  {mode === 'login' ? 'Sign up' : 'Sign in'}
                 </span>
               </button>
             </div>

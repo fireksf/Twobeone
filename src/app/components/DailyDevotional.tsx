@@ -1,5 +1,4 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Button } from './ui/button';
 import { BookOpen, Check } from 'lucide-react';
 import { DailyDevotional as DevotionalType } from '../types';
@@ -12,7 +11,6 @@ interface DailyDevotionalProps {
 }
 
 export function DailyDevotional({ devotional, onComplete, isCompleted }: DailyDevotionalProps) {
-  const { t } = useLanguage();
   return (
     <Card className="overflow-hidden">
       <div className="relative h-48 overflow-hidden">
@@ -25,7 +23,7 @@ export function DailyDevotional({ devotional, onComplete, isCompleted }: DailyDe
         <div className="absolute bottom-4 left-4 right-4">
           <div className="flex items-center gap-2 text-white mb-2">
             <BookOpen className="w-5 h-5" />
-            <span className="text-sm">{t.devotional.todaysDevotional}</span>
+            <span className="text-sm">Today's Devotional</span>
           </div>
           <h2 className="text-white text-2xl">{devotional.title}</h2>
         </div>
@@ -53,10 +51,10 @@ export function DailyDevotional({ devotional, onComplete, isCompleted }: DailyDe
             {isCompleted ? (
               <>
                 <Check className="mr-2 h-4 w-4" />
-                {t.devotional.completedToday}
+                Completed Today
               </>
             ) : (
-              t.devotional.markAsRead
+              'Mark as Read'
             )}
           </Button>
         )}

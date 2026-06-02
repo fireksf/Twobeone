@@ -1,5 +1,4 @@
 import { Smile } from 'lucide-react';
-import { useLanguage } from '../contexts/LanguageContext';
 import { Card } from './ui/card';
 import { useState, useEffect } from 'react';
 import { moods as moodsApi } from '../utils/api';
@@ -11,13 +10,13 @@ interface MoodTrackerProps {
   partnerMood?: string;
 }
 
+const moods = [
+  { emoji: '😊', value: 'great', label: 'Great' },
+  { emoji: '😐', value: 'okay', label: 'Okay' },
+  { emoji: '😔', value: 'sad', label: 'Sad' },
+];
+
 export function MoodTracker({ onMoodSelect, userMood, partnerMood }: MoodTrackerProps) {
-  const { t } = useLanguage();
-  const moods = [
-    { emoji: '😊', value: 'great', label: t.mood.great },
-    { emoji: '😐', value: 'okay', label: t.mood.okay },
-    { emoji: '😔', value: 'sad', label: t.mood.sad },
-  ];
   const [selectedMood, setSelectedMood] = useState<string | null>(userMood || null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -29,10 +28,10 @@ export function MoodTracker({ onMoodSelect, userMood, partnerMood }: MoodTracker
     setIsSaving(true);
     try {
       await moodsApi.save(moodValue as 'great' | 'good' | 'okay' | 'sad');
-      toast.success(t.mood.moodSaved);
+      toast.success('Mood saved!');
     } catch (error) {
       console.error('Error saving mood:', error);
-      toast.error(t.mood.failedToSaveMood);
+      toast.error('Failed to save mood');
     } finally {
       setIsSaving(false);
     }
@@ -42,13 +41,13 @@ export function MoodTracker({ onMoodSelect, userMood, partnerMood }: MoodTracker
     <Card className="bg-white rounded-2xl p-6">
       <div className="flex items-center gap-2 text-rose-600 mb-4">
         <Smile className="w-5 h-5" />
-        <h3 className="font-medium">{t.mood.howAreWeToday}</h3>
+        <h3 className="font-medium">How are we today?</h3>
       </div>
       
       <div className="space-y-4">
         {/* You */}
         <div>
-          <p className="text-sm text-gray-600 mb-2">{t.mood.you}</p>
+          <p className="text-sm text-gray-600 mb-2">You</p>
           <div className="flex gap-3">
             {moods.map((mood) => (
               <button
@@ -68,7 +67,7 @@ export function MoodTracker({ onMoodSelect, userMood, partnerMood }: MoodTracker
 
         {/* Partner */}
         <div>
-          <p className="text-sm text-gray-600 mb-2">{t.mood.partner}</p>
+          <p className="text-sm text-gray-600 mb-2">Partner</p>
           <div className="flex gap-3">
             {moods.map((mood) => (
               <div
