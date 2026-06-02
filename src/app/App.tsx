@@ -40,7 +40,7 @@ import { createClient } from './utils/supabase/client';
 import { projectId, publicAnonKey } from './utils/supabase/info';
 import { sendNotification } from './utils/notifications';
 import { toast } from 'sonner@2.0.3';
-import { Toaster } from './components/ui/sonner';
+import { Toaster, toast } from 'sonner'; //  Fixed
 import api from './utils/api';
 import { registerServiceWorker } from './utils/pwa';
 import { InstallPrompt } from './components/InstallPrompt';
