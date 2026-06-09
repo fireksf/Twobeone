@@ -228,14 +228,15 @@ export function CoupleDashboard({
           answeredByUser: answeredCount
         });
       } catch (error) {
-        console.error('Error fetching questions count:', error);
+        // Non-critical — count display, silently ignore network errors
+        console.warn('Error fetching questions count (non-critical):', error);
       }
     };
 
     if (profile?.id) {
       fetchQuestionsData();
-      // Poll for new questions every 30 seconds
-      const interval = setInterval(fetchQuestionsData, 30000);
+      // Poll for new questions every 2 minutes (reduced frequency)
+      const interval = setInterval(fetchQuestionsData, 120000);
       return () => clearInterval(interval);
     }
   }, [profile?.id, responses.user]);

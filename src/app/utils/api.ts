@@ -20,11 +20,14 @@ function deduplicateRequest<T>(key: string, fn: () => Promise<T>): Promise<T> {
   return promise;
 }
 
-// Helper to get access token
+// Helper to get access token, refreshing session if needed
 export async function getAccessToken(): Promise<string | null> {
   const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token || null;
+  if (session?.access_token) return session.access_token;
+  // Session missing or expired — try refreshing
+  const { data: refreshed } = await supabase.auth.refreshSession();
+  return refreshed?.session?.access_token || null;
 }
 
 // Helper for authenticated API calls with retry logic
@@ -35,15 +38,16 @@ async function apiCall<T>(
   timeout = 12000  // Default 12 second timeout (increased from 10)
 ): Promise<T> {
   const token = await getAccessToken();
-  
+
+  if (!token) {
+    throw new Error('Unauthorized');
+  }
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
     ...options.headers,
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   try {
     // Add a client-side timeout to prevent hanging requests
@@ -59,7 +63,18 @@ async function apiCall<T>(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      // Handle 401 Unauthorized specifically
+      // Handle 401 Unauthorized — try refreshing the session and retry once
+      if (response.status === 401 && retries === 0) {
+        const supabase = createClient();
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        const newToken = refreshed?.session?.access_token;
+        if (newToken) {
+          const retryHeaders = { ...options.headers, 'Authorization': `Bearer ${newToken}`, 'Content-Type': 'application/json' };
+          const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers: retryHeaders });
+          if (retryResponse.ok) return retryResponse.json();
+        }
+        throw new Error('Unauthorized');
+      }
       if (response.status === 401) {
         throw new Error('Unauthorized');
       }
@@ -355,7 +370,7 @@ export const notifications = {
 export const questions = {
   list: async (category?: string) => {
     const query = category ? `?category=${category}` : '';
-    return apiCall<{ questions: any[] }>(`/questions${query}`);
+    return apiCall<{ questions: any[] }>(`/questions${query}`, {}, 2, 15000);
   },
 
   submitResponse: async (questionId: string, response: string, isPrivate: boolean = false) => {
