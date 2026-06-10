@@ -3,7 +3,7 @@ import { Bell, X, Check, Heart, BookOpen, MessageCircle, Users } from 'lucide-re
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;
@@ -67,9 +67,16 @@ export function NotificationCenter({
       const data = await response.json();
       setNotifications(data.notifications || []);
       setUnreadCount(data.notifications?.filter((n: Notification) => !n.isRead).length || 0);
-    } catch (error) {
+    } catch (error: any) {
       // Silently handle notification errors - this is not critical functionality
-      console.warn('Could not load notifications - non-critical feature:', error);
+      const isNetworkErr = error?.message?.includes('Unable to connect') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.message?.includes('Unauthorized') ||
+        error?.message?.includes('timeout') ||
+        error instanceof TypeError;
+      if (!isNetworkErr) {
+        console.warn('Could not load notifications - non-critical feature:', error);
+      }
       setNotifications([]);
       setUnreadCount(0);
     }

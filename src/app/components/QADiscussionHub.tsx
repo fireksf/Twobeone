@@ -174,44 +174,38 @@ export function QADiscussionHub({
             scaleMax: p.scaleMax || 5
           })) || []
         }));
-        
-        // Fetch responses for each question
-        const questionsWithResponses = await Promise.all(
-          convertedQuestions.map(async (q: Question) => {
-            try {
-              const respResponse = await fetch(
-                `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/questions/${q.id}/responses`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                }
-              );
-              
-              if (respResponse.ok) {
-                const { userResponse, partnerResponse } = await respResponse.json();
-                console.log(`[Q&A] Question ${q.id} responses:`, {
-                  userResponse,
-                  partnerResponse,
-                  userAnswers: userResponse?.answers,
-                  partnerAnswers: partnerResponse?.answers
-                });
-                return {
-                  ...q,
-                  userAnswers: userResponse?.answers || {},
-                  partnerAnswers: partnerResponse?.answers || {}
-                };
-              } else {
-                console.error(`Failed to fetch responses for question ${q.id}, status:`, respResponse.status);
-              }
-            } catch (error) {
-              console.error(`Failed to fetch responses for question ${q.id}:`, error);
-            }
-            return q;
-          })
-        );
-        
-        console.log('Questions with responses:', questionsWithResponses);
+
+        // Fetch all responses in one bulk call instead of N per-question requests
+        let userResponses: any[] = [];
+        let partnerResponses: any[] = [];
+        try {
+          const categoryParam = activeCategory !== 'all' ? `?category=${activeCategory}` : '';
+          const respBulk = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/question-responses${categoryParam}`,
+            { headers: { 'Authorization': `Bearer ${token}` } }
+          );
+          if (respBulk.ok) {
+            const bulk = await respBulk.json();
+            userResponses = bulk.userResponses || [];
+            partnerResponses = bulk.partnerResponses || [];
+          }
+        } catch (err) {
+          console.warn('[Q&A] Could not load bulk responses, showing questions without response state');
+        }
+
+        // Attach responses to each question client-side
+        const questionsWithResponses = convertedQuestions.map((q: Question) => {
+          const qUserAnswers: Record<string, any> = {};
+          const qPartnerAnswers: Record<string, any> = {};
+          userResponses.forEach((r: any) => {
+            if (r.questionId === q.id) qUserAnswers[r.promptId ?? 'default'] = r;
+          });
+          partnerResponses.forEach((r: any) => {
+            if (r.questionId === q.id) qPartnerAnswers[r.promptId ?? 'default'] = r;
+          });
+          return { ...q, userAnswers: qUserAnswers, partnerAnswers: qPartnerAnswers };
+        });
+
         setQuestions(questionsWithResponses);
       } else {
         const error = await response.json();

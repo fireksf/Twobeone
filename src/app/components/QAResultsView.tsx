@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Avatar } from './ui/avatar';
 import { MessageCircle, User, Send, Lock, Unlock, Reply } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Answer {
   id: string;
@@ -40,6 +41,7 @@ export function QAResultsView({
   projectId,
   accessToken
 }: QAResultsViewProps) {
+  const { t } = useLanguage();
   const [activeAnswers, setActiveAnswers] = useState<{ [key: number]: string }>({});
   const [isPrivateAnswers, setIsPrivateAnswers] = useState<{ [key: number]: boolean }>({});
   const [replyMode, setReplyMode] = useState<{ [key: number]: boolean }>({});
@@ -138,7 +140,7 @@ export function QAResultsView({
                               {isPrivateReply && (
                                 <div className="flex items-center gap-1.5 mb-1">
                                   <Lock className="w-3 h-3 text-blue-600" />
-                                  <span className="text-xs text-blue-600 font-medium">Private</span>
+                                  <span className="text-xs text-blue-600 font-medium">{t.questions.private}</span>
                                 </div>
                               )}
                               <p className="text-gray-800 text-sm leading-relaxed">
@@ -195,7 +197,7 @@ export function QAResultsView({
                           className="text-gray-600 hover:text-gray-900"
                         >
                           <Reply className="w-4 h-4 mr-1.5" />
-                          Reply
+                          {t.questions.reply}
                         </Button>
                       ) : (
                         <div className="space-y-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
@@ -205,7 +207,7 @@ export function QAResultsView({
                               ...prev, 
                               [index]: e.target.value 
                             }))}
-                            placeholder="Write a reply..."
+                            placeholder={t.questions.writeAReply}
                             className="min-h-[80px] resize-none text-sm bg-white"
                             autoFocus
                           />
@@ -217,7 +219,7 @@ export function QAResultsView({
                               className="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:opacity-90"
                             >
                               <Send className="w-3.5 h-3.5 mr-1.5" />
-                              Send
+                              {t.common.save}
                             </Button>
                             <Button
                               onClick={() => {
@@ -228,7 +230,7 @@ export function QAResultsView({
                               variant="ghost"
                               className="text-gray-600"
                             >
-                              Cancel
+                              {t.common.cancel}
                             </Button>
                           </div>
                         </div>
@@ -240,7 +242,7 @@ export function QAResultsView({
                 /* Answer Input Form - when no one has answered yet */
                 <div className="space-y-3 bg-gray-50 rounded-lg p-4 border border-gray-200">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Share your answer</span>
+                    <span className="text-sm text-gray-700">{t.questions.shareYourAnswer}</span>
                     <button
                       onClick={() => setIsPrivateAnswers(prev => ({ 
                         ...prev, 
@@ -251,12 +253,12 @@ export function QAResultsView({
                       {isPrivateAnswers[index] ? (
                         <>
                           <Lock className="w-3.5 h-3.5" />
-                          Private
+                          {t.questions.private}
                         </>
                       ) : (
                         <>
                           <Unlock className="w-3.5 h-3.5" />
-                          Shared
+                          {t.questions.shared}
                         </>
                       )}
                     </button>
@@ -267,7 +269,7 @@ export function QAResultsView({
                       ...prev, 
                       [index]: e.target.value 
                     }))}
-                    placeholder="Share your thoughts..."
+                    placeholder={t.questions.shareYourThoughts}
                     className="min-h-[100px] resize-none text-sm bg-white"
                   />
                   <Button
@@ -277,7 +279,7 @@ export function QAResultsView({
                     className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:opacity-90"
                   >
                     <Send className="w-4 h-4 mr-2" />
-                    {isPrivateAnswers[index] ? 'Save Privately' : 'Send and Save'}
+                    {isPrivateAnswers[index] ? t.questions.savePriva : t.questions.sendAndSave}
                   </Button>
                 </div>
               )}
@@ -294,7 +296,7 @@ export function QAResultsView({
           className="w-full text-gray-700 hover:text-gray-900 hover:bg-gray-50 border-2"
         >
           <MessageCircle className="w-4 h-4 mr-2" />
-          Discuss "{question.category}"
+          {t.questions.discuss} "{question.category}"
         </Button>
       </div>
     </div>

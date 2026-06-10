@@ -1,14 +1,21 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Label } from './ui/label';
-import { Switch } from './ui/switch';
-import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog';
-import { 
-  Plus, 
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Label } from "./ui/label";
+import { Switch } from "./ui/switch";
+import { Badge } from "./ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "./ui/dialog";
+import {
+  Plus,
   Heart,
   Check,
   ChevronLeft,
@@ -22,9 +29,9 @@ import {
   CheckCircle2,
   Calendar,
   MessageCircle,
-  Home
-} from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+  Home,
+} from "lucide-react";
+import { toast } from "sonner@2.0.3";
 
 interface Prayer {
   id: string;
@@ -55,15 +62,60 @@ interface PrayerBoardProps {
 }
 
 const CATEGORIES = [
-  { value: 'Relationship', emoji: '💑', icon: '💑', color: 'bg-pink-500' },
-  { value: 'Family', emoji: '👨‍👩‍👧‍👦', icon: '👨‍👩‍👧‍👦', color: 'bg-blue-500' },
-  { value: 'Health', emoji: '💪', icon: '💊', color: 'bg-green-500' },
-  { value: 'Work', emoji: '💼', icon: '💼', color: 'bg-purple-500' },
-  { value: 'Spiritual Growth', emoji: '✨', icon: '✨', color: 'bg-yellow-500' },
-  { value: 'Guidance', emoji: '🧭', icon: '🧭', color: 'bg-cyan-500' },
-  { value: 'Thanksgiving', emoji: '🙏', icon: '🙏', color: 'bg-orange-500' },
-  { value: 'Financial', emoji: '💰', icon: '💰', color: 'bg-green-600' },
-  { value: 'General', emoji: '📿', icon: '📿', color: 'bg-gray-500' }
+  {
+    value: "Relationship",
+    emoji: "💑",
+    icon: "💑",
+    color: "bg-pink-500",
+  },
+  {
+    value: "Family",
+    emoji: "👨‍👩‍👧‍👦",
+    icon: "👨‍👩‍👧‍👦",
+    color: "bg-blue-500",
+  },
+  {
+    value: "Health",
+    emoji: "💪",
+    icon: "💊",
+    color: "bg-green-500",
+  },
+  {
+    value: "Work",
+    emoji: "💼",
+    icon: "💼",
+    color: "bg-purple-500",
+  },
+  {
+    value: "Spiritual Growth",
+    emoji: "✨",
+    icon: "✨",
+    color: "bg-yellow-500",
+  },
+  {
+    value: "Guidance",
+    emoji: "🧭",
+    icon: "🧭",
+    color: "bg-cyan-500",
+  },
+  {
+    value: "Thanksgiving",
+    emoji: "🙏",
+    icon: "🙏",
+    color: "bg-orange-500",
+  },
+  {
+    value: "Financial",
+    emoji: "💰",
+    icon: "💰",
+    color: "bg-green-600",
+  },
+  {
+    value: "General",
+    emoji: "📿",
+    icon: "📿",
+    color: "bg-gray-500",
+  },
 ];
 
 export function PrayerBoard({
@@ -72,30 +124,38 @@ export function PrayerBoard({
   onUpdatePrayer,
   onDeletePrayer,
   onMarkPrayed,
-  onBackToHome
+  onBackToHome,
 }: PrayerBoardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [editingPrayer, setEditingPrayer] = useState<Prayer | null>(null);
-  const [activeTab, setActiveTab] = useState<'requests' | 'answered' | 'together'>('requests');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [editingPrayer, setEditingPrayer] =
+    useState<Prayer | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "requests" | "answered" | "together"
+  >("requests");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedCards, setExpandedCards] = useState<
+    Set<string>
+  >(new Set());
 
   // Form fields
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('General');
-  const [reminderDate, setReminderDate] = useState('');
-  const [isSharedWithCommunity, setIsSharedWithCommunity] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("General");
+  const [reminderDate, setReminderDate] = useState("");
+  const [isSharedWithCommunity, setIsSharedWithCommunity] =
+    useState(false);
 
   // Check if user has a partner (based on whether there are any partner prayers)
-  const hasPartner = prayers.some(prayer => prayer.isPartner === true);
+  const hasPartner = prayers.some(
+    (prayer) => prayer.isPartner === true,
+  );
 
   const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setCategory('General');
-    setReminderDate('');
+    setTitle("");
+    setDescription("");
+    setCategory("General");
+    setReminderDate("");
     setIsSharedWithCommunity(false);
     setEditingPrayer(null);
   };
@@ -112,22 +172,22 @@ export function PrayerBoard({
         reminderDate: reminderDate || null,
         isSharedWithCommunity,
         youPrayed: true,
-        partnerPrayed: false
+        partnerPrayed: false,
       };
 
       if (editingPrayer) {
         await onUpdatePrayer(editingPrayer.id, prayerData);
-        toast.success('Prayer updated!');
+        toast.success("Prayer updated!");
       } else {
         await onAddPrayer(prayerData);
-        toast.success('Prayer request added!');
+        toast.success("Prayer request added!");
       }
 
       resetForm();
       setIsOpen(false);
     } catch (error) {
-      console.error('Failed to save prayer:', error);
-      toast.error('Failed to save prayer request');
+      console.error("Failed to save prayer:", error);
+      toast.error("Failed to save prayer request");
     } finally {
       setIsLoading(false);
     }
@@ -138,32 +198,45 @@ export function PrayerBoard({
     setTitle(prayer.title);
     setDescription(prayer.description);
     setCategory(prayer.category);
-    setReminderDate(prayer.reminderDate || '');
+    setReminderDate(prayer.reminderDate || "");
     setIsSharedWithCommunity(prayer.isSharedWithCommunity);
     setIsOpen(true);
   };
 
-  const handleTogglePrayed = async (prayer: Prayer, isPrayer: 'you' | 'partner') => {
+  const handleTogglePrayed = async (
+    prayer: Prayer,
+    isPrayer: "you" | "partner",
+  ) => {
     // Can't modify community prayers from others
     if (prayer.isCommunity) return;
 
     try {
-      if (isPrayer === 'you') {
-        await onUpdatePrayer(prayer.id, { youPrayed: !prayer.youPrayed });
+      if (isPrayer === "you") {
+        await onUpdatePrayer(prayer.id, {
+          youPrayed: !prayer.youPrayed,
+        });
       } else {
-        await onUpdatePrayer(prayer.id, { partnerPrayed: !prayer.partnerPrayed });
+        await onUpdatePrayer(prayer.id, {
+          partnerPrayed: !prayer.partnerPrayed,
+        });
       }
     } catch (error) {
-      toast.error('Failed to update prayer');
+      toast.error("Failed to update prayer");
     }
   };
 
   const handleToggleAnswered = async (prayer: Prayer) => {
     try {
-      await onUpdatePrayer(prayer.id, { isAnswered: !prayer.isAnswered });
-      toast.success(prayer.isAnswered ? 'Marked as ongoing' : 'Praise God! Prayer answered! 🎉');
+      await onUpdatePrayer(prayer.id, {
+        isAnswered: !prayer.isAnswered,
+      });
+      toast.success(
+        prayer.isAnswered
+          ? "Marked as ongoing"
+          : "Praise God! Prayer answered! 🎉",
+      );
     } catch (error) {
-      toast.error('Failed to update prayer');
+      toast.error("Failed to update prayer");
     }
   };
 
@@ -178,31 +251,46 @@ export function PrayerBoard({
   };
 
   // Filter prayers
-  const filteredPrayers = prayers.filter(prayer => {
+  const filteredPrayers = prayers.filter((prayer) => {
     // Text search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      if (!prayer.title.toLowerCase().includes(query) && 
-          !prayer.description.toLowerCase().includes(query)) {
+      if (
+        !prayer.title.toLowerCase().includes(query) &&
+        !prayer.description.toLowerCase().includes(query)
+      ) {
         return false;
       }
     }
 
     // Tab filtering
-    if (activeTab === 'answered' && !prayer.isAnswered) return false;
-    if (activeTab === 'requests' && prayer.isAnswered) return false;
-    if (activeTab === 'together' && (!prayer.youPrayed || !prayer.partnerPrayed)) return false;
+    if (activeTab === "answered" && !prayer.isAnswered)
+      return false;
+    if (activeTab === "requests" && prayer.isAnswered)
+      return false;
+    if (
+      activeTab === "together" &&
+      (!prayer.youPrayed || !prayer.partnerPrayed)
+    )
+      return false;
 
     return true;
   });
 
   const getCategoryData = (categoryName: string) => {
-    return CATEGORIES.find(c => c.value === categoryName) || CATEGORIES[CATEGORIES.length - 1];
+    return (
+      CATEGORIES.find((c) => c.value === categoryName) ||
+      CATEGORIES[CATEGORIES.length - 1]
+    );
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
   };
 
   return (
@@ -212,44 +300,44 @@ export function PrayerBoard({
         {/* Tabs */}
         <div className="flex items-center border-b">
           <button
-            onClick={() => setActiveTab('requests')}
+            onClick={() => setActiveTab("requests")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium relative ${
-              activeTab === 'requests' 
-                ? 'text-purple-700' 
-                : 'text-gray-500'
+              activeTab === "requests"
+                ? "text-purple-700"
+                : "text-gray-500"
             }`}
           >
             <MessageCircle className="w-4 h-4" />
             Requests
-            {activeTab === 'requests' && (
+            {activeTab === "requests" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-700"></div>
             )}
           </button>
           <button
-            onClick={() => setActiveTab('answered')}
+            onClick={() => setActiveTab("answered")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium relative ${
-              activeTab === 'answered' 
-                ? 'text-purple-700' 
-                : 'text-gray-500'
+              activeTab === "answered"
+                ? "text-purple-700"
+                : "text-gray-500"
             }`}
           >
             <CheckCircle2 className="w-4 h-4" />
             Answered
-            {activeTab === 'answered' && (
+            {activeTab === "answered" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-700"></div>
             )}
           </button>
           <button
-            onClick={() => setActiveTab('together')}
+            onClick={() => setActiveTab("together")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium relative ${
-              activeTab === 'together' 
-                ? 'text-purple-700' 
-                : 'text-gray-500'
+              activeTab === "together"
+                ? "text-purple-700"
+                : "text-gray-500"
             }`}
           >
             <Heart className="w-4 h-4" />
             Together
-            {activeTab === 'together' && (
+            {activeTab === "together" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-700"></div>
             )}
           </button>
@@ -271,7 +359,7 @@ export function PrayerBoard({
 
       {/* Prayer List */}
       <div className="px-4 py-4 space-y-3">
-        {!hasPartner && activeTab === 'together' ? (
+        {!hasPartner && activeTab === "together" ? (
           <div className="text-center py-16">
             <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
               <Users className="w-10 h-10 text-purple-400" />
@@ -280,7 +368,9 @@ export function PrayerBoard({
               Connect with Your Partner
             </h3>
             <p className="text-sm text-gray-500 mb-6 px-6">
-              Prayer sharing is available when you're connected as a couple. Share your invite code or enter your partner's code to start praying together.
+              Prayer sharing is available when you're connected
+              as a couple. Share your invite code or enter your
+              partner's code to start praying together.
             </p>
           </div>
         ) : filteredPrayers.length === 0 ? (
@@ -289,14 +379,18 @@ export function PrayerBoard({
               <Heart className="w-10 h-10 text-gray-400" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">
-              {activeTab === 'together' ? 'No Prayers Together Yet' : 
-               activeTab === 'answered' ? 'No Answered Prayers' : 
-               'No Prayer Requests'}
+              {activeTab === "together"
+                ? "No Prayers Together Yet"
+                : activeTab === "answered"
+                  ? "No Answered Prayers"
+                  : "No Prayer Requests"}
             </h3>
             <p className="text-sm text-gray-500 mb-6">
-              {activeTab === 'together' ? 'Pray together as a couple to strengthen your bond' :
-               activeTab === 'answered' ? 'Answered prayers will appear here' :
-               'Start by adding a prayer request'}
+              {activeTab === "together"
+                ? "Pray together as a couple to strengthen your bond"
+                : activeTab === "answered"
+                  ? "Answered prayers will appear here"
+                  : "Start by adding a prayer request"}
             </p>
           </div>
         ) : (
@@ -304,17 +398,21 @@ export function PrayerBoard({
             const catData = getCategoryData(prayer.category);
             const canEdit = !prayer.isCommunity; // Both partners can edit their shared prayers
             const isExpanded = expandedCards.has(prayer.id);
-            const prayerCount = (prayer.youPrayed ? 1 : 0) + (prayer.partnerPrayed ? 1 : 0);
+            const prayerCount =
+              (prayer.youPrayed ? 1 : 0) +
+              (prayer.partnerPrayed ? 1 : 0);
 
             return (
-              <Card 
-                key={prayer.id} 
+              <Card
+                key={prayer.id}
                 className="overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow"
               >
                 <CardContent className="p-0">
                   <div className="flex items-start gap-3 p-4">
                     {/* Category Icon */}
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-full ${catData.color} flex items-center justify-center text-white text-xl`}>
+                    <div
+                      className={`flex-shrink-0 w-12 h-12 rounded-full ${catData.color} flex items-center justify-center text-white text-xl`}
+                    >
                       {catData.icon}
                     </div>
 
@@ -326,9 +424,11 @@ export function PrayerBoard({
                       </h3>
 
                       {/* Description */}
-                      <p className={`text-sm text-gray-600 leading-relaxed ${
-                        isExpanded ? '' : 'line-clamp-2'
-                      }`}>
+                      <p
+                        className={`text-sm text-gray-600 leading-relaxed ${
+                          isExpanded ? "" : "line-clamp-2"
+                        }`}
+                      >
                         {prayer.description}
                       </p>
 
@@ -339,7 +439,10 @@ export function PrayerBoard({
                           {formatDate(prayer.createdAt)}
                         </span>
                         <span>•</span>
-                        <span>{prayerCount} prayer{prayerCount !== 1 ? 's' : ''}</span>
+                        <span>
+                          {prayerCount} prayer
+                          {prayerCount !== 1 ? "s" : ""}
+                        </span>
                       </div>
                     </div>
 
@@ -348,7 +451,9 @@ export function PrayerBoard({
                       {/* Prayer Status Circles */}
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleTogglePrayed(prayer, 'you')}
+                          onClick={() =>
+                            handleTogglePrayed(prayer, "you")
+                          }
                           disabled={!canEdit}
                           className="flex flex-col items-center gap-1 disabled:opacity-50"
                         >
@@ -359,11 +464,18 @@ export function PrayerBoard({
                           ) : (
                             <div className="w-6 h-6 rounded-full border-2 border-gray-300"></div>
                           )}
-                          <span className="text-xs text-gray-600">You</span>
+                          <span className="text-xs text-gray-600">
+                            You
+                          </span>
                         </button>
 
                         <button
-                          onClick={() => handleTogglePrayed(prayer, 'partner')}
+                          onClick={() =>
+                            handleTogglePrayed(
+                              prayer,
+                              "partner",
+                            )
+                          }
                           disabled={!canEdit}
                           className="flex flex-col items-center gap-1 disabled:opacity-50"
                         >
@@ -374,7 +486,9 @@ export function PrayerBoard({
                           ) : (
                             <div className="w-6 h-6 rounded-full border-2 border-gray-300"></div>
                           )}
-                          <span className="text-xs text-gray-600">Partner</span>
+                          <span className="text-xs text-gray-600">
+                            Partner
+                          </span>
                         </button>
                       </div>
 
@@ -406,16 +520,20 @@ export function PrayerBoard({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleToggleAnswered(prayer)}
+                        onClick={() =>
+                          handleToggleAnswered(prayer)
+                        }
                         className="flex-1 text-xs"
                       >
-                        {prayer.isAnswered ? 'Mark Active' : 'Mark Answered'}
+                        {prayer.isAnswered
+                          ? "Mark Active"
+                          : "Mark Answered"}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          if (confirm('Delete this prayer?')) {
+                          if (confirm("Delete this prayer?")) {
                             onDeletePrayer(prayer.id);
                           }
                         }}
@@ -435,21 +553,29 @@ export function PrayerBoard({
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow z-50"
+        className="fixed bottom-40 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-shadow z-50"
       >
         <Plus className="w-6 h-6" />
       </button>
 
       {/* Add/Edit Prayer Dialog */}
-      <Dialog open={isOpen} onOpenChange={(open) => {
-        setIsOpen(open);
-        if (!open) resetForm();
-      }}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) resetForm();
+        }}
+      >
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
-            <DialogTitle>{editingPrayer ? 'Edit Prayer' : 'New Prayer Request'}</DialogTitle>
+            <DialogTitle>
+              {editingPrayer
+                ? "Edit Prayer"
+                : "New Prayer Request"}
+            </DialogTitle>
             <DialogDescription>
-              Bring your needs and concerns before God. Pray together as a couple.
+              Bring your needs and concerns before God. Pray
+              together as a couple.
             </DialogDescription>
           </DialogHeader>
 
@@ -466,11 +592,15 @@ export function PrayerBoard({
                     className={`flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all ${
                       category === cat.value
                         ? `border-purple-500 bg-purple-50 scale-105`
-                        : 'border-gray-200 hover:border-purple-300'
+                        : "border-gray-200 hover:border-purple-300"
                     }`}
                   >
-                    <span className="text-2xl mb-1">{cat.emoji}</span>
-                    <span className="text-xs text-center leading-tight">{cat.value}</span>
+                    <span className="text-2xl mb-1">
+                      {cat.emoji}
+                    </span>
+                    <span className="text-xs text-center leading-tight">
+                      {cat.value}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -511,19 +641,25 @@ export function PrayerBoard({
                 id="reminder"
                 type="date"
                 value={reminderDate}
-                onChange={(e) => setReminderDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) =>
+                  setReminderDate(e.target.value)
+                }
+                min={new Date().toISOString().split("T")[0]}
               />
             </div>
 
             {/* Community Sharing */}
             <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
               <div className="flex-1">
-                <Label htmlFor="community" className="cursor-pointer font-medium">
+                <Label
+                  htmlFor="community"
+                  className="cursor-pointer font-medium"
+                >
                   Share with Community
                 </Label>
                 <p className="text-xs text-gray-600 mt-1">
-                  Allow other couples to see and pray for this request
+                  Allow other couples to see and pray for this
+                  request
                 </p>
               </div>
               <Switch
@@ -534,15 +670,23 @@ export function PrayerBoard({
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={isLoading}
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
-                {isLoading ? 'Saving...' : editingPrayer ? 'Update' : 'Add Prayer'}
+                {isLoading
+                  ? "Saving..."
+                  : editingPrayer
+                    ? "Update"
+                    : "Add Prayer"}
               </Button>
             </DialogFooter>
           </form>

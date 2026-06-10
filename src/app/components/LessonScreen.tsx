@@ -1,29 +1,16 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, BookOpen, Play, FileText, CheckCircle2 } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card } from './ui/card';
-import { Textarea } from './ui/textarea';
-import { ScrollArea } from './ui/scroll-area';
-import { Progress } from './ui/progress';
+import {
+  ArrowLeft,
+  BookOpen,
+  FileText,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Quote,
+} from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { toast } from 'sonner@2.0.3';
-
-interface Lesson {
-  id: string;
-  title: string;
-  duration: string;
-  content: string;
-}
-
-interface Module {
-  id: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  lessons: Lesson[];
-  icon?: string;
-  color?: string;
-}
+import { toast } from 'sonner';
+import { getStaticModule, type StaticModule } from '../data/modules';
 
 interface LessonScreenProps {
   moduleId: string;
@@ -35,407 +22,421 @@ interface LessonScreenProps {
 export function LessonScreen({ moduleId, lessonId, onBack, accessToken }: LessonScreenProps) {
   const [notes, setNotes] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
-  const [module, setModule] = useState<Module | null>(null);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(new Set());
   const [moduleProgress, setModuleProgress] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    loadModule();
-  }, [moduleId]);
+  const module: StaticModule | undefined = getStaticModule(moduleId);
 
+  // Set initial lesson index from lessonId prop
   useEffect(() => {
     if (module && lessonId) {
-      const index = module.lessons.findIndex(l => l.id === lessonId);
-      if (index >= 0) {
-        setCurrentLessonIndex(index);
-      }
+      const idx = module.lessons.findIndex((l) => l.id === lessonId);
+      if (idx >= 0) setCurrentLessonIndex(idx);
     }
-  }, [module, lessonId]);
+  }, [moduleId, lessonId]);
 
-  // Load notes and completion status when lesson changes
+  // Load progress overlay from API (non-blocking)
+  useEffect(() => {
+    loadModuleProgress();
+  }, [moduleId]);
+
+  // Load notes + completion status when lesson changes
   useEffect(() => {
     if (module && module.lessons[currentLessonIndex]) {
-      loadLessonData(module.lessons[currentLessonIndex].id);
+      const lesson = module.lessons[currentLessonIndex];
+      setIsCompleted(completedLessonIds.has(lesson.id));
+      loadLessonNotes(lesson.id);
     }
-  }, [currentLessonIndex, module]);
+  }, [currentLessonIndex, module, completedLessonIds]);
 
-  const loadModule = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${moduleId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken || publicAnonKey}`
-          }
-        }
-      );
-
-      if (response.ok) {
-        const { module: apiModule } = await response.json();
-        setModule(apiModule);
-        
-        // Load progress for this module
-        await loadModuleProgress();
-      } else {
-        toast.error('Failed to load module');
-        onBack();
-      }
-    } catch (error) {
-      console.error('Failed to load module:', error);
-      toast.error('Failed to load module');
-      onBack();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const authHeader = () => ({ Authorization: `Bearer ${accessToken || publicAnonKey}` });
 
   const loadModuleProgress = async () => {
     try {
-      const response = await fetch(
+      const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${moduleId}/progress`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken || publicAnonKey}`
-          }
-        }
+        { headers: authHeader() }
       );
-
-      if (response.ok) {
-        const { progress, completions } = await response.json();
-        setModuleProgress(progress);
-        
-        // Store completed lesson IDs
-        const completedIds = new Set(completions.map((c: any) => c.lessonId));
-        setCompletedLessonIds(completedIds);
+      if (res.ok) {
+        const { progress, completions } = await res.json();
+        setModuleProgress(typeof progress === 'number' ? progress : 0);
+        if (Array.isArray(completions)) {
+          setCompletedLessonIds(new Set(completions.map((c: any) => c.lessonId)));
+        }
       }
-    } catch (error) {
-      console.error('Failed to load module progress:', error);
+    } catch (e) {
+      // progress overlay is best-effort
     }
   };
 
-  const loadLessonData = async (lessonId: string) => {
+  const loadLessonNotes = async (lId: string) => {
     try {
-      // Load saved notes
-      const notesResponse = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${moduleId}/lessons/${lessonId}/notes`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken || publicAnonKey}`
-          }
-        }
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${moduleId}/lessons/${lId}/notes`,
+        { headers: authHeader() }
       );
-
-      if (notesResponse.ok) {
-        const { note } = await notesResponse.json();
-        if (note && note.notes) {
-          setNotes(note.notes);
-        } else {
-          setNotes('');
-        }
+      if (res.ok) {
+        const { note } = await res.json();
+        setNotes(note?.notes ?? '');
+      } else {
+        setNotes('');
       }
-
-      // Check if lesson is completed
-      setIsCompleted(completedLessonIds.has(lessonId));
-    } catch (error) {
-      console.error('Failed to load lesson data:', error);
+    } catch {
       setNotes('');
-      setIsCompleted(false);
     }
   };
 
-  if (isLoading) {
+  if (!module || module.lessons.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl">Loading...</h1>
-          </div>
-        </div>
-        <Card className="p-8 text-center">
-          <p className="text-gray-600">Loading lesson content...</p>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!module || !module.lessons || module.lessons.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex-1">
-            <h1 className="text-2xl">No Lessons Available</h1>
-          </div>
-        </div>
-        <Card className="p-8 text-center">
-          <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600 mb-2">This module doesn't have any lessons yet</p>
-          <Button onClick={onBack} variant="outline">
-            Go Back
-          </Button>
-        </Card>
+      <div style={{ padding: 'var(--spacing-6)', textAlign: 'center' }}>
+        <button
+          onClick={onBack}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)',
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--neutral-600)', fontSize: 'var(--text-callout)',
+            marginBottom: 'var(--spacing-6)',
+          }}
+        >
+          <ArrowLeft style={{ width: 18, height: 18 }} /> Back
+        </button>
+        <p style={{ color: 'var(--neutral-500)', fontSize: 'var(--text-body)' }}>Module not found.</p>
       </div>
     );
   }
 
   const currentLesson = module.lessons[currentLessonIndex];
-  const progress = Math.round(((currentLessonIndex + 1) / module.lessons.length) * 100);
+  const totalLessons = module.lessons.length;
 
-  const goToNextLesson = () => {
-    if (currentLessonIndex < module.lessons.length - 1) {
-      setCurrentLessonIndex(currentLessonIndex + 1);
-      setIsCompleted(false);
-      setNotes('');
-    }
-  };
-
-  const goToPreviousLesson = () => {
-    if (currentLessonIndex > 0) {
-      setCurrentLessonIndex(currentLessonIndex - 1);
-      setIsCompleted(false);
+  const goTo = (idx: number) => {
+    if (idx >= 0 && idx < totalLessons) {
+      setCurrentLessonIndex(idx);
       setNotes('');
     }
   };
 
   const handleMarkComplete = async () => {
-    // Save notes only if they're not empty
-    if (notes.trim()) {
-      try {
-        const response = await fetch(
+    setIsSaving(true);
+    try {
+      if (notes.trim()) {
+        const nr = await fetch(
           `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${moduleId}/lessons/${currentLesson.id}/notes`,
           {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken || publicAnonKey}`
-            },
-            body: JSON.stringify({ notes: notes.trim() })
+            headers: { 'Content-Type': 'application/json', ...authHeader() },
+            body: JSON.stringify({ notes: notes.trim() }),
           }
         );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('Save notes error response:', errorData);
-          throw new Error(errorData.error || 'Failed to save notes');
+        if (!nr.ok) {
+          const err = await nr.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to save notes');
         }
-        
-        const result = await response.json();
-        console.log('Notes saved successfully:', result);
-        toast.success('Notes saved!');
-      } catch (error: any) {
-        console.error('Failed to save notes:', error);
-        toast.error(error.message || 'Failed to save notes');
-        return; // Don't proceed if saving fails
       }
-    }
 
-    // Mark lesson as completed on backend
-    try {
-      const completeResponse = await fetch(
+      const cr = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${moduleId}/lessons/${currentLesson.id}/complete`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken || publicAnonKey}`
-          }
-        }
+        { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeader() } }
       );
-
-      if (!completeResponse.ok) {
-        const errorData = await completeResponse.json().catch(() => ({}));
-        console.error('Mark complete error response:', errorData);
-        throw new Error(errorData.error || 'Failed to mark lesson complete');
+      if (!cr.ok) {
+        const err = await cr.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to mark complete');
       }
 
-      const result = await completeResponse.json();
-      console.log('Lesson marked complete:', result);
-
-      // Update local state
       setIsCompleted(true);
-      setCompletedLessonIds(prev => new Set([...prev, currentLesson.id]));
-      
-      // Reload progress
+      setCompletedLessonIds((prev) => new Set([...prev, currentLesson.id]));
       await loadModuleProgress();
 
-    } catch (error) {
-      console.error('Failed to mark lesson complete:', error);
-      toast.error('Failed to mark lesson complete');
-      return;
+      setTimeout(() => {
+        if (currentLessonIndex < totalLessons - 1) {
+          goTo(currentLessonIndex + 1);
+          toast.success('Great work! Moving to the next lesson.');
+        } else {
+          toast.success('Module complete! Well done. 🎉');
+        }
+      }, 700);
+    } catch (err: any) {
+      toast.error(err.message || 'Something went wrong');
+    } finally {
+      setIsSaving(false);
     }
-    
-    // Auto-advance to next lesson after a brief delay
-    setTimeout(() => {
-      if (currentLessonIndex < module.lessons.length - 1) {
-        goToNextLesson();
-        toast.success('Moving to next lesson!');
-      } else {
-        toast.success('Module completed! 🎉');
-      }
-    }, 800);
   };
 
+  // accent colour for this module
+  const accent = module.accentColor;
+  const accentBg = module.accentBg;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1">
-          <p className="text-sm text-gray-600">{module.title}</p>
-          <h1 className="text-2xl">{currentLesson.title}</h1>
-        </div>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', paddingBottom: 'var(--spacing-10)' }}>
 
-      {/* Progress Bar */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-600">
-            Your Progress
-          </span>
-          <span className="text-sm font-medium">{moduleProgress}%</span>
-        </div>
-        <Progress value={moduleProgress} className="h-2" />
-        <p className="text-xs text-gray-500 mt-2">
-          {completedLessonIds.size} of {module.lessons.length} lessons completed
-        </p>
-      </Card>
-
-      {/* Lesson Navigation */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={goToPreviousLesson}
-            disabled={currentLessonIndex === 0}
-          >
-            Previous Lesson
-          </Button>
-          <span className="text-sm text-gray-600">
-            {currentLesson.duration}
-          </span>
-          <Button
-            variant="outline"
-            onClick={goToNextLesson}
-            disabled={currentLessonIndex === module.lessons.length - 1}
-          >
-            Next Lesson
-          </Button>
-        </div>
-      </Card>
-
-      {/* Content */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <BookOpen className="w-5 h-5 text-rose-600" />
-          <h3 className="font-semibold">Lesson Content</h3>
-        </div>
-        <ScrollArea className="h-96">
-          <div className="prose prose-sm max-w-none whitespace-pre-line">
-            {currentLesson.content}
-          </div>
-        </ScrollArea>
-      </Card>
-
-      {/* Notes Section */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <FileText className="w-5 h-5 text-blue-600" />
-          <h3 className="font-semibold">Your Notes</h3>
-        </div>
-        <Textarea
-          placeholder="Take notes about what you've learned and how you'll apply it..."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="min-h-32"
-        />
-      </Card>
-
-      {/* Complete Button */}
-      <div className="flex gap-3">
-        <Button
-          onClick={handleMarkComplete}
-          disabled={isCompleted}
-          className="flex-1 h-12"
-          size="lg"
+      {/* ── Top bar ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+        <button
+          onClick={onBack}
+          style={{
+            width: 40, height: 40, borderRadius: 'var(--radius-full)',
+            border: '1px solid var(--border)', backgroundColor: 'var(--card)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', flexShrink: 0,
+          }}
         >
-          {isCompleted ? (
-            <>
-              <CheckCircle2 className="w-5 h-5 mr-2" />
-              Lesson Completed
-            </>
-          ) : (
-            'Mark as Complete'
-          )}
-        </Button>
-        {isCompleted && currentLessonIndex < module.lessons.length - 1 && (
-          <Button
-            onClick={goToNextLesson}
-            variant="outline"
-            className="h-12"
-            size="lg"
-          >
-            Next Lesson
-          </Button>
-        )}
+          <ArrowLeft style={{ width: 18, height: 18, color: 'var(--neutral-600)' }} />
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 'var(--text-label)', color: accent, fontWeight: 'var(--font-weight-semibold)', margin: 0 }}>
+            {module.title}
+          </p>
+          <p style={{
+            fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)',
+            color: 'var(--neutral-900)', margin: 0,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {currentLesson.title}
+          </p>
+        </div>
+        <span style={{
+          fontSize: 'var(--text-label)', color: 'var(--neutral-500)',
+          flexShrink: 0, fontWeight: 'var(--font-weight-medium)',
+        }}>
+          {currentLessonIndex + 1}/{totalLessons}
+        </span>
       </div>
 
-      {/* All Lessons List */}
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4">All Lessons in This Module</h3>
-        <div className="space-y-2">
-          {module.lessons.map((lesson, index) => {
-            const isLessonCompleted = completedLessonIds.has(lesson.id);
+      {/* ── Module progress bar ── */}
+      <div style={{
+        backgroundColor: 'var(--card)', borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border)', padding: 'var(--spacing-3) var(--spacing-4)',
+        boxShadow: 'var(--shadow-sm)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-2)' }}>
+          <span style={{ fontSize: 'var(--text-label)', color: 'var(--neutral-600)', fontWeight: 'var(--font-weight-medium)' }}>
+            Module Progress
+          </span>
+          <span style={{ fontSize: 'var(--text-label)', color: accent, fontWeight: 'var(--font-weight-semibold)' }}>
+            {moduleProgress}%
+          </span>
+        </div>
+        <div style={{ height: 5, borderRadius: 'var(--radius-full)', backgroundColor: 'var(--neutral-100)', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', width: `${moduleProgress}%`,
+            backgroundColor: accent, borderRadius: 'var(--radius-full)',
+            transition: 'width 0.5s ease',
+          }} />
+        </div>
+        <p style={{ fontSize: 'var(--text-label)', color: 'var(--neutral-500)', margin: 'var(--spacing-1) 0 0 0' }}>
+          {completedLessonIds.size} of {totalLessons} lessons completed
+        </p>
+      </div>
+
+      {/* ── Scripture banner ── */}
+      <div style={{
+        backgroundColor: accentBg,
+        border: `1px solid ${module.accentBorder}`,
+        borderRadius: 'var(--radius-md)',
+        padding: 'var(--spacing-4)',
+        display: 'flex', gap: 'var(--spacing-3)',
+      }}>
+        <Quote style={{ width: 18, height: 18, color: accent, flexShrink: 0, marginTop: 2 }} />
+        <div>
+          <p style={{ fontSize: 'var(--text-callout)', color: 'var(--neutral-800)', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>
+            {module.scripture}
+          </p>
+          <p style={{ fontSize: 'var(--text-label)', color: accent, fontWeight: 'var(--font-weight-semibold)', margin: 'var(--spacing-1) 0 0 0' }}>
+            {module.scriptureRef}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Lesson navigation ── */}
+      <div style={{
+        backgroundColor: 'var(--card)', borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border)', padding: 'var(--spacing-3) var(--spacing-4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        boxShadow: 'var(--shadow-sm)',
+      }}>
+        <button
+          onClick={() => goTo(currentLessonIndex - 1)}
+          disabled={currentLessonIndex === 0}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)',
+            background: 'none', border: 'none', cursor: currentLessonIndex === 0 ? 'not-allowed' : 'pointer',
+            color: currentLessonIndex === 0 ? 'var(--neutral-300)' : 'var(--neutral-600)',
+            fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)',
+          }}
+        >
+          <ChevronLeft style={{ width: 16, height: 16 }} /> Prev
+        </button>
+
+        <span style={{
+          fontSize: 'var(--text-label)', color: 'var(--neutral-500)',
+          fontWeight: 'var(--font-weight-medium)',
+        }}>
+          {currentLesson.duration}
+        </span>
+
+        <button
+          onClick={() => goTo(currentLessonIndex + 1)}
+          disabled={currentLessonIndex === totalLessons - 1}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)',
+            background: 'none', border: 'none', cursor: currentLessonIndex === totalLessons - 1 ? 'not-allowed' : 'pointer',
+            color: currentLessonIndex === totalLessons - 1 ? 'var(--neutral-300)' : 'var(--neutral-600)',
+            fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)',
+          }}
+        >
+          Next <ChevronRight style={{ width: 16, height: 16 }} />
+        </button>
+      </div>
+
+      {/* ── Lesson content ── */}
+      <div style={{
+        backgroundColor: 'var(--card)', borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)',
+          padding: 'var(--spacing-4)',
+          borderBottom: '1px solid var(--border)',
+          backgroundColor: accentBg,
+        }}>
+          <BookOpen style={{ width: 18, height: 18, color: accent }} />
+          <span style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--neutral-900)' }}>
+            Lesson Content
+          </span>
+        </div>
+        <div style={{ padding: 'var(--spacing-5)', maxHeight: 480, overflowY: 'auto' }}>
+          <pre style={{
+            fontFamily: 'inherit', whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            fontSize: 'var(--text-body)', color: 'var(--neutral-800)',
+            lineHeight: 1.7, margin: 0,
+          }}>
+            {currentLesson.content}
+          </pre>
+        </div>
+      </div>
+
+      {/* ── Notes ── */}
+      <div style={{
+        backgroundColor: 'var(--card)', borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
+        overflow: 'hidden',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)',
+          padding: 'var(--spacing-4)',
+          borderBottom: '1px solid var(--border)',
+        }}>
+          <FileText style={{ width: 18, height: 18, color: 'var(--secondary-600)' }} />
+          <span style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--neutral-900)' }}>
+            Your Notes
+          </span>
+        </div>
+        <div style={{ padding: 'var(--spacing-4)' }}>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Reflect on what you've learned. How will you apply this together?"
+            style={{
+              width: '100%', minHeight: 120,
+              fontSize: 'var(--text-body)', color: 'var(--neutral-800)',
+              backgroundColor: 'var(--neutral-50)',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+              padding: 'var(--spacing-3)',
+              resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.6,
+              outline: 'none', boxSizing: 'border-box',
+            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; }}
+          />
+        </div>
+      </div>
+
+      {/* ── Mark complete ── */}
+      <button
+        onClick={handleMarkComplete}
+        disabled={isCompleted || isSaving}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--spacing-2)',
+          width: '100%', padding: 'var(--spacing-4)',
+          borderRadius: 'var(--radius-md)',
+          border: 'none', cursor: isCompleted || isSaving ? 'not-allowed' : 'pointer',
+          backgroundColor: isCompleted ? 'var(--success-50)' : accent,
+          color: isCompleted ? 'var(--success-700)' : '#fff',
+          fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)',
+          transition: 'opacity 0.15s ease',
+          opacity: isSaving ? 0.7 : 1,
+        }}
+      >
+        <CheckCircle2 style={{ width: 18, height: 18 }} />
+        {isSaving ? 'Saving…' : isCompleted ? 'Lesson Completed ✓' : 'Mark as Complete'}
+      </button>
+
+      {/* ── All lessons list ── */}
+      <div style={{
+        backgroundColor: 'var(--card)', borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
+        overflow: 'hidden',
+      }}>
+        <div style={{ padding: 'var(--spacing-4)', borderBottom: '1px solid var(--border)' }}>
+          <span style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--neutral-900)' }}>
+            All Lessons
+          </span>
+        </div>
+        <div style={{ padding: 'var(--spacing-2) 0' }}>
+          {module.lessons.map((lesson, idx) => {
+            const done = completedLessonIds.has(lesson.id);
+            const active = idx === currentLessonIndex;
             return (
-              <div
+              <button
                 key={lesson.id}
-                onClick={() => {
-                  setCurrentLessonIndex(index);
+                onClick={() => goTo(idx)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)',
+                  width: '100%', padding: 'var(--spacing-3) var(--spacing-4)',
+                  background: active ? accentBg : 'none', border: 'none',
+                  cursor: 'pointer', textAlign: 'left',
+                  borderLeft: active ? `3px solid ${accent}` : '3px solid transparent',
+                  transition: 'background 0.15s ease',
                 }}
-                className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                  index === currentLessonIndex
-                    ? 'bg-purple-100 border-2 border-purple-600'
-                    : 'bg-gray-50 hover:bg-gray-100'
-                }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      isLessonCompleted
-                        ? 'bg-green-600 text-white'
-                        : index === currentLessonIndex
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white border-2 border-gray-300'
-                    }`}>
-                      {isLessonCompleted ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <div>
-                      <p className="font-medium text-sm">{lesson.title}</p>
-                      <p className="text-xs text-gray-600">{lesson.duration}</p>
-                    </div>
-                  </div>
-                  {isLessonCompleted && (
-                    <span className="text-xs text-green-600 font-medium">Completed</span>
-                  )}
+                {/* circle number */}
+                <div style={{
+                  width: 32, height: 32, borderRadius: 'var(--radius-full)',
+                  backgroundColor: done ? 'var(--success-500)' : active ? accent : 'var(--neutral-100)',
+                  border: done || active ? 'none' : '2px solid var(--neutral-300)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  {done
+                    ? <CheckCircle2 style={{ width: 16, height: 16, color: '#fff' }} />
+                    : <span style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)', color: active ? '#fff' : 'var(--neutral-500)' }}>{idx + 1}</span>
+                  }
                 </div>
-              </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{
+                    fontSize: 'var(--text-callout)', fontWeight: active ? 'var(--font-weight-semibold)' : 'var(--font-weight-medium)',
+                    color: done ? 'var(--success-700)' : active ? accent : 'var(--neutral-800)',
+                    margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {lesson.title}
+                  </p>
+                  <p style={{ fontSize: 'var(--text-label)', color: 'var(--neutral-400)', margin: 0 }}>
+                    {lesson.duration}
+                  </p>
+                </div>
+
+                {done && (
+                  <span style={{ fontSize: 'var(--text-label)', color: 'var(--success-600)', fontWeight: 'var(--font-weight-semibold)', flexShrink: 0 }}>
+                    Done ✓
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

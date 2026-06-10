@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, GraduationCap, ChevronRight, X } from 'lucide-react';
+import { ModulesImportExport } from './ModulesImportExport';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -555,6 +556,13 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Import / Export */}
+      <ModulesImportExport
+        modules={modules}
+        accessToken={accessToken}
+        onImportComplete={loadModules}
+      />
 
       {/* Search */}
       <Card className="p-3 sm:p-4">

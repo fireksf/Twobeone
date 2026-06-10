@@ -4,8 +4,8 @@
   "description": "Strengthen your relationship through Bible-based guidance, shared reflection, and spiritual growth together",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#7c3aed",
+  "background_color": "#f43f5e",
+  "theme_color": "#f43f5e",
   "orientation": "portrait-primary",
   "scope": "/",
   "categories": ["lifestyle", "social", "productivity"],
@@ -37,6 +37,18 @@
     {
       "src": "/icons/icon-152x152.png",
       "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-167x167.png",
+      "sizes": "167x167",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-180x180.png",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },

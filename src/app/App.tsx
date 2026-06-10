@@ -230,14 +230,15 @@ export default function App() {
           lastNotificationCheckRef.current = new Date().toISOString();
         }
       } catch (err: any) {
-        // Silently fail for common expected errors
-        if (err.message?.includes('timeout') || 
-            err.message?.includes('Failed to fetch') || 
+        // Silently fail for all expected network/auth errors
+        // Note: api.ts transforms "Failed to fetch" → "Unable to connect to server"
+        if (err.message?.includes('timeout') ||
+            err.message?.includes('Failed to fetch') ||
+            err.message?.includes('Unable to connect') ||
             err.message?.includes('Unauthorized')) {
-          // Don't show error toast, just log it
-          console.log('[App] Notification check skipped:', err.message);
+          // Don't show error toast, just log at debug level
+          console.log('[App] Notification check skipped (network):', err.message);
         } else {
-          // For unexpected errors, still log but don't show to user
           console.error('[App] Failed to check notifications:', err);
         }
       }
@@ -271,7 +272,12 @@ export default function App() {
         }
       } catch (err: any) {
         // Silently fail - this is background polling
-        if (err.message !== 'Failed to fetch' && err.message !== 'Unauthorized') {
+        // Note: api.ts transforms "Failed to fetch" → "Unable to connect to server"
+        const isNetworkErr = err.message?.includes('Failed to fetch') ||
+          err.message?.includes('Unable to connect') ||
+          err.message?.includes('Unauthorized') ||
+          err.message?.includes('timeout');
+        if (!isNetworkErr) {
           console.error('[App] Failed to check profile updates:', err);
         }
       }

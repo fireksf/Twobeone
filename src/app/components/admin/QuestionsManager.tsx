@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
-import { Plus, Search, Edit, Trash2, Eye, EyeOff, Loader2, X, MessageCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Loader2, X, MessageCircle, Download, Upload, FileJson, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { createClient } from '../../utils/supabase/client';
@@ -50,17 +50,17 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
   const [accessToken, setAccessToken] = useState<string | null>(propAccessToken || null);
 
   const categories = [
-    'daily-life',
-    'intimacy',
-    'love-balance',
-    'dream-wedding',
-    'travel',
-    'boundaries',
-    'trust',
-    'kids-future',
-    'finance',
-    'family',
-    'bible',
+    { id: 'daily-life', label: 'Daily Life & Habits' },
+    { id: 'intimacy', label: 'Intimacy & Lifestyle' },
+    { id: 'love-balance', label: 'Love & Balance' },
+    { id: 'dream-wedding', label: 'Dream Wedding / Dream Home' },
+    { id: 'travel', label: '✈️ Travel & Adventure' },
+    { id: 'boundaries', label: '🛡️ Relationship Boundaries' },
+    { id: 'trust', label: '🤝 Trust & Truth' },
+    { id: 'kids-future', label: '👶 Kids & Future' },
+    { id: 'finance', label: '💰 Finance & Goals' },
+    { id: 'family', label: '👨‍👩‍👧‍👦 Family Relations' },
+    { id: 'bible', label: '📖 Bible Convictions' },
   ];
 
   const questionTypes: { value: QuestionType; label: string; description: string }[] = [
@@ -74,6 +74,13 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
   ];
 
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importCategory, setImportCategory] = useState('daily-life');
+  const [importPreview, setImportPreview] = useState<Partial<Question>[] | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [exportCategory, setExportCategory] = useState('all');
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   useEffect(() => {
     loadQuestions();
@@ -343,6 +350,107 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
     });
   };
 
+  const handleExport = () => {
+    const toExport = exportCategory === 'all'
+      ? questions
+      : questions.filter(q => q.category === exportCategory);
+
+    if (toExport.length === 0) {
+      toast.error('No questions found for the selected category');
+      return;
+    }
+
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      category: exportCategory,
+      version: '1.0',
+      questions: toExport.map(({ id, ...rest }) => rest), // strip IDs so imports get fresh ones
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const catLabel = exportCategory === 'all'
+      ? 'all-categories'
+      : categories.find(c => c.id === exportCategory)?.label?.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() || exportCategory;
+    a.href = url;
+    a.download = `qa-questions-${catLabel}-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${toExport.length} question(s)`);
+    setIsExportDialogOpen(false);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImportError(null);
+    setImportPreview(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const json = JSON.parse(ev.target?.result as string);
+        // Accept either array or { questions: [...] } format
+        const raw: any[] = Array.isArray(json) ? json : (json.questions || []);
+        if (!Array.isArray(raw) || raw.length === 0) {
+          setImportError('No valid questions found in this file.');
+          return;
+        }
+        // Basic validation
+        const valid = raw.filter(q => q.title && Array.isArray(q.prompts));
+        if (valid.length === 0) {
+          setImportError('Questions must have a title and prompts array.');
+          return;
+        }
+        setImportPreview(valid);
+      } catch {
+        setImportError('Invalid JSON file. Please upload a valid export file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportSubmit = async () => {
+    if (!importPreview || importPreview.length === 0) return;
+    setIsImporting(true);
+    const token = accessToken || publicAnonKey;
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const q of importPreview) {
+      try {
+        const payload = {
+          ...q,
+          id: undefined, // let server generate
+          category: importCategory, // override with chosen category
+          status: q.status || 'active',
+          language: q.language || 'en',
+        };
+        const resp = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/admin/questions`,
+          {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          }
+        );
+        if (resp.ok) succeeded++;
+        else failed++;
+      } catch {
+        failed++;
+      }
+    }
+
+    setIsImporting(false);
+    if (succeeded > 0) toast.success(`Imported ${succeeded} question(s) successfully`);
+    if (failed > 0) toast.error(`${failed} question(s) failed to import`);
+    setIsImportDialogOpen(false);
+    setImportPreview(null);
+    setImportError(null);
+    loadQuestions();
+  };
+
   const filteredQuestions = questions.filter(q => {
     const matchesSearch = q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.verseReference.toLowerCase().includes(searchQuery.toLowerCase());
@@ -362,9 +470,159 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
           <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[24px]">Q&A Discussion Questions</h2>
           <p className="text-sm text-gray-600 text-[16px]">Manage conversation topics with flexible question types</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+          {/* Export Dialog */}
+          <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileJson className="w-5 h-5 text-green-600" />
+                  Export Q&A Questions
+                </DialogTitle>
+                <DialogDescription>
+                  Download questions as a JSON file. You can re-import them later or share with others.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div>
+                  <Label>Select Category to Export</Label>
+                  <select
+                    value={exportCategory}
+                    onChange={(e) => setExportCategory(e.target.value)}
+                    className="w-full h-10 px-3 rounded-md border border-gray-300 text-sm mt-1"
+                  >
+                    <option value="all">📦 All Categories ({questions.length} questions)</option>
+                    {categories.map(cat => {
+                      const count = questions.filter(q => q.category === cat.id).length;
+                      return (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.label} ({count} questions)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+                  <p className="font-medium mb-1">What gets exported:</p>
+                  <ul className="space-y-1 text-xs">
+                    <li>• Question titles, Bible verses &amp; references</li>
+                    <li>• All prompts with types and options</li>
+                    <li>• Category, language, and status</li>
+                    <li>• IDs are stripped — imports create fresh entries</li>
+                  </ul>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setIsExportDialogOpen(false)} className="flex-1">Cancel</Button>
+                  <Button onClick={handleExport} className="flex-1 bg-green-600 hover:bg-green-700 gap-2">
+                    <Download className="w-4 h-4" />
+                    Download JSON
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Import Dialog */}
+          <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
+            setIsImportDialogOpen(open);
+            if (!open) { setImportPreview(null); setImportError(null); }
+          }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Upload className="w-4 h-4" />
+                Import
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-blue-600" />
+                  Import Q&A Questions
+                </DialogTitle>
+                <DialogDescription>
+                  Upload a JSON export file to bulk-add questions into a category.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div>
+                  <Label>Target Category</Label>
+                  <select
+                    value={importCategory}
+                    onChange={(e) => setImportCategory(e.target.value)}
+                    className="w-full h-10 px-3 rounded-md border border-gray-300 text-sm mt-1"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">All imported questions will be assigned to this category.</p>
+                </div>
+
+                <div>
+                  <Label>Upload JSON File</Label>
+                  <label className="mt-1 flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                    <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                    <span className="text-sm text-gray-500">Click to select a .json file</span>
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      className="hidden"
+                      onChange={handleImportFile}
+                    />
+                  </label>
+                </div>
+
+                {importError && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
+                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-700">{importError}</p>
+                  </div>
+                )}
+
+                {importPreview && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <p className="text-sm font-medium text-green-800">
+                        {importPreview.length} question(s) ready to import
+                      </p>
+                    </div>
+                    <div className="max-h-40 overflow-y-auto space-y-1">
+                      {importPreview.map((q, i) => (
+                        <div key={i} className="text-xs text-green-700 flex items-center gap-1">
+                          <span className="font-medium">{i + 1}.</span>
+                          <span className="truncate">{q.title}</span>
+                          <span className="text-green-500 flex-shrink-0">({q.prompts?.length || 0} prompts)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setIsImportDialogOpen(false)} className="flex-1">Cancel</Button>
+                  <Button
+                    onClick={handleImportSubmit}
+                    disabled={!importPreview || isImporting}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 gap-2"
+                  >
+                    {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    {isImporting ? 'Importing...' : `Import ${importPreview?.length || 0} Questions`}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
               className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
               size="sm"
               onClick={() => {
@@ -406,8 +664,8 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
                       required
                     >
                       {categories.map(cat => (
-                        <option key={cat} value={cat}>
-                          {cat.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        <option key={cat.id} value={cat.id}>
+                          {cat.label}
                         </option>
                       ))}
                     </select>
@@ -608,6 +866,7 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
             </ScrollArea>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
@@ -631,8 +890,8 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
           >
             <option value="all">All Categories</option>
             {categories.map(cat => (
-              <option key={cat} value={cat}>
-                {cat.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+              <option key={cat.id} value={cat.id}>
+                {cat.label}
               </option>
             ))}
           </select>
@@ -673,7 +932,7 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
                   <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 flex-shrink-0" />
                   <h3 className="font-semibold text-base sm:text-lg font-bold">{question.title}</h3>
                   <Badge variant="outline" className="text-xs">
-                    {question.category.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    {categories.find(c => c.id === question.category)?.label || question.category}
                   </Badge>
                   <Badge variant={question.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                     {question.status}

@@ -158,6 +158,15 @@ export interface Translations {
     saveAnswer: string;
     questionsAnswered: string;
     viewResponses: string;
+    shareYourAnswer: string;
+    shareYourThoughts: string;
+    writeAReply: string;
+    savePriva: string;
+    sendAndSave: string;
+    reply: string;
+    private: string;
+    shared: string;
+    discuss: string;
     categories: {
       faith: string;
       values: string;
@@ -470,6 +479,15 @@ export const translations: Record<Language, Translations> = {
       saveAnswer: 'Save Answer',
       questionsAnswered: 'Questions Answered',
       viewResponses: 'View Responses',
+      shareYourAnswer: 'Share your answer',
+      shareYourThoughts: 'Share your thoughts...',
+      writeAReply: 'Write a reply...',
+      savePriva: 'Save Privately',
+      sendAndSave: 'Send and Save',
+      reply: 'Reply',
+      private: 'Private',
+      shared: 'Shared',
+      discuss: 'Discuss',
       categories: {
         faith: 'Faith & Beliefs',
         values: 'Values & Goals',
@@ -772,6 +790,15 @@ export const translations: Record<Language, Translations> = {
       saveAnswer: 'መልስ አስቀምጥ',
       questionsAnswered: 'የተመለሱ ጥያቄዎች',
       viewResponses: 'መልሶችን ይመልከቱ',
+      shareYourAnswer: 'መልስዎን ያጋሩ',
+      shareYourThoughts: 'ሃሳብዎን ያጋሩ...',
+      writeAReply: 'መልስ ይጻፉ...',
+      savePriva: 'በምስጢር አስቀምጥ',
+      sendAndSave: 'ላክ እና አስቀምጥ',
+      reply: 'መልስ',
+      private: 'ምስጢራዊ',
+      shared: 'የጋራ',
+      discuss: 'ተወያይ',
       categories: {
         faith: 'እምነት እና እምነቶች',
         values: 'እሴቶች እና ግቦች',

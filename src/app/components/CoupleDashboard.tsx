@@ -299,15 +299,21 @@ export function CoupleDashboard({
           description: m.description || '',
           icon: 'heart'
         })));
-      } catch (error) {
-        console.error('Error fetching milestones:', error);
+      } catch (error: any) {
+        const isNetworkErr = error?.message?.includes('Unable to connect') ||
+          error?.message?.includes('Failed to fetch') ||
+          error?.message?.includes('Unauthorized') ||
+          error?.message?.includes('timeout');
+        if (!isNetworkErr) {
+          console.error('Error fetching milestones:', error);
+        }
       }
     };
 
     if (profile?.id) {
       fetchMilestones();
-      // Poll for partner milestone updates every 15 seconds
-      const interval = setInterval(fetchMilestones, 15000);
+      // Poll for partner milestone updates every 30 seconds (reduced from 15s)
+      const interval = setInterval(fetchMilestones, 30000);
       return () => clearInterval(interval);
     }
   }, [profile?.id, partner?.id]);
@@ -367,16 +373,22 @@ export function CoupleDashboard({
             note: partnerTodayMood.note
           });
         }
-      } catch (error) {
-        console.warn('Could not fetch moods - non-critical feature:', error);
-        // Silently fail for moods - this is a nice-to-have feature
+      } catch (error: any) {
+        // Suppress expected network errors — moods polling is non-critical
+        const isNetworkErr = error?.message?.includes('Unable to connect') ||
+          error?.message?.includes('Failed to fetch') ||
+          error?.message?.includes('Unauthorized') ||
+          error?.message?.includes('timeout');
+        if (!isNetworkErr) {
+          console.warn('Could not fetch moods - non-critical feature:', error);
+        }
       }
     };
 
     if (profile?.id) {
       fetchMoods();
-      // Poll for partner mood updates every 10 seconds
-      const interval = setInterval(fetchMoods, 10000);
+      // Poll for partner mood updates every 60 seconds (reduced from 10s to ease cold-start pressure)
+      const interval = setInterval(fetchMoods, 60000);
       return () => clearInterval(interval);
     }
   }, [profile?.id, partner?.id]);
