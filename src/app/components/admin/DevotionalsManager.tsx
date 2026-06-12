@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Search, Calendar, BookOpen, RefreshCw, Upload, Music, X, Play, Pause } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Calendar, BookOpen, RefreshCw, Upload, Music, X, Play, Pause, ArrowDownUp } from 'lucide-react';
+import { DevotionalsImportExport } from './DevotionalsImportExport';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,7 +9,7 @@ import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { useContentLanguage } from '../../contexts/ContentLanguageContext';
 import { ContentLanguageSelector } from './ContentLanguageSelector';
@@ -528,6 +529,13 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
           </div>
         </Card>
       </div>
+
+      {/* Import / Export */}
+      <DevotionalsImportExport
+        devotionals={devotionals}
+        accessToken={accessToken}
+        onImportComplete={loadDevotionals}
+      />
 
       {/* Search & Filter */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">

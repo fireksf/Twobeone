@@ -2382,7 +2382,6 @@ app.get('/make-server-6d579fee/question-responses', async (c) => {
 
     const category = c.req.query('category');
 
-    // Increased timeout from 2000ms to 8000ms (8 seconds) for better reliability
     const queryTimeout = 8000;
     const fetchWithTimeout = async (promise: Promise<any>, context: string) => {
       const timeoutPromise = new Promise((_, reject) => {
@@ -2396,68 +2395,103 @@ app.get('/make-server-6d579fee/question-responses', async (c) => {
       }
     };
 
-    // Return empty arrays immediately if there are no responses
+    // Expand new-format question-response entries (key: question-response:userId:questionId)
+    // into per-prompt records matching the shape the frontend attachResponses() expects:
+    // { questionId, promptId, response, userId, coupleId, createdAt }
+    const expandNewFormatResponses = (entries: any[]): any[] => {
+      const out: any[] = [];
+      for (const entry of entries) {
+        if (!entry?.answers || typeof entry.answers !== 'object') continue;
+        for (const [promptId, value] of Object.entries(entry.answers)) {
+          out.push({
+            questionId: entry.questionId,
+            promptId,
+            response: value,
+            userId: entry.userId,
+            coupleId: entry.coupleId || null,
+            createdAt: entry.createdAt,
+          });
+        }
+      }
+      return out;
+    };
+
     let userResponses: any[] = [];
     try {
-      const allUserResponses = await fetchWithTimeout(
-        kv.getByPrefix(`response:${userId}:`), 
+      // Read both key formats in parallel: legacy (response:) and current (question-response:)
+      const [legacyRaw, newFormatRaw] = await fetchWithTimeout(
+        Promise.all([
+          kv.getByPrefix(`response:${userId}:`),
+          kv.getByPrefix(`question-response:${userId}:`),
+        ]),
         'User responses'
       );
-      userResponses = allUserResponses || [];
-      
-      // Filter by category if specified
-      if (category && userResponses.length > 0) {
-        userResponses = userResponses.filter((r: any) => r.category === category);
+
+      const legacyResponses: any[] = legacyRaw || [];
+      const newFormatExpanded = expandNewFormatResponses(newFormatRaw || []);
+
+      // Merge, deduplicating by questionId+promptId (new format wins)
+      const seen = new Set<string>();
+      for (const r of newFormatExpanded) {
+        seen.add(`${r.questionId}:${r.promptId ?? 'default'}`);
       }
+      const filteredLegacy = legacyResponses.filter((r: any) => {
+        const key = `${r.questionId}:${r.promptId ?? 'default'}`;
+        return !seen.has(key);
+      });
+
+      userResponses = [...newFormatExpanded, ...filteredLegacy];
+      // NOTE: Do NOT filter by category here. Response objects have no category field.
+      // The client matches responses to questions by questionId, so the category is
+      // irrelevant at the response layer — filtering here always wiped all results.
     } catch (error) {
       console.error('[GET /question-responses] User responses timeout, returning empty');
-      // Return immediately - don't wait for partner data
-      return c.json({ 
-        userResponses: [], 
-        partnerResponses: []
-      });
+      return c.json({ userResponses: [], partnerResponses: [] });
     }
 
-    // Quick profile fetch with fallback
     let userProfile = null;
     try {
       userProfile = await fetchWithTimeout(kv.get(`user:${userId}`), 'Profile');
     } catch (error) {
       console.error('[GET /question-responses] Profile fetch timeout');
-      // Return what we have
       return c.json({ userResponses, partnerResponses: [] });
     }
-    
-    // Only fetch partner responses if we have a partnerId
+
     let partnerResponses: any[] = [];
     if (userProfile?.partnerId) {
+      const partnerId = userProfile.partnerId;
       try {
-        const allPartnerResponses = await fetchWithTimeout(
-          kv.getByPrefix(`response:${userProfile.partnerId}:`), 
+        const [legacyPartnerRaw, newFormatPartnerRaw] = await fetchWithTimeout(
+          Promise.all([
+            kv.getByPrefix(`response:${partnerId}:`),
+            kv.getByPrefix(`question-response:${partnerId}:`),
+          ]),
           'Partner responses'
         );
-        partnerResponses = (allPartnerResponses || []).filter((r: any) => !r.isPrivate);
-        
-        if (category && partnerResponses.length > 0) {
-          partnerResponses = partnerResponses.filter((r: any) => r.category === category);
+
+        const legacyPartner: any[] = (legacyPartnerRaw || []).filter((r: any) => !r.isPrivate);
+        const newFormatPartnerExpanded = expandNewFormatResponses(newFormatPartnerRaw || []);
+
+        const seenPartner = new Set<string>();
+        for (const r of newFormatPartnerExpanded) {
+          seenPartner.add(`${r.questionId}:${r.promptId ?? 'default'}`);
         }
+        const filteredLegacyPartner = legacyPartner.filter((r: any) => {
+          const key = `${r.questionId}:${r.promptId ?? 'default'}`;
+          return !seenPartner.has(key);
+        });
+
+        partnerResponses = [...newFormatPartnerExpanded, ...filteredLegacyPartner];
+        // NOTE: Same as user responses — no category filter here.
       } catch (error) {
         console.error('[GET /question-responses] Partner responses timeout, continuing with user data only');
-        // Continue without partner data rather than failing
       }
     }
 
-    return c.json({ 
-      userResponses, 
-      partnerResponses 
-    });
+    return c.json({ userResponses, partnerResponses });
   } catch (error: any) {
     console.error('[GET /question-responses] Unexpected error:', error);
-    // Always return valid data structure, even on error - prevents frontend crashes
-    return c.json({ 
-      userResponses: [], 
-      partnerResponses: []
-    }, 200); // Return 200 to prevent frontend errors
+    return c.json({ userResponses: [], partnerResponses: [] }, 200);
   }
 });
 
@@ -2552,6 +2586,25 @@ app.post('/make-server-6d579fee/question-chat', async (c) => {
 // DEVOTIONALS
 // ============================================
 
+// Helper: generate fresh signed audio URL from a stored fileName
+const refreshAudioUrl = async (audioFileName: string): Promise<string | null> => {
+  if (!audioFileName) return null;
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase.storage
+      .from('make-6d579fee-devotional-audio')
+      .createSignedUrl(audioFileName, 3600); // 1-hour URL, refreshed on every fetch
+    if (error || !data?.signedUrl) {
+      console.warn('[Audio] Could not refresh signed URL for:', audioFileName, error?.message);
+      return null;
+    }
+    return data.signedUrl;
+  } catch (err) {
+    console.warn('[Audio] refreshAudioUrl error:', err);
+    return null;
+  }
+};
+
 // Get all devotionals (admin-created only)
 app.get('/make-server-6d579fee/devotions', async (c) => {
   try {
@@ -2560,13 +2613,21 @@ app.get('/make-server-6d579fee/devotions', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    // Get all devotionals from KV store (only admin-created ones)
     const allDevotionals = await kv.getByPrefix('devotional:');
-    
-    // Filter to only published devotionals
     const publishedDevotionals = allDevotionals.filter((d: any) => d.status === 'published');
-    
-    return c.json({ devotions: publishedDevotionals });
+
+    // Refresh signed audio URLs so they are never stale
+    const devotions = await Promise.all(
+      publishedDevotionals.map(async (d: any) => {
+        if (d.audioFileName) {
+          const freshUrl = await refreshAudioUrl(d.audioFileName);
+          return { ...d, audioUrl: freshUrl };
+        }
+        return { ...d, audioUrl: null };
+      })
+    );
+
+    return c.json({ devotions });
   } catch (error: any) {
     console.error('Devotions fetch error:', error);
     return c.json({ error: error.message }, 500);
@@ -2581,15 +2642,20 @@ app.get('/make-server-6d579fee/devotions/today', async (c) => {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    
-    // Get all published devotionals
+
     const allDevotionals = await kv.getByPrefix('devotional:');
     const publishedDevotionals = allDevotionals.filter((d: any) => d.status === 'published');
-    
-    // Find today's devotional by date, or return the most recent one
+
     const todayDevotional = publishedDevotionals.find((d: any) => d.date === today);
-    const devotion = todayDevotional || publishedDevotionals[publishedDevotionals.length - 1] || null;
-    
+    const raw = todayDevotional || publishedDevotionals[publishedDevotionals.length - 1] || null;
+
+    if (!raw) return c.json({ devotion: null });
+
+    // Refresh signed audio URL
+    const devotion = raw.audioFileName
+      ? { ...raw, audioUrl: await refreshAudioUrl(raw.audioFileName) }
+      : { ...raw, audioUrl: null };
+
     return c.json({ devotion });
   } catch (error: any) {
     console.error('Today devotion fetch error:', error);
@@ -3516,6 +3582,70 @@ app.get('/make-server-6d579fee/admin/devotionals/list', async (c) => {
     return c.json({ devotionals });
   } catch (error: any) {
     console.error('Admin list devotionals error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Devotionals Bulk Import
+app.post('/make-server-6d579fee/admin/devotionals/import', async (c) => {
+  try {
+    const userId = await getUserFromToken(c.req.header('Authorization'));
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!(await isAdminUser(userId))) return c.json({ error: 'Forbidden - Admin access required' }, 403);
+
+    const body = await c.req.json();
+    const { devotionals: incoming, overwrite = false } = body;
+
+    if (!Array.isArray(incoming) || incoming.length === 0) {
+      return c.json({ error: 'No devotionals provided' }, 400);
+    }
+
+    const results: Array<{ id: string; title: string; action: string; error?: string }> = [];
+    let created = 0, updated = 0, skipped = 0;
+
+    for (const dev of incoming) {
+      if (!dev.id || !dev.title || !dev.verse || !dev.reference || !dev.reflection) {
+        results.push({ id: dev.id || 'unknown', title: dev.title || 'Untitled', action: 'skipped', error: 'Missing required fields' });
+        skipped++;
+        continue;
+      }
+      try {
+        const key = `devotional:${dev.id}`;
+        const existing = await kv.get(key);
+        if (existing && !overwrite) {
+          results.push({ id: dev.id, title: dev.title, action: 'skipped' });
+          skipped++;
+        } else {
+          const record = {
+            id: dev.id,
+            date: dev.date || new Date().toISOString().split('T')[0],
+            title: dev.title,
+            verse: dev.verse,
+            reference: dev.reference,
+            reflection: dev.reflection,
+            prayerPrompt: dev.prayerPrompt || '',
+            tags: dev.tags || [],
+            status: dev.status || 'published',
+            language: dev.language || 'en',
+            audioUrl: dev.audioUrl || null,
+            audioFileName: dev.audioFileName || null,
+            createdAt: existing?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          await kv.set(key, record);
+          const action = existing ? 'updated' : 'created';
+          results.push({ id: dev.id, title: dev.title, action });
+          if (action === 'created') created++; else updated++;
+        }
+      } catch (err: any) {
+        results.push({ id: dev.id, title: dev.title, action: 'skipped', error: err.message });
+        skipped++;
+      }
+    }
+
+    return c.json({ success: true, results, summary: { created, updated, skipped, total: incoming.length } });
+  } catch (error: any) {
+    console.error('Admin bulk import devotionals error:', error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -5045,6 +5175,31 @@ app.get('/make-server-6d579fee/admin/devotionals/:id/audio', async (c) => {
     });
   } catch (error: any) {
     console.error('[Audio] Get audio info error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Fresh signed audio URL for any authenticated user (avoids stale cached URLs)
+app.get('/make-server-6d579fee/devotions/:id/audio-url', async (c) => {
+  try {
+    const userId = await getUserFromToken(c.req.header('Authorization'));
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const devotionalId = c.req.param('id');
+    const devotional = await kv.get(`devotional:${devotionalId}`);
+
+    if (!devotional) return c.json({ error: 'Devotional not found' }, 404);
+    if (!devotional.audioFileName) return c.json({ error: 'No audio file for this devotional' }, 404);
+
+    const freshUrl = await refreshAudioUrl(devotional.audioFileName);
+    if (!freshUrl) {
+      console.error(`[Audio] Could not generate signed URL for devotional ${devotionalId}, file: ${devotional.audioFileName}`);
+      return c.json({ error: 'Audio file not accessible in storage' }, 404);
+    }
+
+    return c.json({ audioUrl: freshUrl });
+  } catch (error: any) {
+    console.error('[Audio] Fresh URL error:', error);
     return c.json({ error: error.message }, 500);
   }
 });

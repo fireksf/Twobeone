@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Bell, X, Check, Heart, BookOpen, MessageCircle, Users } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Bell, X, Check, Heart, MessageCircle, Users, MessageSquareDot } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
@@ -9,7 +9,7 @@ interface Notification {
   id: string;
   recipientId: string;
   senderId: string;
-  type: 'devotional' | 'journal' | 'prayer' | 'question' | 'partner_link' | 'general';
+  type: 'devotional' | 'journal' | 'prayer' | 'question' | 'question_answered' | 'partner_link' | 'general';
   title: string;
   message: string;
   data?: any;
@@ -25,6 +25,27 @@ interface NotificationCenterProps {
   onNotificationClick?: (notification: Notification) => void;
 }
 
+const SESSION_KEY = 'dismissed_notification_ids';
+
+function getSessionDismissed(): Set<string> {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function addSessionDismissed(ids: string[]) {
+  try {
+    const existing = getSessionDismissed();
+    ids.forEach(id => existing.add(id));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify([...existing]));
+  } catch {
+    // sessionStorage unavailable — no-op
+  }
+}
+
 export function NotificationCenter({
   accessToken,
   projectId,
@@ -33,88 +54,128 @@ export function NotificationCenter({
 }: NotificationCenterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const autoDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchNotifications = async () => {
-    // Don't fetch if no access token
-    if (!accessToken) {
-      return;
-    }
+  // Filter out session-dismissed notifications before displaying
+  const visible = notifications.filter(n => !getSessionDismissed().has(n.id));
+  const unreadCount = visible.filter(n => !n.isRead).length;
+
+  const fetchNotifications = useCallback(async () => {
+    if (!accessToken) return;
 
     try {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        }
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
       );
 
       if (!response.ok) {
-        // Silently fail for auth errors (expected when not logged in)
-        if (response.status === 401) {
-          return;
+        if (response.status !== 401) {
+          console.warn('Failed to fetch notifications (status:', response.status, ')');
         }
-        console.warn('Failed to fetch notifications (status:', response.status, ')');
-        // Don't throw error, just use empty array
         setNotifications([]);
-        setUnreadCount(0);
         return;
       }
 
       const data = await response.json();
       setNotifications(data.notifications || []);
-      setUnreadCount(data.notifications?.filter((n: Notification) => !n.isRead).length || 0);
     } catch (error: any) {
-      // Silently handle notification errors - this is not critical functionality
-      const isNetworkErr = error?.message?.includes('Unable to connect') ||
+      const isNetworkErr =
+        error?.message?.includes('Unable to connect') ||
         error?.message?.includes('Failed to fetch') ||
         error?.message?.includes('Unauthorized') ||
         error?.message?.includes('timeout') ||
         error instanceof TypeError;
       if (!isNetworkErr) {
-        console.warn('Could not load notifications - non-critical feature:', error);
+        console.warn('Could not load notifications:', error);
       }
       setNotifications([]);
-      setUnreadCount(0);
     }
-  };
+  }, [accessToken, projectId]);
 
   useEffect(() => {
     if (!accessToken) return;
-
     fetchNotifications();
-
-    // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
-
     return () => clearInterval(interval);
-  }, [accessToken]);
+  }, [accessToken, fetchNotifications]);
 
-  const markAsRead = async (notificationId: string) => {
+  // Auto-dismiss: when panel opens, mark all currently visible unread notifications
+  // as read after a 2.5s view delay, then remove them from the panel.
+  useEffect(() => {
+    if (!isOpen) {
+      if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current);
+      return;
+    }
+
+    const unreadVisible = visible.filter(n => !n.isRead);
+    if (unreadVisible.length === 0) return;
+
+    autoDismissTimer.current = setTimeout(async () => {
+      const ids = unreadVisible.map(n => n.id);
+
+      // Optimistically remove from panel immediately
+      addSessionDismissed(ids);
+      setNotifications(prev => prev.filter(n => !ids.includes(n.id)));
+
+      // Persist read state server-side (fire-and-forget)
+      ids.forEach(id => {
+        fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${id}/read`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        ).catch(err => console.warn('Auto-dismiss mark-read failed for', id, err));
+      });
+    }, 2500);
+
+    return () => {
+      if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current);
+    };
+  }, [isOpen]);
+
+  const dismissNotification = useCallback((notificationId: string) => {
+    // Optimistic removal
+    addSessionDismissed([notificationId]);
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+
+    // Persist server-side
+    fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}/read`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    ).catch(err => console.warn('Mark-read failed for', notificationId, err));
+  }, [accessToken, projectId]);
+
+  const deleteNotification = useCallback(async (notificationId: string) => {
+    // Optimistic removal
+    addSessionDismissed([notificationId]);
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}/read`,
+        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}`,
         {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${accessToken}` }
         }
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to mark notification as read');
-      }
-
-      await fetchNotifications();
+      if (!response.ok) throw new Error('Delete failed');
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('Error deleting notification:', error);
+      toast.error('Failed to delete notification');
     }
-  };
+  }, [accessToken, projectId]);
 
   const markAllAsRead = async () => {
     setIsLoading(true);
@@ -129,12 +190,12 @@ export function NotificationCenter({
           }
         }
       );
+      if (!response.ok) throw new Error('Failed to mark all as read');
 
-      if (!response.ok) {
-        throw new Error('Failed to mark all as read');
-      }
-
-      await fetchNotifications();
+      // Optimistically remove all unread from panel for this session
+      const unreadIds = visible.filter(n => !n.isRead).map(n => n.id);
+      addSessionDismissed(unreadIds);
+      setNotifications(prev => prev.filter(n => n.isRead));
       toast.success('All notifications marked as read');
     } catch (error) {
       console.error('Error marking all as read:', error);
@@ -144,85 +205,49 @@ export function NotificationCenter({
     }
   };
 
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to delete notification');
-      }
-
-      await fetchNotifications();
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      toast.error('Failed to delete notification');
-    }
-  };
-
   const handleNotificationClick = (notification: Notification) => {
-    if (!notification.isRead) {
-      markAsRead(notification.id);
-    }
-    
-    if (onNotificationClick) {
-      onNotificationClick(notification);
-    }
+    dismissNotification(notification.id);
+    setIsOpen(false);
+    if (onNotificationClick) onNotificationClick(notification);
   };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'devotional':
-        return <Heart className="w-4 h-4 fill-current" />;
-      case 'journal':
-        return <MessageCircle className="w-4 h-4" />;
-      case 'prayer':
-        return <Heart className="w-4 h-4" />;
-      case 'question':
-        return <MessageCircle className="w-4 h-4" />;
-      case 'partner_link':
-        return <Users className="w-4 h-4" />;
-      case 'mood_report':
-        return <Heart className="w-4 h-4" />;
-      default:
-        return <Bell className="w-4 h-4" />;
+      case 'devotional': return <Heart style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} className="fill-current" />;
+      case 'journal':    return <MessageCircle style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
+      case 'prayer':     return <Heart style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
+      case 'question':   return <MessageCircle style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
+      case 'question_answered': return <MessageSquareDot style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
+      case 'partner_link': return <Users style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
+      default: return <Bell style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
     }
   };
 
-  const getNotificationColor = (type: string) => {
+  const getIconStyle = (type: string): React.CSSProperties => {
     switch (type) {
       case 'devotional':
-        return 'bg-purple-100 text-purple-600';
+        return { background: 'var(--primary-50)', color: 'var(--primary-600)' };
       case 'journal':
-        return 'bg-blue-100 text-blue-600';
+        return { background: 'var(--secondary-50)', color: 'var(--secondary-600)' };
       case 'prayer':
-        return 'bg-pink-100 text-pink-600';
+        return { background: 'var(--primary-100)', color: 'var(--primary-500)' };
       case 'question':
-        return 'bg-green-100 text-green-600';
+        return { background: 'var(--success-50)', color: 'var(--success-700)' };
+      case 'question_answered':
+        return { background: 'var(--success-50)', color: 'var(--success-700)' };
       case 'partner_link':
-        return 'bg-orange-100 text-orange-600';
-      case 'mood_report':
-        return 'bg-gradient-to-br from-purple-100 to-pink-100 text-purple-600';
+        return { background: 'var(--warning-50)', color: 'var(--warning-700)' };
       default:
-        return 'bg-gray-100 text-gray-600';
+        return { background: 'var(--neutral-100)', color: 'var(--neutral-600)' };
     }
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
+    const diffInMs = Date.now() - date.getTime();
     const diffInMins = Math.floor(diffInMs / 60000);
     const diffInHours = Math.floor(diffInMs / 3600000);
     const diffInDays = Math.floor(diffInMs / 86400000);
-
     if (diffInMins < 1) return 'Just now';
     if (diffInMins < 60) return `${diffInMins}m ago`;
     if (diffInHours < 24) return `${diffInHours}h ago`;
@@ -232,117 +257,267 @@ export function NotificationCenter({
 
   return (
     <div className="relative">
-      {/* Notification Bell Button */}
+      {/* Bell trigger */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+        onClick={() => setIsOpen(prev => !prev)}
+        style={{
+          padding: 'var(--spacing-2)',
+          borderRadius: 'var(--radius-full)',
+          transition: 'background 150ms',
+          color: 'var(--neutral-700)',
+          background: 'transparent',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--neutral-100)')}
+        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        aria-label="Notifications"
       >
-        <Bell className="w-6 h-6 text-gray-700" />
+        <Bell style={{ width: 'var(--icon-md)', height: 'var(--icon-md)' }} />
         {unreadCount > 0 && (
-          <Badge 
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-600 hover:bg-red-600"
+          <Badge
+            style={{
+              position: 'absolute',
+              top: '-2px',
+              right: '-2px',
+              height: '20px',
+              minWidth: '20px',
+              padding: '0 var(--spacing-1)',
+              fontSize: 'var(--text-label)',
+              fontWeight: 'var(--font-weight-bold)',
+              background: 'var(--error-500)',
+              color: '#ffffff',
+              borderRadius: 'var(--radius-full)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </Badge>
         )}
       </button>
 
-      {/* Notification Dropdown */}
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setIsOpen(false)}
-          />
-          
-          {/* Notification Panel */}
-          <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-md bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+
+          {/* Panel */}
+          <div
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 'calc(100% + var(--spacing-2))',
+              width: 'min(calc(100vw - var(--spacing-8)), 384px)',
+              background: 'var(--card)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-xl)',
+              border: '1px solid var(--border)',
+              zIndex: 50,
+              maxHeight: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: 'var(--spacing-4)',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
               <div>
-                <h3 className="font-semibold text-gray-900">Notifications</h3>
+                <h3
+                  style={{
+                    fontSize: 'var(--text-body)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    color: 'var(--foreground)',
+                    margin: 0,
+                  }}
+                >
+                  Notifications
+                </h3>
                 {unreadCount > 0 && (
-                  <p className="text-xs text-gray-500">{unreadCount} unread</p>
+                  <p
+                    style={{
+                      fontSize: 'var(--text-caption-small)',
+                      color: 'var(--muted-foreground)',
+                      margin: 0,
+                    }}
+                  >
+                    {unreadCount} unread · auto-dismissing in a moment
+                  </p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
                 {unreadCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={markAllAsRead}
                     disabled={isLoading}
-                    className="text-xs"
+                    style={{ fontSize: 'var(--text-caption-small)' }}
                   >
-                    <Check className="w-3 h-3 mr-1" />
+                    <Check style={{ width: 12, height: 12, marginRight: 4 }} />
                     Mark all read
                   </Button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 hover:bg-gray-100 rounded"
+                  style={{
+                    padding: 'var(--spacing-1)',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'transparent',
+                    color: 'var(--muted-foreground)',
+                    transition: 'background 150ms',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
-                  <X className="w-4 h-4 text-gray-500" />
+                  <X style={{ width: 16, height: 16 }} />
                 </button>
               </div>
             </div>
 
-            {/* Notification List */}
+            {/* List */}
             <ScrollArea className="flex-1">
-              {notifications.length === 0 ? (
-                <div className="text-center py-12 px-4">
-                  <Bell className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-500">No notifications yet</p>
-                  <p className="text-xs text-gray-400 mt-1">
+              {visible.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: 'center',
+                    padding: 'var(--spacing-12) var(--spacing-4)',
+                    color: 'var(--muted-foreground)',
+                  }}
+                >
+                  <Bell
+                    style={{
+                      width: 'var(--icon-2xl)',
+                      height: 'var(--icon-2xl)',
+                      margin: '0 auto var(--spacing-3)',
+                      color: 'var(--neutral-300)',
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontSize: 'var(--text-callout)',
+                      margin: '0 0 var(--spacing-1)',
+                    }}
+                  >
+                    All caught up
+                  </p>
+                  <p style={{ fontSize: 'var(--text-caption-small)', margin: 0 }}>
                     You'll be notified when your partner completes activities
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-100">
-                  {notifications.map((notification) => (
+                <div>
+                  {visible.map(notification => (
                     <div
                       key={notification.id}
                       onClick={() => handleNotificationClick(notification)}
-                      className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer ${
-                        !notification.isRead ? 'bg-blue-50' : ''
-                      }`}
+                      style={{
+                        padding: 'var(--spacing-3) var(--spacing-4)',
+                        borderBottom: '1px solid var(--border)',
+                        cursor: 'pointer',
+                        background: !notification.isRead ? 'var(--secondary-50)' : 'transparent',
+                        transition: 'background 150ms',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
+                      onMouseLeave={e =>
+                        (e.currentTarget.style.background = !notification.isRead
+                          ? 'var(--secondary-50)'
+                          : 'transparent')
+                      }
                     >
-                      <div className="flex items-start gap-3">
-                        {/* Icon */}
-                        <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${getNotificationColor(notification.type)}`}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-3)' }}>
+                        {/* Icon bubble */}
+                        <div
+                          style={{
+                            flexShrink: 0,
+                            width: 'var(--icon-xl)',
+                            height: 'var(--icon-xl)',
+                            borderRadius: 'var(--radius-full)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            ...getIconStyle(notification.type),
+                          }}
+                        >
                           {getNotificationIcon(notification.type)}
                         </div>
 
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <p className={`text-sm ${!notification.isRead ? 'font-semibold' : 'font-medium'} text-gray-900`}>
+                        {/* Text */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--spacing-2)' }}>
+                            <div style={{ flex: 1 }}>
+                              <p
+                                style={{
+                                  fontSize: 'var(--text-callout)',
+                                  fontWeight: !notification.isRead
+                                    ? 'var(--font-weight-semibold)'
+                                    : 'var(--font-weight-medium)',
+                                  color: 'var(--foreground)',
+                                  margin: 0,
+                                }}
+                              >
                                 {notification.title}
                               </p>
-                              <p className="text-sm text-gray-600 mt-0.5">
+                              <p
+                                style={{
+                                  fontSize: 'var(--text-caption)',
+                                  color: 'var(--neutral-600)',
+                                  margin: 'var(--spacing-1) 0 0',
+                                }}
+                              >
                                 {notification.message}
                               </p>
                             </div>
+                            {/* Delete button */}
                             <button
-                              onClick={(e) => {
+                              onClick={e => {
                                 e.stopPropagation();
                                 deleteNotification(notification.id);
                               }}
-                              className="flex-shrink-0 p-1 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                              style={{
+                                flexShrink: 0,
+                                padding: 'var(--spacing-1)',
+                                borderRadius: 'var(--radius-sm)',
+                                background: 'transparent',
+                                color: 'var(--muted-foreground)',
+                                transition: 'background 150ms',
+                              }}
+                              onMouseEnter={e => (e.currentTarget.style.background = 'var(--neutral-200)')}
+                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                              aria-label="Dismiss"
                             >
-                              <X className="w-3 h-3 text-gray-500" />
+                              <X style={{ width: 12, height: 12 }} />
                             </button>
                           </div>
-                          <p className="text-xs text-gray-400 mt-1">
+                          <p
+                            style={{
+                              fontSize: 'var(--text-label)',
+                              color: 'var(--muted-foreground)',
+                              marginTop: 'var(--spacing-1)',
+                            }}
+                          >
                             {formatTime(notification.createdAt)}
                           </p>
                         </div>
 
-                        {/* Unread Indicator */}
+                        {/* Unread dot */}
                         {!notification.isRead && (
-                          <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2" />
+                          <div
+                            style={{
+                              flexShrink: 0,
+                              width: 8,
+                              height: 8,
+                              borderRadius: 'var(--radius-full)',
+                              background: 'var(--secondary-500)',
+                              marginTop: 'var(--spacing-2)',
+                            }}
+                          />
                         )}
                       </div>
                     </div>

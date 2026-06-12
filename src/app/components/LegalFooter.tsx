@@ -16,7 +16,7 @@ export function LegalFooter({ language = 'en' }: LegalFooterProps) {
   return (
     <>
       <div className="flex flex-wrap items-center justify-center gap-3 py-4 px-4 text-xs text-gray-500 border-t border-gray-200 bg-gray-50">
-        <p>© 2024 TwoBeOne</p>
+        <p>© {new Date().getFullYear()} TwoBeOne</p>
         <span className="text-gray-300">•</span>
         <Button
           variant="link"
@@ -39,7 +39,7 @@ export function LegalFooter({ language = 'en' }: LegalFooterProps) {
         </Button>
         <span className="text-gray-300">•</span>
         <a
-          href="mailto:support@twobeone.app"
+          href="mailto:fireksf@gmail.com"
           className="text-gray-600 hover:text-purple-600"
         >
           support@twobeone.app

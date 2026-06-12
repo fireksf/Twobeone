@@ -165,6 +165,18 @@ export default function App() {
     }
   }, [user, accessToken]);
 
+  // Silently refresh the responses count whenever the user navigates to the questions tab
+  useEffect(() => {
+    if (activeTab === 'questions' && accessToken) {
+      api.questions.getResponses()
+        .then(data => setResponses({
+          user: data.userResponses || [],
+          partner: data.partnerResponses || [],
+        }))
+        .catch(() => {});
+    }
+  }, [activeTab]);
+
   // Poll for notifications to show real-time toasts
   // Use refs to avoid re-creating polling functions on every render
   const lastNotificationCheckRef = useRef(new Date().toISOString());
@@ -186,7 +198,25 @@ export default function App() {
 
           // Show toast for each new notification
           newNotifications.forEach((notification: any) => {
-            if (notification.type === 'verse_shared') {
+            if (notification.type === 'question_answered') {
+              const categoryLabel = notification.data?.categoryLabel ?? 'a question';
+              const categoryId    = notification.data?.categoryId;
+              toast.success(
+                notification.title || '💬 Your partner answered!',
+                {
+                  description: `They answered in "${categoryLabel}". Tap to view.`,
+                  duration: 8000,
+                  action: categoryId ? {
+                    label: 'Go there',
+                    onClick: () => {
+                      setActiveTab('home');
+                      setSelectedQACategory(categoryId);
+                      setSelectedScreen('qa-discussion');
+                    },
+                  } : undefined,
+                }
+              );
+            } else if (notification.type === 'verse_shared') {
               toast.success(
                 `${notification.data?.sharedBy || 'Your partner'} shared a verse with you!`,
                 {
@@ -939,10 +969,25 @@ export default function App() {
     }
   };
 
-  const handleSaveQuestionResponse = async (questionId: string, answers: Record<string, string | string[] | number>) => {
+  // Human-readable labels matching QADiscussionHub's categories array
+  const QA_CATEGORY_LABELS: Record<string, string> = {
+    'daily-life':    'Daily Life & Habits',
+    'intimacy':      'Intimacy & Lifestyle',
+    'love-balance':  'Love & Balance',
+    'dream-wedding': 'Dream Wedding / Dream Home',
+    'travel':        'Travel & Adventure',
+    'boundaries':    'Relationship Boundaries',
+    'trust':         'Trust & Truth',
+    'kids-future':   'Kids & Future',
+    'finance':       'Finance & Goals',
+    'family':        'Family Relations',
+    'bible':         'Bible Convictions',
+  };
+
+  const handleSaveQuestionResponse = async (questionId: string, answers: Record<string, string | string[] | number>, categoryId?: string) => {
     try {
-      console.log('[App] Saving question response:', { questionId, answers });
-      
+      console.log('[App] Saving question response:', { questionId, answers, categoryId });
+
       const responseData = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/questions/${questionId}/responses`,
         {
@@ -966,7 +1011,30 @@ export default function App() {
 
       const result = await responseData.json();
       console.log('[App] Question response saved successfully:', result);
-      toast.success('Answer saved successfully!');
+      toast.success('Answer saved!');
+
+      // Refresh response counts so dashboard stats stay current
+      api.questions.getResponses()
+        .then(data => setResponses({
+          user: data.userResponses || [],
+          partner: data.partnerResponses || [],
+        }))
+        .catch(() => {});
+
+      // Notify partner — fire-and-forget so a slow notification doesn't block the user
+      if (profile?.partnerId && accessToken && categoryId) {
+        const categoryLabel = QA_CATEGORY_LABELS[categoryId] ?? categoryId;
+        const senderName = profile?.name ?? 'Your partner';
+        sendNotification({
+          recipientId: profile.partnerId,
+          type: 'question_answered',
+          title: `💬 ${senderName} answered a question!`,
+          message: `They answered in "${categoryLabel}". Tap to see their response.`,
+          data: { categoryId, categoryLabel, questionId },
+          accessToken,
+          projectId,
+        }).catch(err => console.warn('[App] Partner notification failed (non-critical):', err));
+      }
     } catch (error: any) {
       console.error('[App] Failed to save response:', error);
       toast.error('Failed to save answer');
@@ -975,15 +1043,7 @@ export default function App() {
   };
 
   const handleCompleteDevotional = async () => {
-    // TEMPORARILY DISABLED - devotional completion tracking needs API migration
-    toast.info('Devotional completion tracking is being updated. Check back soon!');
-    return;
-    /*
     try {
-      console.log('[App] Marking devotional as complete:', devotional.id);
-      console.log('[App] Current streak before completion:', devotionalStreak);
-      console.log('[App] Current isDevotionalCompletedToday:', isDevotionalCompletedToday);
-      
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/devotional-completions`,
         {
@@ -993,7 +1053,7 @@ export default function App() {
             'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify({
-            devotion_id: devotional.id,
+            devotion_id: selectedDevotionalId,
             notes: null
           })
         }
@@ -1001,56 +1061,35 @@ export default function App() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[App] Failed to mark complete - Status:', response.status);
-        console.error('[App] Failed to mark complete - Error:', errorText);
+        console.error('[App] Failed to mark complete - Status:', response.status, errorText);
         throw new Error('Failed to mark devotional as complete');
       }
 
-      const result = await response.json();
-      console.log('[App] Devotional marked complete:', result);
-
-      // Immediately update completion status
+      // Immediately update completion status in UI
       setIsDevotionalCompletedToday(true);
 
-      // Wait a moment for the backend to update the streak
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Fetch the updated streak directly
+      // Fetch updated streak
       try {
         const streaksResponse = await fetch(
           `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/streaks`,
           {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`
-            }
+            headers: { 'Authorization': `Bearer ${accessToken}` }
           }
         );
-        
         if (streaksResponse.ok) {
           const { streaks } = await streaksResponse.json();
-          console.log('[App] Updated streaks loaded:', streaks);
           const devotionalStreakData = streaks?.find((s: any) => s.streak_type === 'devotional');
-          console.log('[App] Updated devotional streak data:', devotionalStreakData);
-          const streakValue = devotionalStreakData?.current_streak || 0;
-          console.log('[App] Setting devotional streak to:', streakValue);
-          setDevotionalStreak(streakValue);
+          setDevotionalStreak(devotionalStreakData?.current_streak || 0);
         }
       } catch (err) {
         console.error('[App] Failed to reload streak:', err);
       }
 
-      // Reload all user data
-      console.log('[App] Reloading user data to get updated streak...');
-      await loadUserData();
-      
-      console.log('[App] After reload - new streak:', devotionalStreak);
-      
       toast.success('Devotional completed! 🎉');
     } catch (error) {
       console.error('[App] Failed to complete devotional:', error);
       toast.error('Failed to mark as complete');
     }
-    */
   };
 
   const updateProgress = async (updates: Partial<Progress>) => {
@@ -1273,9 +1312,18 @@ export default function App() {
                     setActiveTab('journal');
                   } else if (notification.type === 'prayer') {
                     setActiveTab('prayer');
-                  } else if (notification.type === 'question' || notification.type === 'question_answered') {
+                  } else if (notification.type === 'question') {
                     setActiveTab('home');
-                    setSelectedScreen('qa-hub');
+                    setSelectedScreen('category-selection');
+                  } else if (notification.type === 'question_answered') {
+                    // Deep-link directly to the exact category the partner answered in
+                    setActiveTab('home');
+                    if (notification.data?.categoryId) {
+                      setSelectedQACategory(notification.data.categoryId);
+                      setSelectedScreen('qa-discussion');
+                    } else {
+                      setSelectedScreen('category-selection');
+                    }
                   } else if (notification.type === 'mood_report') {
                     setActiveTab('home');
                     setSelectedScreen('mood-analytics');

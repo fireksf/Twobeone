@@ -253,140 +253,91 @@ export function DailyDevotionsFeed({ onDevotionalClick, accessToken, projectId, 
     };
   }, [audioElements]);
 
-  const handlePlayAudio = async (devotionalId: string, audioUrl: string) => {
-    // Validate audio URL
-    if (!audioUrl || audioUrl.trim() === '' || audioUrl === 'undefined' || audioUrl === 'null') {
-      console.error('Invalid audio URL:', audioUrl);
-      toast.error('Audio file not available');
-      return;
+  const fetchFreshAudioUrl = async (devotionalId: string): Promise<string | null> => {
+    if (!accessToken || !projectId) return null;
+    try {
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/devotions/${devotionalId}/audio-url`,
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      );
+      if (!res.ok) {
+        console.warn(`[Audio] Fresh URL fetch failed (${res.status}) for devotional ${devotionalId}`);
+        return null;
+      }
+      const { audioUrl } = await res.json();
+      return audioUrl || null;
+    } catch (err) {
+      console.warn('[Audio] fetchFreshAudioUrl error:', err);
+      return null;
     }
+  };
 
-    // If clicking the same audio that's playing, pause it
+  const loadAndPlay = (audio: HTMLAudioElement, url: string): Promise<void> =>
+    new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('timeout')), 12000);
+      const cleanup = () => {
+        clearTimeout(timeout);
+        audio.removeEventListener('canplay', onCanPlay);
+        audio.removeEventListener('error', onError);
+      };
+      const onCanPlay = () => { cleanup(); resolve(); };
+      const onError = () => { cleanup(); reject(new Error('load_error')); };
+      audio.addEventListener('canplay', onCanPlay, { once: true });
+      audio.addEventListener('error', onError, { once: true });
+      audio.src = url;
+      audio.load();
+    });
+
+  const handlePlayAudio = async (devotionalId: string) => {
+    // Toggle pause if already playing
     if (currentlyPlayingId === devotionalId) {
       const audio = audioElements.get(devotionalId);
-      if (audio) {
-        audio.pause();
-        setCurrentlyPlayingId(null);
-      }
+      if (audio) { audio.pause(); setCurrentlyPlayingId(null); }
       return;
     }
 
-    // Pause any currently playing audio
+    // Pause any other playing audio
     if (currentlyPlayingId) {
-      const currentAudio = audioElements.get(currentlyPlayingId);
-      if (currentAudio) {
-        try {
-          currentAudio.pause();
-          currentAudio.currentTime = 0;
-        } catch (err) {
-          console.log('Error pausing previous audio:', err);
-        }
-      }
+      const cur = audioElements.get(currentlyPlayingId);
+      if (cur) { try { cur.pause(); cur.currentTime = 0; } catch {} }
       setCurrentlyPlayingId(null);
+    }
+
+    // Always fetch a fresh signed URL — avoids stale/expired URL issues
+    const freshUrl = await fetchFreshAudioUrl(devotionalId);
+    if (!freshUrl) {
+      toast.error('Audio file is not available. Please contact your admin.');
+      return;
     }
 
     // Get or create audio element
     let audio = audioElements.get(devotionalId);
-    let isNewAudio = false;
-    
     if (!audio) {
-      isNewAudio = true;
       audio = new Audio();
-      
-      // Set up event listeners before setting src
-      audio.addEventListener('ended', () => {
-        setCurrentlyPlayingId(null);
-      });
-      
+      audio.addEventListener('ended', () => setCurrentlyPlayingId(null));
       audio.addEventListener('error', (e: Event) => {
-        const target = e.target as HTMLAudioElement;
-        const error = target.error;
-        
-        // Silently handle expected audio errors (file doesn't exist, CORS issues, etc.)
-        if (error) {
-          // Only log to console, don't show verbose error details to avoid clutter
-          console.log(`Audio unavailable for devotional ${devotionalId} (Error code: ${error.code})`);
-          
-          // Don't show toast errors - audio is optional and failures are expected
-          // when files haven't been uploaded yet or signed URLs expire
-        }
-        
+        const code = (e.target as HTMLAudioElement).error?.code;
+        console.warn(`Audio element error for ${devotionalId} (code: ${code})`);
         setCurrentlyPlayingId(null);
       });
-
-      audio.addEventListener('loadedmetadata', () => {
-        console.log('Audio metadata loaded for:', devotionalId);
-      });
-      
-      // Store the audio element
       audioElements.set(devotionalId, audio);
       setAudioElements(new Map(audioElements));
-    } else {
-      // If audio element exists but hasn't been loaded yet (or failed to load),
-      // we need to reload it. Check the readyState.
-      if (audio.readyState === 0 || audio.error) {
-        // Audio was never loaded or had an error, treat it as new
-        isNewAudio = true;
-        console.log('Reloading audio that failed to load previously');
-      }
     }
 
-    // Set playing state immediately for better UX
     setCurrentlyPlayingId(devotionalId);
 
     try {
-      // Set src and load if this is a new audio element or needs reloading
-      if (isNewAudio) {
-        console.log('Setting audio source:', audioUrl);
-        audio.src = audioUrl;
-        audio.load();
-        
-        // Wait for audio to be ready to play
-        await new Promise<void>((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Audio loading timeout'));
-          }, 10000); // Increased to 10 seconds
-          
-          const onCanPlay = () => {
-            clearTimeout(timeout);
-            cleanup();
-            console.log('Audio ready to play');
-            resolve();
-          };
-          
-          const onError = () => {
-            clearTimeout(timeout);
-            cleanup();
-            reject(new Error('Audio failed to load'));
-          };
-          
-          const cleanup = () => {
-            audio!.removeEventListener('canplay', onCanPlay);
-            audio!.removeEventListener('error', onError);
-          };
-          
-          audio!.addEventListener('canplay', onCanPlay, { once: true });
-          audio!.addEventListener('error', onError, { once: true });
-        });
-      }
-      
-      // Play the audio
-      console.log('Playing audio...');
+      await loadAndPlay(audio, freshUrl);
       await audio.play();
-      console.log('Audio playing successfully');
     } catch (err: any) {
-      console.error('Failed to play audio:', err);
       setCurrentlyPlayingId(null);
-      
-      if (err.message === 'Audio loading timeout') {
+      console.error('Failed to play audio:', err);
+      if (err.message === 'timeout') {
         toast.error('Audio is taking too long to load. Please try again.');
-      } else if (err.message === 'Audio failed to load') {
-        // Error already handled by the error event listener
-      } else if (err.name === 'NotSupportedError' || err.name === 'NotAllowedError') {
-        toast.error('Unable to play audio. Please check your browser settings.');
+      } else if (err.message === 'load_error') {
+        toast.error('Audio file could not be loaded. The file may have been removed.');
       } else if (err.name !== 'AbortError') {
-        // Don't show toast for abort errors (quick clicks)
-        toast.error('Failed to play audio');
+        toast.error('Could not play audio. Please try again.');
       }
     }
   };
@@ -567,7 +518,7 @@ export function DailyDevotionsFeed({ onDevotionalClick, accessToken, projectId, 
                     <Button
                       size="lg"
                       className="w-14 h-14 rounded-full bg-purple-600 hover:bg-purple-700 flex-shrink-0"
-                      onClick={() => handlePlayAudio(devotional.id, devotional.audioUrl!)}
+                      onClick={() => handlePlayAudio(devotional.id)}
                     >
                       {isPlaying ? (
                         <Pause className="w-6 h-6 text-white" />

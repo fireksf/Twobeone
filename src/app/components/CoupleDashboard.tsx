@@ -26,13 +26,11 @@ import {
   BarChart3,
   BookHeart,
   HandHeart,
-  Smile,
-  Meh,
-  Frown,
   Gift,
   Star,
   PartyPopper,
-  Brain
+  Brain,
+  Trash2
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { BibleReader } from './BibleReader';
@@ -46,6 +44,7 @@ import { toast } from 'sonner';
 import type { User, JournalEntry, PrayerRequest, Progress as ProgressType, QuestionResponse } from '../types';
 import { moods as moodsApi, milestones as milestonesApi, questions as questionsApi } from '../utils/api';
 import { AddMilestoneDialog } from './AddMilestoneDialog';
+import { amharicVerses } from '../data/amharic-verses';
 
 export interface CoupleDashboardProps {
   profile?: User;
@@ -129,6 +128,7 @@ export function CoupleDashboard({
   const [dailyVerse, setDailyVerse] = useState<BibleVerse | null>(null);
   const [isLoadingVerse, setIsLoadingVerse] = useState(true);
   const [isBibleReaderOpen, setIsBibleReaderOpen] = useState(false);
+  const [verseLanguage, setVerseLanguage] = useState<'en' | 'am'>('am');
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [todaysMood, setTodaysMood] = useState<MoodEntry | null>(null);
   const [partnerMood, setPartnerMood] = useState<MoodEntry | null>(null);
@@ -317,6 +317,18 @@ export function CoupleDashboard({
       return () => clearInterval(interval);
     }
   }, [profile?.id, partner?.id]);
+
+  // Delete a milestone by ID
+  const handleMilestoneDelete = async (milestoneId: string) => {
+    try {
+      await milestonesApi.delete(milestoneId);
+      setMilestones(prev => prev.filter(m => m.id !== milestoneId));
+      toast.success('Milestone removed');
+    } catch (error: any) {
+      console.error('Error deleting milestone:', error);
+      toast.error('Failed to remove milestone');
+    }
+  };
 
   // Helper function to handle milestone addition and refetch
   const handleMilestoneAdd = async (milestone: Milestone) => {
@@ -725,21 +737,83 @@ export function CoupleDashboard({
             </div>
           ) : dailyVerse ? (
             <div className="space-y-3">
-              <blockquote className="text-base italic text-gray-700 leading-relaxed border-l-4 border-amber-400 pl-4">
-                "{dailyVerse.text}"
-              </blockquote>
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-amber-700">{dailyVerse.reference}</span>
-                <span className="text-xs text-muted-foreground">{dailyVerse.translation}</span>
+              {/* Language toggle */}
+              <div style={{ display: 'flex', gap: 'var(--spacing-1)', padding: 'var(--spacing-1)', width: 'fit-content' }} onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => setVerseLanguage('en')}
+                  style={{
+                    background: verseLanguage === 'en' ? 'var(--primary)' : 'transparent',
+                    color: verseLanguage === 'en' ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: 'var(--text-xs)',
+                    padding: 'var(--spacing-1) var(--spacing-2)',
+                    border: verseLanguage === 'en' ? 'none' : '1px solid var(--border)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => setVerseLanguage('am')}
+                  style={{
+                    background: verseLanguage === 'am' ? 'var(--primary)' : 'transparent',
+                    color: verseLanguage === 'am' ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: 'var(--text-xs)',
+                    padding: 'var(--spacing-1) var(--spacing-2)',
+                    border: verseLanguage === 'am' ? 'none' : '1px solid var(--border)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  አማርኛ
+                </button>
               </div>
-              <Button 
-                variant="outline" 
+
+              {verseLanguage === 'en' ? (
+                <>
+                  <blockquote style={{ fontSize: 'var(--text-base)', fontStyle: 'italic', color: 'var(--foreground)', lineHeight: 1.6, borderLeft: '4px solid var(--primary)', paddingLeft: 'var(--spacing-3)', margin: 0, opacity: 0.85 }}>
+                    "{dailyVerse.text}"
+                  </blockquote>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--primary)' }}>{dailyVerse.reference}</span>
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>{dailyVerse.translation}</span>
+                  </div>
+                </>
+              ) : (() => {
+                const amVerse = amharicVerses[dailyVerse.reference];
+                return amVerse ? (
+                  <>
+                    <blockquote style={{ fontSize: 'var(--text-base)', color: 'var(--foreground)', lineHeight: 1.8, borderLeft: '4px solid var(--primary)', paddingLeft: 'var(--spacing-3)', margin: 0, opacity: 0.85 }}>
+                      "{amVerse.text}"
+                    </blockquote>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--primary)' }}>{amVerse.referenceAmharic}</span>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>{amVerse.translation}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <blockquote style={{ fontSize: 'var(--text-base)', fontStyle: 'italic', color: 'var(--foreground)', lineHeight: 1.6, borderLeft: '4px solid var(--primary)', paddingLeft: 'var(--spacing-3)', margin: 0, opacity: 0.85 }}>
+                      "{dailyVerse.text}"
+                    </blockquote>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--font-weight-medium)', color: 'var(--primary)' }}>{dailyVerse.reference}</span>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--muted-foreground)' }}>{dailyVerse.translation}</span>
+                    </div>
+                  </>
+                );
+              })()}
+
+              <Button
+                variant="outline"
                 size="sm"
                 className="w-full border-amber-300 text-amber-700 hover:bg-amber-100"
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log('[CoupleDashboard] Read Full Chapter clicked, opening Bible reader');
-                  console.log('[CoupleDashboard] Daily verse:', dailyVerse);
                   setIsBibleReaderOpen(true);
                 }}
               >
@@ -835,63 +909,79 @@ export function CoupleDashboard({
             <div className="grid sm:grid-cols-2 gap-6">
               {/* Your Mood */}
               <div className="space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">Your Mood</p>
+                <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-medium)', color: 'var(--muted-foreground)' }}>Your Mood</p>
                 <div className="grid grid-cols-4 gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className={`h-14 w-full ${todaysMood?.mood === 'great' ? 'bg-green-100 border-green-400' : ''}`}
-                    onClick={() => handleMoodUpdate('great')}
-                  >
-                    <Smile className={`w-6 h-6 ${todaysMood?.mood === 'great' ? 'text-green-600' : 'text-gray-400'}`} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className={`h-14 w-full ${todaysMood?.mood === 'good' ? 'bg-blue-100 border-blue-400' : ''}`}
-                    onClick={() => handleMoodUpdate('good')}
-                  >
-                    <Smile className={`w-6 h-6 ${todaysMood?.mood === 'good' ? 'text-blue-600' : 'text-gray-400'}`} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className={`h-14 w-full ${todaysMood?.mood === 'okay' ? 'bg-yellow-100 border-yellow-400' : ''}`}
-                    onClick={() => handleMoodUpdate('okay')}
-                  >
-                    <Meh className={`w-6 h-6 ${todaysMood?.mood === 'okay' ? 'text-yellow-600' : 'text-gray-400'}`} />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className={`h-14 w-full ${todaysMood?.mood === 'sad' ? 'bg-gray-100 border-gray-400' : ''}`}
-                    onClick={() => handleMoodUpdate('sad')}
-                  >
-                    <Frown className={`w-6 h-6 ${todaysMood?.mood === 'sad' ? 'text-gray-600' : 'text-gray-400'}`} />
-                  </Button>
+                  {([
+                    { mood: 'great', emoji: '🤩', label: 'Great', bg: 'var(--success-50)', border: 'var(--success-500)', labelColor: 'var(--success-700)' },
+                    { mood: 'good',  emoji: '😊', label: 'Good',  bg: 'var(--secondary-50)', border: 'var(--secondary-500)', labelColor: 'var(--secondary-700)' },
+                    { mood: 'okay',  emoji: '😐', label: 'Okay',  bg: 'var(--warning-50)', border: 'var(--warning-500)', labelColor: 'var(--warning-700)' },
+                    { mood: 'sad',   emoji: '😔', label: 'Sad',   bg: 'var(--neutral-100)', border: 'var(--neutral-400)', labelColor: 'var(--neutral-600)' },
+                  ] as const).map(({ mood, emoji, label, bg, border, labelColor }) => {
+                    const isSelected = todaysMood?.mood === mood;
+                    return (
+                      <button
+                        key={mood}
+                        onClick={() => handleMoodUpdate(mood)}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          gap: 'var(--spacing-1)',
+                          height: 'var(--touch-target-comfortable)',
+                          borderRadius: 'var(--radius-md)',
+                          border: `2px solid ${isSelected ? border : 'var(--neutral-200)'}`,
+                          background: isSelected ? bg : 'var(--card)',
+                          cursor: 'pointer',
+                          padding: 'var(--spacing-1)',
+                          transition: 'all 0.15s ease',
+                          boxShadow: isSelected ? `0 0 className="p-[0px] p-[0px] px-[0px] py-[1px] px-[0px] py-[2px] px-[0px] py-[3px] px-[0px] py-[4px] px-[0px] py-[4px] px-[0px] py-[4px] px-[0px] py-[5px] px-[0px] py-[6px] px-[0px] py-[6px] px-[0px] py-[6px] px-[0px] py-[6px] px-[0px] py-[6px] px-[0px] py-[6px] px-[0px] py-[5px] px-[0px] py-[5px] px-[0px] py-[5px] px-[0px] py-[4px] px-[0px] py-[4px] px-[0px] py-[3px] px-[0px] py-[3px] px-[0px] py-[2px] px-[0px] py-[1px] p-[0px] p-[0px] p-[0px] p-[0px] p-[0px] p-[0px] p-[0px]" 0 2px ${border}33` : 'none',
+                        }}
+                      >
+                        <span style={{ fontSize: 'var(--icon-lg)', lineHeight: 1 }}>{emoji}</span>
+                        <span style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-medium)', color: isSelected ? labelColor : 'var(--neutral-500)' }}>{label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 {!todaysMood && (
-                  <p className="text-xs text-muted-foreground">Tap an emoji to set your mood</p>
+                  <p style={{ fontSize: 'var(--text-caption-small)', color: 'var(--muted-foreground)' }}>Tap to share how you feel</p>
                 )}
               </div>
 
               {/* Partner's Mood */}
               <div className="space-y-3">
-                <p className="text-sm font-medium text-muted-foreground">{partner.name}'s Mood</p>
-                {partnerMood ? (
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg h-14">
-                    {partnerMood.mood === 'great' && <Smile className="w-8 h-8 text-green-600" />}
-                    {partnerMood.mood === 'good' && <Smile className="w-8 h-8 text-blue-600" />}
-                    {partnerMood.mood === 'okay' && <Meh className="w-8 h-8 text-yellow-600" />}
-                    {partnerMood.mood === 'sad' && <Frown className="w-8 h-8 text-gray-600" />}
-                    <div>
-                      <p className="text-sm font-medium capitalize">{partnerMood.mood}</p>
-                      <p className="text-xs text-muted-foreground">Today</p>
+                <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-medium)', color: 'var(--muted-foreground)' }}>{partner.name}'s Mood</p>
+                {partnerMood ? (() => {
+                  const moodMap: Record<string, { emoji: string; label: string; bg: string; border: string; color: string }> = {
+                    great: { emoji: '🤩', label: 'Feeling great!', bg: 'var(--success-50)', border: 'var(--success-500)', color: 'var(--success-700)' },
+                    good:  { emoji: '😊', label: 'Feeling good',   bg: 'var(--secondary-50)', border: 'var(--secondary-500)', color: 'var(--secondary-700)' },
+                    okay:  { emoji: '😐', label: 'Feeling okay',   bg: 'var(--warning-50)', border: 'var(--warning-500)', color: 'var(--warning-700)' },
+                    sad:   { emoji: '😔', label: 'Feeling sad',    bg: 'var(--neutral-100)', border: 'var(--neutral-400)', color: 'var(--neutral-600)' },
+                  };
+                  const m = moodMap[partnerMood.mood] ?? moodMap.okay;
+                  return (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)',
+                      padding: 'var(--spacing-3) var(--spacing-4)',
+                      background: m.bg,
+                      border: `1.5px solid ${m.border}`,
+                      borderRadius: 'var(--radius-md)',
+                      minHeight: 'var(--touch-target-comfortable)',
+                    }}>
+                      <span style={{ fontSize: '2rem', lineHeight: 1 }}>{m.emoji}</span>
+                      <div>
+                        <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: m.color, margin: 0 }}>{m.label}</p>
+                        <p style={{ fontSize: 'var(--text-caption-small)', color: 'var(--muted-foreground)', margin: 0 }}>Today</p>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-14 bg-gray-50 rounded-lg">
-                    <p className="text-xs text-muted-foreground">Not set yet</p>
+                  );
+                })() : (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    minHeight: 'var(--touch-target-comfortable)',
+                    background: 'var(--neutral-50)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1.5px dashed var(--neutral-300)',
+                  }}>
+                    <p style={{ fontSize: 'var(--text-caption-small)', color: 'var(--muted-foreground)', margin: 0 }}>Not shared yet</p>
                   </div>
                 )}
               </div>
@@ -921,25 +1011,55 @@ export function CoupleDashboard({
                 {milestones.slice(0, 3).map((milestone) => (
                   <div
                     key={milestone.id}
-                    className="flex items-start gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200"
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-3)',
+                      padding: 'var(--spacing-3)',
+                      background: 'linear-gradient(to right, var(--primary-50), var(--secondary-50, #f0f9ff))',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--primary-200, #ffc7d7)',
+                      position: 'relative',
+                    }}
                   >
-                    <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center flex-shrink-0">
-                      {milestone.icon === 'gift' && <Gift className="w-5 h-5 text-purple-600" />}
-                      {milestone.icon === 'party' && <PartyPopper className="w-5 h-5 text-purple-600" />}
-                      {milestone.icon === 'heart' && <Heart className="w-5 h-5 text-purple-600 fill-purple-600" />}
-                      {milestone.icon === 'star' && <Star className="w-5 h-5 text-purple-600 fill-yellow-400" />}
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 'var(--radius-full)',
+                      backgroundColor: 'var(--primary-100, #ffe0e8)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      {milestone.icon === 'gift' && <Gift style={{ width: 18, height: 18, color: 'var(--primary-600)' }} />}
+                      {milestone.icon === 'party' && <PartyPopper style={{ width: 18, height: 18, color: 'var(--primary-600)' }} />}
+                      {milestone.icon === 'heart' && <Heart style={{ width: 18, height: 18, color: 'var(--primary-600)' }} />}
+                      {milestone.icon === 'star' && <Star style={{ width: 18, height: 18, color: 'var(--warning-500, #f59e0b)' }} />}
+                      {!['gift','party','heart','star'].includes(milestone.icon) && <Star style={{ width: 18, height: 18, color: 'var(--primary-600)' }} />}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm">{milestone.title}</h4>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{milestone.description}</p>
-                      <p className="text-xs text-purple-600 mt-1">
-                        {new Date(milestone.date).toLocaleDateString('en-US', { 
-                          month: 'long', 
-                          day: 'numeric', 
-                          year: 'numeric' 
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--neutral-900)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {milestone.title}
+                      </p>
+                      {milestone.description && (
+                        <p style={{ fontSize: 'var(--text-label)', color: 'var(--neutral-500)', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {milestone.description}
+                        </p>
+                      )}
+                      <p style={{ fontSize: 'var(--text-label)', color: 'var(--primary-600)', margin: 'var(--spacing-1) 0 0 0', fontWeight: 'var(--font-weight-medium)' }}>
+                        {new Date(milestone.date).toLocaleDateString('en-US', {
+                          month: 'long', day: 'numeric', year: 'numeric'
                         })}
                       </p>
                     </div>
+                    <button
+                      onClick={() => handleMilestoneDelete(milestone.id)}
+                      title="Remove milestone"
+                      style={{
+                        flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer',
+                        padding: 4, borderRadius: 'var(--radius-sm)',
+                        color: 'var(--neutral-400)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--error-500, #ef4444)')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--neutral-400)')}
+                    >
+                      <Trash2 style={{ width: 14, height: 14 }} />
+                    </button>
                   </div>
                 ))}
               </div>

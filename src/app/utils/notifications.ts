@@ -1,6 +1,6 @@
 interface SendNotificationParams {
   recipientId: string;
-  type: 'devotional' | 'journal' | 'prayer' | 'question' | 'partner_link' | 'general';
+  type: 'devotional' | 'journal' | 'prayer' | 'question' | 'question_answered' | 'partner_link' | 'general';
   title: string;
   message: string;
   data?: any;

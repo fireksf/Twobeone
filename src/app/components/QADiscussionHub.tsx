@@ -47,7 +47,7 @@ interface Question {
 }
 
 interface QADiscussionHubProps {
-  onSaveAnswer: (questionId: string, answers: Record<string, string | string[] | number>) => void;
+  onSaveAnswer: (questionId: string, answers: Record<string, string | string[] | number>, categoryId?: string) => void;
   onPrayTogether: (question: Question) => void;
   userName?: string;
   partnerName?: string;
@@ -175,13 +175,14 @@ export function QADiscussionHub({
           })) || []
         }));
 
-        // Fetch all responses in one bulk call instead of N per-question requests
+        // Fetch ALL responses — no category param. Responses have no category field,
+        // so passing one caused the backend to filter everything out. The client-side
+        // attachResponses() already scopes responses to the current question set by questionId.
         let userResponses: any[] = [];
         let partnerResponses: any[] = [];
         try {
-          const categoryParam = activeCategory !== 'all' ? `?category=${activeCategory}` : '';
           const respBulk = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/question-responses${categoryParam}`,
+            `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/question-responses`,
             { headers: { 'Authorization': `Bearer ${token}` } }
           );
           if (respBulk.ok) {
@@ -193,18 +194,27 @@ export function QADiscussionHub({
           console.warn('[Q&A] Could not load bulk responses, showing questions without response state');
         }
 
-        // Attach responses to each question client-side
-        const questionsWithResponses = convertedQuestions.map((q: Question) => {
-          const qUserAnswers: Record<string, any> = {};
-          const qPartnerAnswers: Record<string, any> = {};
-          userResponses.forEach((r: any) => {
-            if (r.questionId === q.id) qUserAnswers[r.promptId ?? 'default'] = r;
+        // Attach responses to each question client-side.
+        // Handles two storage formats:
+        //   DailyQuestion: questionId = "qId:prompt:N"  (no promptId field)
+        //   QADiscussionHub: questionId = "qId", promptId = "someId"
+        const attachResponses = (responses: any[], q: Question): Record<string, any> => {
+          const out: Record<string, any> = {};
+          responses.forEach((r: any) => {
+            const baseId = (r.questionId || '').split(':prompt:')[0];
+            if (baseId !== q.id) return;
+            const key = r.promptId
+              ?? (r.questionId?.includes(':prompt:') ? r.questionId.split(':prompt:')[1] : 'default');
+            out[key] = r;
           });
-          partnerResponses.forEach((r: any) => {
-            if (r.questionId === q.id) qPartnerAnswers[r.promptId ?? 'default'] = r;
-          });
-          return { ...q, userAnswers: qUserAnswers, partnerAnswers: qPartnerAnswers };
-        });
+          return out;
+        };
+
+        const questionsWithResponses = convertedQuestions.map((q: Question) => ({
+          ...q,
+          userAnswers: attachResponses(userResponses, q),
+          partnerAnswers: attachResponses(partnerResponses, q),
+        }));
 
         setQuestions(questionsWithResponses);
       } else {
@@ -240,19 +250,11 @@ export function QADiscussionHub({
 
   const handleSaveAnswer = async (questionId: string, answers: Record<string, string | string[] | number>) => {
     try {
-      console.log('Saving answer for question:', questionId, answers);
-      
-      // Call the parent save handler (saves to backend)
-      await onSaveAnswer(questionId, answers);
-      
-      // Update the questions array to reflect the saved answer
-      setQuestions(prev => prev.map(q => 
-        q.id === questionId 
-          ? { ...q, userAnswers: answers }
-          : q
-      ));
-      
-      console.log('Answer saved successfully');
+      // Pass the active category so App.tsx can deep-link the partner notification
+      const category = activeCategory !== 'all' ? activeCategory : undefined;
+      await onSaveAnswer(questionId, answers, category);
+      // Reload from server so answered status, stats, and card badges all reflect reality
+      await loadQuestions();
     } catch (error) {
       console.error('Failed to save answer:', error);
       throw error;
@@ -284,26 +286,26 @@ export function QADiscussionHub({
             </Badge>
           </div>
         )}
-        <p className="text-gray-600">Meaningful conversations for growing together</p>
+        <p style={{ color: 'var(--muted-foreground)', fontSize: 'var(--text-body)' }}>Meaningful conversations for growing together</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-semibold text-purple-600">{questions.length}</p>
-          <p className="text-xs text-gray-600 mt-1">Total Questions</p>
+        <Card className="p-4 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+          <p style={{ fontSize: 'var(--text-title)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--primary)' }}>{questions.length}</p>
+          <p style={{ fontSize: 'var(--text-label)', color: 'var(--muted-foreground)', marginTop: 'var(--spacing-1)' }}>Total</p>
         </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-semibold text-green-600">
+        <Card className="p-4 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+          <p style={{ fontSize: 'var(--text-title)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--success-700)' }}>
             {questions.filter(q => q.userAnswers && Object.keys(q.userAnswers).length > 0).length}
           </p>
-          <p className="text-xs text-gray-600 mt-1">Answered</p>
+          <p style={{ fontSize: 'var(--text-label)', color: 'var(--muted-foreground)', marginTop: 'var(--spacing-1)' }}>Answered</p>
         </Card>
-        <Card className="p-4 text-center">
-          <p className="text-2xl font-semibold text-rose-600">
+        <Card className="p-4 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+          <p style={{ fontSize: 'var(--text-title)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--primary-500)' }}>
             {questions.filter(q => q.userAnswers && Object.keys(q.userAnswers).length > 0 && q.partnerAnswers && Object.keys(q.partnerAnswers).length > 0).length}
           </p>
-          <p className="text-xs text-gray-600 mt-1">Discussed</p>
+          <p style={{ fontSize: 'var(--text-label)', color: 'var(--muted-foreground)', marginTop: 'var(--spacing-1)' }}>Discussed</p>
         </Card>
       </div>
 
@@ -334,8 +336,9 @@ export function QADiscussionHub({
       {/* AI Assistant Button */}
       <Button
         onClick={() => setShowAIAssistant(!showAIAssistant)}
-        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+        className="w-full"
         size="lg"
+        style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', height: 'var(--button-lg)', fontSize: 'var(--text-body)', fontWeight: 'var(--font-weight-semibold)', borderRadius: 'var(--radius-md)' }}
       >
         <Sparkles className="w-5 h-5 mr-2" />
         AI Assistant
@@ -375,16 +378,16 @@ export function QADiscussionHub({
 
       {/* Loading State */}
       {isLoadingQuestions && (
-        <Card className="p-12 text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading questions...</p>
+        <Card className="p-12 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+          <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: 'var(--primary)' }} />
+          <p style={{ color: 'var(--muted-foreground)', fontSize: 'var(--text-body)' }}>Loading questions…</p>
         </Card>
       )}
 
       {/* Empty State */}
       {!isLoadingQuestions && filteredQuestions.length === 0 && (
-        <Card className="p-12 text-center">
-          <MessageSquare className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <Card className="p-12 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+          <MessageSquare className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--neutral-300)' }} />
           <h3 className="text-xl font-semibold mb-2">No Questions Yet</h3>
           <p className="text-gray-600 mb-4">
             {activeCategory === 'all' 
@@ -410,24 +413,14 @@ export function QADiscussionHub({
         <div className="space-y-4">
           {/* Navigation */}
           <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrevious}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={handlePrevious} className="gap-2">
               <ChevronLeft className="w-4 h-4" />
               Previous
             </Button>
-            <div className="text-sm text-gray-600">
+            <div style={{ fontSize: 'var(--text-caption)', color: 'var(--muted-foreground)', fontWeight: 'var(--font-weight-medium)' }}>
               {currentQuestionIndex + 1} / {filteredQuestions.length}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNext}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={handleNext} className="gap-2">
               Next
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -519,20 +512,40 @@ function QuestionCard({
   const [myAnswers, setMyAnswers] = useState<Record<string, string | string[] | number>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [canContinue, setCanContinue] = useState(false); // New: track if user can continue
-  const [isTyping, setIsTyping] = useState(false); // New: track if user is typing
+  const [canContinue, setCanContinue] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // allow re-editing a saved answer
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Derive read-only mode: question is saved and user has not clicked "Edit"
+  const isReadOnly = saveStatus === 'saved' && !isEditing;
+
   // Update answers when question changes
   useEffect(() => {
-    console.log('Question changed:', question.id);
-    console.log('Loaded userAnswers:', question.userAnswers);
-    const loadedAnswers = question.userAnswers || {};
-    setMyAnswers(loadedAnswers);
-    const hasAnswers = Object.keys(loadedAnswers).length > 0;
+    const raw = question.userAnswers || {};
+
+    const normalizedByKey: Record<string, any> = {};
+    Object.entries(raw).forEach(([key, val]: [string, any]) => {
+      const actualValue = (val && typeof val === 'object' && 'response' in val) ? val.response : val;
+      normalizedByKey[key] = actualValue;
+    });
+
+    const finalAnswers: Record<string, any> = {};
+    Object.entries(normalizedByKey).forEach(([key, val]) => {
+      const asIndex = parseInt(key, 10);
+      if (!isNaN(asIndex) && question.prompts[asIndex]) {
+        finalAnswers[question.prompts[asIndex].id] = val;
+      } else {
+        finalAnswers[key] = val;
+      }
+    });
+
+    setMyAnswers(finalAnswers);
+    const hasAnswers = Object.keys(finalAnswers).length > 0;
     setSaveStatus(hasAnswers ? 'saved' : 'idle');
-    setCanContinue(hasAnswers); // Can continue if already answered
+    setCanContinue(hasAnswers);
+    setIsEditing(false); // reset edit mode when question changes
   }, [question.id]);
 
   // Auto-save function with debouncing
@@ -560,13 +573,13 @@ function QuestionCard({
     setSaveStatus('saving');
     setIsTyping(false); // User finished typing
 
-    // Debounce: wait 1000ms (1 second) after user stops typing before saving
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         console.log('Auto-saving answers after typing completed:', answers);
         await onSaveAnswer(question.id, answers);
         setSaveStatus('saved');
-        setCanContinue(true); // Enable continue button after successful save
+        setCanContinue(true);
+        setIsEditing(false); // collapse to read-only after save
         toast.success('Your answers have been saved!');
       } catch (error) {
         console.error('Failed to auto-save:', error);
@@ -574,7 +587,7 @@ function QuestionCard({
         setCanContinue(false);
         toast.error('Failed to save answer');
       }
-    }, 1000); // Wait 1 second after user stops typing
+    }, 1000);
   };
 
   // Cleanup timeout on unmount
@@ -605,12 +618,9 @@ function QuestionCard({
   };
 
   const handleSave = async () => {
-    // Validate all prompts are answered
     const allAnswered = question.prompts.every(prompt => {
       const answer = myAnswers[prompt.id];
-      if (Array.isArray(answer)) {
-        return answer.length > 0;
-      }
+      if (Array.isArray(answer)) return answer.length > 0;
       return answer !== undefined && answer !== null && answer !== '';
     });
 
@@ -622,9 +632,10 @@ function QuestionCard({
     setIsSaving(true);
     try {
       await onSaveAnswer(question.id, myAnswers);
+      setSaveStatus('saved');
+      setCanContinue(true);
+      setIsEditing(false);
       toast.success('Answer saved successfully!');
-      // Don't clear answers after saving - keep them visible
-      // Don't navigate away automatically
     } catch (error) {
       console.error('Failed to save answer:', error);
       toast.error('Failed to save answer');
@@ -634,12 +645,9 @@ function QuestionCard({
   };
 
   const handleSaveAndContinue = async () => {
-    // Validate all prompts are answered
     const allAnswered = question.prompts.every(prompt => {
       const answer = myAnswers[prompt.id];
-      if (Array.isArray(answer)) {
-        return answer.length > 0;
-      }
+      if (Array.isArray(answer)) return answer.length > 0;
       return answer !== undefined && answer !== null && answer !== '';
     });
 
@@ -651,8 +659,10 @@ function QuestionCard({
     setIsSaving(true);
     try {
       await onSaveAnswer(question.id, myAnswers);
-      toast.success('Answer saved successfully!')
-      // Navigate to next question
+      setSaveStatus('saved');
+      setCanContinue(true);
+      setIsEditing(false);
+      toast.success('Answer saved successfully!');
       onNextQuestion();
     } catch (error) {
       console.error('Failed to save answer:', error);
@@ -681,21 +691,28 @@ function QuestionCard({
     partnerAnswers: question.partnerAnswers
   });
 
-  // Get match color based on percentage
-  const getMatchColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 60) return 'text-lime-600';
-    if (percentage >= 40) return 'text-yellow-600';
-    if (percentage >= 20) return 'text-orange-600';
-    return 'text-red-600';
+  const getMatchColor = (percentage: number): string => {
+    if (percentage >= 80) return 'var(--success-700)';
+    if (percentage >= 60) return 'var(--success-500)';
+    if (percentage >= 40) return 'var(--warning-700)';
+    if (percentage >= 20) return 'var(--warning-500)';
+    return 'var(--error-500)';
   };
 
-  const getMatchBgColor = (percentage: number) => {
-    if (percentage >= 80) return 'bg-green-100 border-green-300';
-    if (percentage >= 60) return 'bg-lime-100 border-lime-300';
-    if (percentage >= 40) return 'bg-yellow-100 border-yellow-300';
-    if (percentage >= 20) return 'bg-orange-100 border-orange-300';
-    return 'bg-red-100 border-red-300';
+  const getMatchBg = (percentage: number): string => {
+    if (percentage >= 80) return 'var(--success-50)';
+    if (percentage >= 60) return 'var(--success-50)';
+    if (percentage >= 40) return 'var(--warning-50)';
+    if (percentage >= 20) return 'var(--warning-50)';
+    return 'var(--error-50)';
+  };
+
+  const getMatchBorder = (percentage: number): string => {
+    if (percentage >= 80) return 'var(--success-500)';
+    if (percentage >= 60) return 'var(--success-500)';
+    if (percentage >= 40) return 'var(--warning-500)';
+    if (percentage >= 20) return 'var(--warning-500)';
+    return 'var(--error-500)';
   };
 
   const getMatchMessage = (percentage: number) => {
@@ -707,21 +724,51 @@ function QuestionCard({
     return '💜 Very different views - embrace the journey!';
   };
 
+  // Format a saved answer value for display
+  const formatAnswerForDisplay = (value: string | string[] | number | undefined): string => {
+    if (value === undefined || value === null || value === '') return '—';
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  };
+
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50">
+    <Card className="overflow-hidden" style={{ borderColor: 'var(--border)', background: 'var(--card)' }}>
+      <CardHeader style={{ background: 'linear-gradient(to right, var(--primary-50), var(--secondary-50))' }}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <Badge variant="secondary" className="mb-2">
-              {question.category}
-            </Badge>
-            <CardTitle className="text-2xl mb-2">{question.title}</CardTitle>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <Badge variant="secondary" style={{ fontSize: 'var(--text-caption)', fontWeight: 'var(--font-weight-medium)' }}>
+                {question.category}
+              </Badge>
+              {/* Green "Done" badge — shown whenever this question has a saved answer */}
+              {saveStatus === 'saved' && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'var(--success-50)',
+                    color: 'var(--success-700)',
+                    fontSize: 'var(--text-caption-small)',
+                    fontWeight: 'var(--font-weight-semibold)',
+                    borderRadius: 'var(--radius-full)',
+                    border: '1px solid var(--success-500)',
+                  }}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Done
+                </span>
+              )}
+            </div>
+            <CardTitle style={{ fontSize: 'var(--text-title)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>
+              {question.title}
+            </CardTitle>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={onPrayTogether}
-            className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+            style={{ color: 'var(--primary-500)' }}
           >
             <Heart className="w-5 h-5" />
           </Button>
@@ -730,104 +777,155 @@ function QuestionCard({
 
       <CardContent className="p-6 space-y-6">
         {/* Scripture */}
-        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r">
+        <div
+          className="p-4 rounded-r"
+          style={{
+            background: 'var(--warning-50)',
+            borderLeft: '4px solid var(--warning-500)',
+            borderRadius: '0 var(--radius-md) var(--radius-md) 0',
+          }}
+        >
           <div className="flex items-start gap-3">
-            <BookOpen className="w-5 h-5 text-amber-600 mt-1 flex-shrink-0" />
+            <BookOpen className="w-5 h-5 mt-1 flex-shrink-0" style={{ color: 'var(--warning-700)' }} />
             <div>
-              <p className="text-gray-900 italic mb-2 text-base leading-relaxed">{question.verse}</p>
-              <p className="text-sm text-gray-700 font-semibold">{question.verseReference}</p>
+              <p className="italic mb-2 leading-relaxed" style={{ color: 'var(--foreground)', fontSize: 'var(--text-body)' }}>
+                {question.verse}
+              </p>
+              <p style={{ fontSize: 'var(--text-caption)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--neutral-700)' }}>
+                {question.verseReference}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Discussion Prompts */}
         <Separator />
 
         {/* My Answers */}
         <div className="space-y-3">
+          {/* Section header with status indicator */}
           <div className="flex items-center justify-between">
-            <h4 className="font-semibold flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+            <h4
+              className="flex items-center gap-2"
+              style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-body)', color: 'var(--foreground)' }}
+            >
+              <Users className="w-5 h-5" style={{ color: 'var(--secondary-500)' }} />
               {userName ? `${userName}'s Answers` : 'Your Answers'}
             </h4>
-            {saveStatus === 'saving' && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                <span>Saving...</span>
-              </div>
-            )}
-            {saveStatus === 'saved' && (
-              <div className="flex items-center gap-2 text-sm text-green-600">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Saved</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {saveStatus === 'saving' && (
+                <div className="flex items-center gap-1" style={{ fontSize: 'var(--text-caption)', color: 'var(--muted-foreground)' }}>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Saving…</span>
+                </div>
+              )}
+              {/* Edit toggle — shown when in read-only mode */}
+              {isReadOnly && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1 underline"
+                  style={{ fontSize: 'var(--text-caption)', color: 'var(--primary-600)', fontWeight: 'var(--font-weight-medium)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  Edit
+                </button>
+              )}
+            </div>
           </div>
-          {question.prompts.map((prompt) => {
-            // Check if this prompt has been answered
-            const isAnswered = myAnswers[prompt.id] !== undefined && myAnswers[prompt.id] !== null && myAnswers[prompt.id] !== '';
-            const isDisabled = false; // Never disable - allow editing
-            
-            return (
-              <DynamicQuestionPrompt
-                key={prompt.id}
-                prompt={prompt}
-                value={myAnswers[prompt.id] || null}
-                onChange={(value) => handleAnswerChange(prompt.id, value)}
-                disabled={isDisabled}
-              />
-            );
-          })}
-          
-          {/* Status Message */}
-          {!canContinue && saveStatus === 'idle' && Object.keys(myAnswers).length > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
-              💡 Please answer all prompts to continue
-            </div>
-          )}
-          
-          {isTyping && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Waiting for you to finish typing...</span>
-            </div>
-          )}
-          
-          {saveStatus === 'saving' && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-sm text-purple-700 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Saving your answers...</span>
-            </div>
-          )}
-          
-          {canContinue && saveStatus === 'saved' && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span>Your answers have been saved! Click below to continue.</span>
-            </div>
-          )}
-          
-          <Button
-            onClick={handleSaveAndContinue}
-            disabled={isSaving || !canContinue}
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
+
+          {/* READ-ONLY view: static answer display */}
+          {isReadOnly ? (
+            <div className="space-y-4">
+              {question.prompts.map((prompt) => (
+                <div key={prompt.id} className="space-y-1">
+                  <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>
+                    {prompt.text}
+                  </p>
+                  <div
+                    className="px-4 py-3"
+                    style={{
+                      background: 'var(--success-50)',
+                      borderLeft: '3px solid var(--success-500)',
+                      borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+                    }}
+                  >
+                    <p style={{ fontSize: 'var(--text-body)', color: 'var(--foreground)', fontWeight: 'var(--font-weight-normal)' }}>
+                      {formatAnswerForDisplay(myAnswers[prompt.id])}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Continue button — read-only mode */}
+              <Button
+                onClick={onNextQuestion}
+                className="w-full"
+                style={{ height: 'var(--button-md)', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-body)', background: 'var(--primary)', color: 'var(--primary-foreground)', borderRadius: 'var(--radius-md)' }}
+              >
                 <ChevronRight className="w-4 h-4 mr-2" />
-                Continue to Next Question
-              </>
-            )}
-          </Button>
+                Next Question
+              </Button>
+            </div>
+          ) : (
+            /* EDITABLE view: interactive prompts */
+            <>
+              {question.prompts.map((prompt) => (
+                <DynamicQuestionPrompt
+                  key={prompt.id}
+                  prompt={prompt}
+                  value={myAnswers[prompt.id] || null}
+                  onChange={(value) => handleAnswerChange(prompt.id, value)}
+                  disabled={false}
+                />
+              ))}
+
+              {!canContinue && saveStatus === 'idle' && Object.keys(myAnswers).length > 0 && (
+                <div
+                  className="p-3"
+                  style={{ background: 'var(--secondary-100)', border: '1px solid var(--secondary-200)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--text-caption)', color: 'var(--secondary-700)' }}
+                >
+                  💡 Please answer all prompts to continue
+                </div>
+              )}
+
+              {isTyping && (
+                <div
+                  className="p-3 flex items-center gap-2"
+                  style={{ background: 'var(--warning-50)', border: '1px solid var(--warning-500)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--text-caption)', color: 'var(--warning-700)' }}
+                >
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Waiting for you to finish typing…</span>
+                </div>
+              )}
+
+              {saveStatus === 'saving' && (
+                <div
+                  className="p-3 flex items-center gap-2"
+                  style={{ background: 'var(--primary-50)', border: '1px solid var(--primary-200)', borderRadius: 'var(--radius-sm)', fontSize: 'var(--text-caption)', color: 'var(--primary-700)' }}
+                >
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving your answers…</span>
+                </div>
+              )}
+
+              <Button
+                onClick={handleSaveAndContinue}
+                disabled={isSaving || !canContinue}
+                className="w-full"
+                style={{ height: 'var(--button-md)', fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-body)', background: 'var(--primary)', color: 'var(--primary-foreground)', borderRadius: 'var(--radius-md)', opacity: (isSaving || !canContinue) ? 0.5 : 1, cursor: (isSaving || !canContinue) ? 'not-allowed' : 'pointer' }}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="w-4 h-4 mr-2" />
+                    Save &amp; Continue
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Partner's Answers */}
@@ -835,19 +933,30 @@ function QuestionCard({
           <>
             <Separator />
             <div className="space-y-4">
-              <h4 className="font-semibold flex items-center gap-2">
-                <Heart className="w-5 h-5 text-rose-600" />
+              <h4
+                className="flex items-center gap-2"
+                style={{ fontWeight: 'var(--font-weight-semibold)', fontSize: 'var(--text-body)', color: 'var(--foreground)' }}
+              >
+                <Heart className="w-5 h-5" style={{ color: 'var(--primary-500)' }} />
                 {partnerName ? `${partnerName}'s Answers` : "Partner's Answers"}
               </h4>
               {question.prompts.map((prompt) => {
                 const answer = question.partnerAnswers?.[prompt.id];
                 if (!answer) return null;
-                
                 return (
-                  <div key={prompt.id} className="space-y-2">
-                    <p className="text-lg font-bold text-gray-900 leading-snug">{prompt.text}</p>
-                    <div className="bg-rose-50 p-4 rounded-lg border-l-4 border-rose-400">
-                      <p className="text-gray-900 font-medium leading-relaxed text-base">
+                  <div key={prompt.id} className="space-y-1">
+                    <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>
+                      {prompt.text}
+                    </p>
+                    <div
+                      className="px-4 py-3"
+                      style={{
+                        background: 'var(--primary-50)',
+                        borderLeft: '3px solid var(--primary-400)',
+                        borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+                      }}
+                    >
+                      <p style={{ fontSize: 'var(--text-body)', color: 'var(--foreground)', fontWeight: 'var(--font-weight-medium)' }}>
                         {Array.isArray(answer) ? answer.join(', ') : String(answer)}
                       </p>
                     </div>
@@ -859,16 +968,19 @@ function QuestionCard({
         )}
 
         {/* Partner hasn't answered yet */}
-        {question.userAnswers && Object.keys(question.userAnswers).length > 0 && 
+        {question.userAnswers && Object.keys(question.userAnswers).length > 0 &&
          (!question.partnerAnswers || Object.keys(question.partnerAnswers).length === 0) && (
           <>
             <Separator />
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-              <Heart className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600 mb-2">
+            <div
+              className="p-6 text-center"
+              style={{ background: 'var(--muted)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)' }}
+            >
+              <Heart className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--neutral-300)' }} />
+              <p style={{ color: 'var(--muted-foreground)', marginBottom: 'var(--spacing-1)', fontSize: 'var(--text-body)' }}>
                 {partnerName ? `${partnerName} hasn't` : "Your partner hasn't"} answered this question yet
               </p>
-              <p className="text-sm text-gray-500">
+              <p style={{ fontSize: 'var(--text-caption)', color: 'var(--muted-foreground)' }}>
                 You'll see the match percentage once you both answer! 💕
               </p>
             </div>
@@ -879,26 +991,38 @@ function QuestionCard({
         {bothAnswered && (
           <>
             <Separator />
-            <div className={`${getMatchBgColor(matchPercentage)} border-2 rounded-lg p-6`}>
+            <div
+              className="p-6"
+              style={{
+                background: getMatchBg(matchPercentage),
+                border: `2px solid ${getMatchBorder(matchPercentage)}`,
+                borderRadius: 'var(--radius-lg)',
+              }}
+            >
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-rose-600" />
+                <h4
+                  className="flex items-center gap-2"
+                  style={{ fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)', fontSize: 'var(--text-body)' }}
+                >
+                  <Heart className="w-5 h-5" style={{ color: 'var(--primary-500)' }} />
                   Compatibility Match
                 </h4>
-                <div className={`text-4xl ${getMatchColor(matchPercentage)}`}>
+                <div style={{ fontSize: 'var(--text-display)', fontWeight: 'var(--font-weight-bold)', color: getMatchColor(matchPercentage) }}>
                   {matchPercentage}%
                 </div>
               </div>
-              
-              {/* Progress Bar */}
-              <div className="w-full bg-white/50 rounded-full h-3 mb-3 overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 ${matchPercentage >= 80 ? 'bg-green-600' : matchPercentage >= 60 ? 'bg-lime-600' : matchPercentage >= 40 ? 'bg-yellow-600' : matchPercentage >= 20 ? 'bg-orange-600' : 'bg-red-600'}`}
-                  style={{ width: `${matchPercentage}%` }}
+
+              <div
+                className="w-full h-3 mb-3 overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.5)', borderRadius: 'var(--radius-full)' }}
+              >
+                <div
+                  className="h-full transition-all duration-500"
+                  style={{ width: `${matchPercentage}%`, background: getMatchColor(matchPercentage), borderRadius: 'var(--radius-full)' }}
                 />
               </div>
-              
-              <p className={`text-center ${getMatchColor(matchPercentage)}`}>
+
+              <p className="text-center" style={{ color: getMatchColor(matchPercentage), fontSize: 'var(--text-callout)' }}>
                 {getMatchMessage(matchPercentage)}
               </p>
             </div>

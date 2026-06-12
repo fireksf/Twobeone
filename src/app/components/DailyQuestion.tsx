@@ -58,10 +58,10 @@ interface Answer {
   createdAt: string;
 }
 
-export function DailyQuestion({ 
-  accessToken, 
-  projectId, 
-  userProfile, 
+export function DailyQuestion({
+  accessToken,
+  projectId,
+  userProfile,
   partner,
   onPrayTogether,
   onBack
@@ -70,6 +70,10 @@ export function DailyQuestion({
   const [activePromptIndex, setActivePromptIndex] = useState(0);
   const [answers, setAnswers] = useState<{ [promptIndex: number]: string }>({});
   const [isPrivate, setIsPrivate] = useState<{ [promptIndex: number]: boolean }>({});
+  // allQuestions keeps the complete unfiltered list so category lookups always work
+  const [allQuestions, setAllQuestions] = useState<Question[]>([]);
+  // allUserAnswers stores every saved response so isCategoryAnswered/Complete work across questions
+  const [allUserAnswers, setAllUserAnswers] = useState<Answer[]>([]);
   const [partnerAnswers, setPartnerAnswers] = useState<Answer[]>([]);
   const [userSubmittedAnswers, setUserSubmittedAnswers] = useState<Answer[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -101,6 +105,8 @@ export function DailyQuestion({
       if (response.ok) {
         const { questions: fetchedQuestions } = await response.json();
         if (fetchedQuestions && fetchedQuestions.length > 0) {
+          // Keep the complete list in allQuestions — never overwrite this
+          setAllQuestions(fetchedQuestions);
           // Get today's question based on day of year
           const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
           const questionIndex = dayOfYear % fetchedQuestions.length;
@@ -119,46 +125,50 @@ export function DailyQuestion({
   };
 
   const getQuestionsByCategory = (category: string): Question[] => {
-    return availableQuestions.filter(q => q.category === category);
+    // Always search the full list so category lookups work even after filtering availableQuestions
+    return allQuestions.filter(q => q.category === category);
   };
 
   const getCategories = (): string[] => {
-    const categories = [...new Set(availableQuestions.map(q => q.category))];
-    return categories;
+    return [...new Set(allQuestions.map(q => q.category))];
   };
 
   useEffect(() => {
     // Reload answers whenever the question changes
     if (question) {
-      loadAnswers();
+      loadAnswers(question);
     }
-  }, [question]);
+  }, [question?.id]);
 
   const handleCategorySelect = (category: string) => {
     const categoryQuestions = getQuestionsByCategory(category);
+    // Only update the browseable list, never overwrite allQuestions
     setAvailableQuestions(categoryQuestions);
     setSelectedCategory(category);
     setSelectedQuestionIndex(0);
-    setQuestion(categoryQuestions[0]);
+    const firstQuestion = categoryQuestions[0] ?? null;
+    setQuestion(firstQuestion);
     setActivePromptIndex(0);
     setShowCategorySelection(false);
-    loadAnswers();
+    // Pass the new question explicitly so loadAnswers doesn't read stale state
+    loadAnswers(firstQuestion);
   };
 
   const handleQuestionChange = (direction: 'prev' | 'next') => {
     if (!availableQuestions.length) return;
-    
-    const newIndex = direction === 'next' 
+
+    const newIndex = direction === 'next'
       ? Math.min(availableQuestions.length - 1, selectedQuestionIndex + 1)
       : Math.max(0, selectedQuestionIndex - 1);
-    
+
+    const newQuestion = availableQuestions[newIndex];
     setSelectedQuestionIndex(newIndex);
-    setQuestion(availableQuestions[newIndex]);
+    setQuestion(newQuestion);
     setActivePromptIndex(0);
-    loadAnswers();
+    loadAnswers(newQuestion);
   };
 
-  const loadAnswers = async () => {
+  const loadAnswers = async (currentQuestion?: Question | null) => {
     try {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/question-responses`,
@@ -175,15 +185,20 @@ export function DailyQuestion({
       }
 
       const data = await response.json();
-      
-      // Filter answers for current question
-      if (question) {
-        const userAnswers = data.userResponses?.filter(
-          (r: Answer) => r.questionId.startsWith(question.id)
-        ) || [];
+      const allResponses: Answer[] = data.userResponses || [];
+
+      // Store every response so category completion checks always have full data
+      setAllUserAnswers(allResponses);
+
+      // Filter to just the current question's answers for the detail view
+      const activeQuestion = currentQuestion ?? question;
+      if (activeQuestion) {
+        const userAnswers = allResponses.filter(
+          (r: Answer) => r.questionId.startsWith(activeQuestion.id)
+        );
         setUserSubmittedAnswers(userAnswers);
       }
-      
+
       setPartnerAnswers(data.partnerResponses || []);
     } catch (error) {
       console.error('Error loading answers:', error);
@@ -241,8 +256,8 @@ export function DailyQuestion({
       
       // Clear the answer
       setAnswers(prev => ({ ...prev, [promptIndex]: '' }));
-      await loadAnswers();
-      
+      await loadAnswers(question);
+
       // Move to next prompt if available
       if (promptIndex < question.prompts.length - 1) {
         setActivePromptIndex(promptIndex + 1);
@@ -305,7 +320,7 @@ export function DailyQuestion({
       );
       
       // Reload answers to show the new reply
-      await loadAnswers();
+      await loadAnswers(question);
     } catch (error) {
       console.error('Error submitting answer:', error);
       toast.error('Failed to submit answer');
@@ -362,29 +377,26 @@ export function DailyQuestion({
   // Helper function to check if a category has any answered questions
   const isCategoryAnswered = (category: string): boolean => {
     const categoryQuestions = getQuestionsByCategory(category);
-    return categoryQuestions.some(q => 
-      userSubmittedAnswers.some(a => a.questionId.startsWith(q.id))
+    if (categoryQuestions.length === 0) return false;
+    return categoryQuestions.some(q =>
+      allUserAnswers.some(a => a.questionId.startsWith(q.id))
     );
   };
 
   // Helper function to check if a category is fully complete (all prompts answered)
   const isCategoryComplete = (category: string): boolean => {
     const categoryQuestions = getQuestionsByCategory(category);
-    
-    // For each question in the category
-    for (const question of categoryQuestions) {
-      // Check if all prompts have been answered
-      for (let promptIndex = 0; promptIndex < question.prompts.length; promptIndex++) {
-        const hasAnswer = userSubmittedAnswers.some(
-          a => a.questionId === `${question.id}:prompt:${promptIndex}`
+    if (categoryQuestions.length === 0) return false;
+
+    for (const q of categoryQuestions) {
+      for (let i = 0; i < q.prompts.length; i++) {
+        const hasAnswer = allUserAnswers.some(
+          a => a.questionId === `${q.id}:prompt:${i}`
         );
-        if (!hasAnswer) {
-          return false; // If any prompt is unanswered, category is not complete
-        }
+        if (!hasAnswer) return false;
       }
     }
-    
-    return true; // All prompts answered
+    return true;
   };
 
   // Category Selection Screen

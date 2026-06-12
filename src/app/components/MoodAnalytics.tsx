@@ -8,9 +8,6 @@ import { Separator } from './ui/separator';
 import { Progress } from './ui/progress';
 import { Alert, AlertDescription } from './ui/alert';
 import {
-  Smile,
-  Meh,
-  Frown,
   TrendingUp,
   TrendingDown,
   Activity,
@@ -224,19 +221,21 @@ export function MoodAnalytics({ profile, partner, onClose }: MoodAnalyticsProps)
     sad: partnerMoods.filter(m => m.mood === 'sad').length
   };
 
+  const MOOD_CONFIG = {
+    great: { emoji: '🤩', label: 'Great',  desc: 'Feeling amazing!', bg: 'var(--success-50)',    border: 'var(--success-500)',    color: 'var(--success-700)' },
+    good:  { emoji: '😊', label: 'Good',   desc: 'Feeling good',     bg: 'var(--secondary-50)',  border: 'var(--secondary-500)',  color: 'var(--secondary-700)' },
+    okay:  { emoji: '😐', label: 'Okay',   desc: 'Feeling okay',     bg: 'var(--warning-50)',    border: 'var(--warning-500)',    color: 'var(--warning-700)' },
+    sad:   { emoji: '😔', label: 'Sad',    desc: 'Feeling down',     bg: 'var(--neutral-100)',   border: 'var(--neutral-400)',    color: 'var(--neutral-600)' },
+  } as const;
+
+  const getMoodEmoji = (mood: string) => {
+    return MOOD_CONFIG[mood as keyof typeof MOOD_CONFIG]?.emoji ?? '😐';
+  };
+
   const getMoodIcon = (mood: string, size = 'w-5 h-5') => {
-    switch (mood) {
-      case 'great':
-        return <Smile className={`${size} text-green-600`} />;
-      case 'good':
-        return <Smile className={`${size} text-blue-600`} />;
-      case 'okay':
-        return <Meh className={`${size} text-yellow-600`} />;
-      case 'sad':
-        return <Frown className={`${size} text-gray-600`} />;
-      default:
-        return <Meh className={`${size} text-gray-400`} />;
-    }
+    const emoji = getMoodEmoji(mood);
+    const px = size.includes('8') ? '2rem' : size.includes('6') ? '1.5rem' : '1.25rem';
+    return <span style={{ fontSize: px, lineHeight: 1 }}>{emoji}</span>;
   };
 
   const getMoodColor = (mood: string) => {
@@ -331,38 +330,30 @@ export function MoodAnalytics({ profile, partner, onClose }: MoodAnalyticsProps)
         <CardContent className="space-y-4">
           {/* Mood Selection */}
           <div className="grid grid-cols-4 gap-3">
-            <Button
-              variant="outline"
-              className={`h-20 flex-col gap-2 ${selectedMood === 'great' ? 'border-green-400 bg-green-100' : ''}`}
-              onClick={() => setSelectedMood('great')}
-            >
-              <Smile className={`w-8 h-8 ${selectedMood === 'great' ? 'text-green-600' : 'text-gray-400'}`} />
-              <span className="text-xs">Great</span>
-            </Button>
-            <Button
-              variant="outline"
-              className={`h-20 flex-col gap-2 ${selectedMood === 'good' ? 'border-blue-400 bg-blue-100' : ''}`}
-              onClick={() => setSelectedMood('good')}
-            >
-              <Smile className={`w-8 h-8 ${selectedMood === 'good' ? 'text-blue-600' : 'text-gray-400'}`} />
-              <span className="text-xs">Good</span>
-            </Button>
-            <Button
-              variant="outline"
-              className={`h-20 flex-col gap-2 ${selectedMood === 'okay' ? 'border-yellow-400 bg-yellow-100' : ''}`}
-              onClick={() => setSelectedMood('okay')}
-            >
-              <Meh className={`w-8 h-8 ${selectedMood === 'okay' ? 'text-yellow-600' : 'text-gray-400'}`} />
-              <span className="text-xs">Okay</span>
-            </Button>
-            <Button
-              variant="outline"
-              className={`h-20 flex-col gap-2 ${selectedMood === 'sad' ? 'border-gray-400 bg-gray-100' : ''}`}
-              onClick={() => setSelectedMood('sad')}
-            >
-              <Frown className={`w-8 h-8 ${selectedMood === 'sad' ? 'text-gray-600' : 'text-gray-400'}`} />
-              <span className="text-xs">Sad</span>
-            </Button>
+            {(Object.entries(MOOD_CONFIG) as [keyof typeof MOOD_CONFIG, typeof MOOD_CONFIG[keyof typeof MOOD_CONFIG]][]).map(([mood, cfg]) => {
+              const isSelected = selectedMood === mood;
+              return (
+                <button
+                  key={mood}
+                  onClick={() => setSelectedMood(mood)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 'var(--spacing-2)',
+                    height: '80px',
+                    borderRadius: 'var(--radius-md)',
+                    border: `2px solid ${isSelected ? cfg.border : 'var(--neutral-200)'}`,
+                    background: isSelected ? cfg.bg : 'var(--card)',
+                    cursor: 'pointer',
+                    padding: 'var(--spacing-2)',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isSelected ? `0 0 0 3px ${cfg.border}33` : 'none',
+                  }}
+                >
+                  <span style={{ fontSize: '1.75rem', lineHeight: 1 }}>{cfg.emoji}</span>
+                  <span style={{ fontSize: 'var(--text-label)', fontWeight: 'var(--font-weight-semibold)', color: isSelected ? cfg.color : 'var(--neutral-500)' }}>{cfg.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Optional Note */}
@@ -460,20 +451,20 @@ export function MoodAnalytics({ profile, partner, onClose }: MoodAnalyticsProps)
                   formatter={(value: any) => value?.toFixed(1)}
                 />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="you" 
-                  stroke="#8b5cf6" 
+                <Line
+                  type="monotone"
+                  dataKey="you"
+                  stroke="#8b5cf6"
                   strokeWidth={2}
                   name={profile?.name || 'You'}
                   connectNulls
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="partner" 
-                  stroke="#ec4899" 
+                <Line
+                  type="monotone"
+                  dataKey="partner"
+                  stroke="#ec4899"
                   strokeWidth={2}
-                  name={partner.name}
+                  name={partner?.name || 'Partner'}
                   connectNulls
                 />
               </LineChart>
@@ -495,28 +486,24 @@ export function MoodAnalytics({ profile, partner, onClose }: MoodAnalyticsProps)
           <CardContent className="space-y-6">
             {/* Your Distribution */}
             <div className="space-y-3">
-              <p className="text-sm font-medium">{profile?.name || 'You'}</p>
+              <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>{profile?.name || 'You'}</p>
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-                  <Smile className="w-6 h-6 text-green-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-green-700">{userMoodCounts.great}</p>
-                  <p className="text-xs text-green-600">Great</p>
-                </div>
-                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <Smile className="w-6 h-6 text-blue-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-blue-700">{userMoodCounts.good}</p>
-                  <p className="text-xs text-blue-600">Good</p>
-                </div>
-                <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <Meh className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-yellow-700">{userMoodCounts.okay}</p>
-                  <p className="text-xs text-yellow-600">Okay</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <Frown className="w-6 h-6 text-gray-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-gray-700">{userMoodCounts.sad}</p>
-                  <p className="text-xs text-gray-600">Sad</p>
-                </div>
+                {(Object.entries(MOOD_CONFIG) as [keyof typeof MOOD_CONFIG, typeof MOOD_CONFIG[keyof typeof MOOD_CONFIG]][]).map(([mood, cfg]) => (
+                  <div key={mood} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: 'var(--spacing-3) var(--spacing-2)',
+                    background: cfg.bg,
+                    borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${cfg.border}55`,
+                    gap: 'var(--spacing-1)',
+                  }}>
+                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{cfg.emoji}</span>
+                    <span style={{ fontSize: 'var(--text-subtitle)', fontWeight: 'var(--font-weight-bold)', color: cfg.color, lineHeight: 1 }}>
+                      {userMoodCounts[mood]}
+                    </span>
+                    <span style={{ fontSize: 'var(--text-label)', color: cfg.color }}>{cfg.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -524,28 +511,24 @@ export function MoodAnalytics({ profile, partner, onClose }: MoodAnalyticsProps)
 
             {/* Partner Distribution */}
             <div className="space-y-3">
-              <p className="text-sm font-medium">{partner.name}</p>
+              <p style={{ fontSize: 'var(--text-callout)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--foreground)' }}>{partner.name}</p>
               <div className="grid grid-cols-4 gap-2">
-                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
-                  <Smile className="w-6 h-6 text-green-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-green-700">{partnerMoodCounts.great}</p>
-                  <p className="text-xs text-green-600">Great</p>
-                </div>
-                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <Smile className="w-6 h-6 text-blue-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-blue-700">{partnerMoodCounts.good}</p>
-                  <p className="text-xs text-blue-600">Good</p>
-                </div>
-                <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                  <Meh className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-yellow-700">{partnerMoodCounts.okay}</p>
-                  <p className="text-xs text-yellow-600">Okay</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <Frown className="w-6 h-6 text-gray-600 mx-auto mb-1" />
-                  <p className="text-lg font-bold text-gray-700">{partnerMoodCounts.sad}</p>
-                  <p className="text-xs text-gray-600">Sad</p>
-                </div>
+                {(Object.entries(MOOD_CONFIG) as [keyof typeof MOOD_CONFIG, typeof MOOD_CONFIG[keyof typeof MOOD_CONFIG]][]).map(([mood, cfg]) => (
+                  <div key={mood} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    padding: 'var(--spacing-3) var(--spacing-2)',
+                    background: cfg.bg,
+                    borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${cfg.border}55`,
+                    gap: 'var(--spacing-1)',
+                  }}>
+                    <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{cfg.emoji}</span>
+                    <span style={{ fontSize: 'var(--text-subtitle)', fontWeight: 'var(--font-weight-bold)', color: cfg.color, lineHeight: 1 }}>
+                      {partnerMoodCounts[mood]}
+                    </span>
+                    <span style={{ fontSize: 'var(--text-label)', color: cfg.color }}>{cfg.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </CardContent>
