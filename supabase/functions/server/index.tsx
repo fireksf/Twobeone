@@ -3007,21 +3007,86 @@ app.get('/make-server-6d579fee/admin/users', async (c) => {
       return c.json({ error: 'Forbidden - Admin access required' }, 403);
     }
 
-    // Fetch all users
     const allUsers = await kv.getByPrefix('user:');
-    
-    // Filter out system keys and format user data
-    const users = allUsers
-      .filter((u: any) => u.id && u.email)
-      .map((u: any) => ({
+    const validUsers = allUsers.filter((u: any) => u.id && u.email);
+
+    // Bulk-scan all journals and prayers in just 2 queries instead of 2×N.
+    // This avoids connection-pool exhaustion from parallel per-user scans.
+    const [allJournals, allPrayers] = await Promise.all([
+      kv.getByPrefix('journal:'),
+      kv.getByPrefix('prayer:'),
+    ]);
+
+    // Build lookup maps: userId → { count, latestAt }
+    const journalByUser: Record<string, { count: number; latestAt: string }> = {};
+    for (const j of allJournals) {
+      if (!j?.userId) continue;
+      const cur = journalByUser[j.userId];
+      const ts = j.createdAt || j.updatedAt || '';
+      if (!cur) {
+        journalByUser[j.userId] = { count: 1, latestAt: ts };
+      } else {
+        cur.count++;
+        if (ts > cur.latestAt) cur.latestAt = ts;
+      }
+    }
+    const prayerByUser: Record<string, { count: number; latestAt: string }> = {};
+    for (const p of allPrayers) {
+      if (!p?.userId) continue;
+      const cur = prayerByUser[p.userId];
+      const ts = p.createdAt || p.updatedAt || '';
+      if (!cur) {
+        prayerByUser[p.userId] = { count: 1, latestAt: ts };
+      } else {
+        cur.count++;
+        if (ts > cur.latestAt) cur.latestAt = ts;
+      }
+    }
+
+    // Bulk-scan ALL couple records and build lookup by userId (partner1Id or partner2Id).
+    // This handles users who connected before coupleId was stored on the user profile.
+    const allCoupleRecords = await kv.getByPrefix('couple:');
+    const coupleByUserId: Record<string, any> = {};
+    for (const rec of allCoupleRecords) {
+      if (rec?.partner1Id) coupleByUserId[rec.partner1Id] = rec;
+      if (rec?.partner2Id) coupleByUserId[rec.partner2Id] = rec;
+    }
+
+    const users = validUsers.map((u: any) => {
+      // Days together = days since they connected on the app (relationshipStartDate).
+      // Never fall back to u.relationshipStart which is the couple's anniversary date
+      // (could be years before they joined the app).
+      const coupleRec = coupleByUserId[u.id];
+      const startDate = coupleRec?.relationshipStartDate;
+      let daysTogether = 0;
+      if (startDate) {
+        daysTogether = Math.max(0, Math.floor((Date.now() - new Date(startDate).getTime()) / 86_400_000));
+      }
+
+      // Most recent activity = max of profile updatedAt, latest journal, latest prayer.
+      // touchActivity is only called on content creation so profile.updatedAt can lag.
+      const candidateDates = [
+        u.updatedAt || '',
+        u.createdAt || '',
+        journalByUser[u.id]?.latestAt || '',
+        prayerByUser[u.id]?.latestAt || '',
+      ].filter(Boolean);
+      const lastActive = candidateDates.sort().pop() || new Date().toISOString();
+
+      return {
         id: u.id,
         name: u.name,
         email: u.email,
         partnerId: u.partnerId || null,
         partnerName: u.partnerName || null,
         createdAt: u.createdAt,
-        relationshipStart: u.relationshipStart
-      }));
+        updatedAt: lastActive,
+        relationshipStart: startDate || null,
+        daysTogether,
+        journalEntries: journalByUser[u.id]?.count || 0,
+        prayerRequests: prayerByUser[u.id]?.count || 0,
+      };
+    });
 
     return c.json({ users });
   } catch (error: any) {

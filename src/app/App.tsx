@@ -563,10 +563,14 @@ export default function App() {
       setPartner(profileData.partner || null);
       setLoadError(null);
 
-      // Non-blocking admin check
+      // Non-blocking admin check — redirect admins to Admin Dashboard on first load
       adminApi
         .checkPrivileges()
-        .then((d) => setIsAdmin(d.isAdmin || false))
+        .then((d) => {
+          const admin = d.isAdmin || false;
+          setIsAdmin(admin);
+          if (admin) setSelectedScreen('admin');
+        })
         .catch(() => setIsAdmin(false));
 
       // All remaining data loads in parallel — no sequential waterfall

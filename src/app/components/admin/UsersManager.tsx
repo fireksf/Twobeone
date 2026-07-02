@@ -63,20 +63,28 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
       if (response.ok) {
         const { users: apiUsers } = await response.json();
         
-        // Transform API data to match User interface
-        const transformedUsers = apiUsers.map((u: any) => ({
-          id: u.id,
-          name: u.name || 'Unknown User',
-          email: u.email,
-          partnerId: u.partnerId || null,
-          partnerName: u.partnerName || null,
-          joinedDate: u.createdAt || u.relationshipStart || new Date().toISOString(),
-          lastActive: u.createdAt || new Date().toISOString(),
-          completedDays: 0, // Will be enhanced later with real completion data
-          journalEntries: 0, // Will be enhanced later
-          prayerRequests: 0, // Will be enhanced later
-          status: 'active' as const
-        }));
+        const transformedUsers = apiUsers.map((u: any) => {
+          const lastActive = u.updatedAt || u.createdAt || new Date().toISOString();
+          const daysSinceActive = (Date.now() - new Date(lastActive).getTime()) / 86_400_000;
+          // Active = seen within 30 days. touchActivity only fires on content creation
+          // so the backend already picks the most recent journal/prayer timestamp.
+          const isActive = u.partnerId
+            ? daysSinceActive <= 30   // connected couple: 30-day window
+            : daysSinceActive <= 7;   // solo user: 7-day window
+          return {
+            id: u.id,
+            name: u.name || 'Unknown User',
+            email: u.email,
+            partnerId: u.partnerId || null,
+            partnerName: u.partnerName || null,
+            joinedDate: u.createdAt || u.relationshipStart || new Date().toISOString(),
+            lastActive,
+            completedDays: u.daysTogether ?? 0,
+            journalEntries: u.journalEntries ?? 0,
+            prayerRequests: u.prayerRequests ?? 0,
+            status: (isActive ? 'active' : 'inactive') as 'active' | 'inactive',
+          };
+        });
 
         setUsers(transformedUsers);
       } else {
@@ -242,9 +250,9 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
                     <th className="px-4 py-3 text-left text-sm font-bold text-foreground border-r border-border">Couple</th>
                     <th className="px-4 py-3 text-left text-sm font-bold text-foreground border-r border-border">Partner 1</th>
                     <th className="px-4 py-3 text-left text-sm font-bold text-foreground border-r border-border">Partner 2</th>
-                    <th className="px-4 py-3 text-center text-sm font-bold text-foreground border-r border-border">Days</th>
-                    <th className="px-4 py-3 text-center text-sm font-bold text-foreground border-r border-border">Journal</th>
-                    <th className="px-4 py-3 text-center text-sm font-bold text-foreground border-r border-border">Prayers</th>
+                    <th className="px-4 py-3 text-center text-sm font-bold text-foreground border-r border-border" title="Days since they connected">Days Together</th>
+                    <th className="px-4 py-3 text-center text-sm font-bold text-foreground border-r border-border" title="Total journal entries">Journal</th>
+                    <th className="px-4 py-3 text-center text-sm font-bold text-foreground border-r border-border" title="Total prayer requests">Prayers</th>
                     <th className="px-4 py-3 text-center text-sm font-bold text-foreground">Status</th>
                   </tr>
                 </thead>
@@ -311,9 +319,11 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
                         </p>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Badge className="bg-success-700 text-white text-xs font-semibold px-3 py-1 border border-success-700">
-                          Active
-                        </Badge>
+                        {(couple.user1.status === 'active' || couple.user2.status === 'active') ? (
+                          <Badge className="bg-success-700 text-white text-xs font-semibold px-3 py-1 border border-success-700">Active</Badge>
+                        ) : (
+                          <Badge className="bg-neutral-400 text-white text-xs font-semibold px-3 py-1 border border-neutral-400">Inactive</Badge>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -342,7 +352,11 @@ export function UsersManager({ accessToken }: UsersManagerProps) {
                         Since {new Date(couple.user1.joinedDate).toLocaleDateString()}
                       </p>
                     </div>
-                    <Badge variant="default" className="bg-success-500 text-xs flex-shrink-0">Active</Badge>
+                    {(couple.user1.status === 'active' || couple.user2.status === 'active') ? (
+                      <Badge className="bg-success-700 text-white text-xs flex-shrink-0">Active</Badge>
+                    ) : (
+                      <Badge className="bg-neutral-400 text-white text-xs flex-shrink-0">Inactive</Badge>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
