@@ -136,6 +136,39 @@ const DEFAULT_MODULES = [
 
 type DefaultModule = typeof DEFAULT_MODULES[number];
 
+// Accent palettes cycle for API modules that don't have design tokens
+const ACCENT_PALETTES = [
+  { accentColor: 'var(--primary-600)', accentBg: 'var(--primary-50)', accentBorder: 'var(--primary-200)' },
+  { accentColor: 'var(--sky-600, #0284c7)', accentBg: 'var(--sky-50, #f0f9ff)', accentBorder: 'var(--sky-200, #bae6fd)' },
+  { accentColor: 'var(--success-700)', accentBg: 'var(--success-50)', accentBorder: 'var(--success-200, #bbf7d0)' },
+  { accentColor: 'var(--warning-700)', accentBg: 'var(--warning-50)', accentBorder: 'var(--warning-200, #fde68a)' },
+  { accentColor: 'var(--neutral-700)', accentBg: 'var(--neutral-100)', accentBorder: 'var(--neutral-200)' },
+];
+
+/** Normalise a KV/API module to the shape ModuleCard expects. */
+function normaliseModule(m: any, index: number): DefaultModule {
+  if (m.accentColor) return m as DefaultModule; // already in correct shape
+  const pal = ACCENT_PALETTES[index % ACCENT_PALETTES.length];
+  return {
+    id: m.id,
+    title: m.title || '',
+    subtitle: m.subtitle || '',
+    description: m.description || '',
+    scripture: m.verse || m.scripture || '',
+    scriptureRef: m.verseReference || m.scriptureRef || '',
+    iconKey: m.iconKey || 'book',
+    duration: m.duration || `${(m.lessons?.length || 1) * 20} min`,
+    isLocked: false,
+    lessons: (m.lessons || []).map((l: any) => ({
+      id: l.id,
+      title: l.title,
+      duration: l.duration || '20 min',
+      content: l.content || '',
+    })),
+    ...pal,
+  } as DefaultModule;
+}
+
 interface PreMarriageHubProps {
   onModuleClick: (moduleId: string) => void;
   accessToken?: string;
@@ -385,24 +418,54 @@ function ModuleCard({
 
 /* ── Main screen ── */
 export function PreMarriageHub({ onModuleClick, accessToken, onBack }: PreMarriageHubProps) {
-  const { t } = useLanguage();
+  const { t, language: appLanguage } = useLanguage();
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
-  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'am'>(() => {
-    try { return (localStorage.getItem('twobeone_language') === 'am' ? 'am' : 'en'); } catch { return 'en'; }
-  });
+  const [apiModules, setApiModules] = useState<any[] | null>(null);
 
-  useEffect(() => {
-    try { localStorage.setItem('twobeone_language', selectedLanguage); } catch {}
-  }, [selectedLanguage]);
+  // Use app language directly — no separate state that can diverge
+  const validLang = (appLanguage === 'am' || appLanguage === 'om') ? appLanguage : 'en';
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'am' | 'om'>(validLang as 'en' | 'am' | 'om');
 
-  /* Fetch progress from API only — modules are always the 5 defaults above */
+  // Keep in sync when user changes app language
   useEffect(() => {
+    const l = (appLanguage === 'am' || appLanguage === 'om') ? appLanguage : 'en';
+    setSelectedLanguage(l as 'en' | 'am' | 'om');
+  }, [appLanguage]);
+
+  // Fetch modules from API for the selected language
+  useEffect(() => {
+    if (!accessToken) return;
+    setApiModules(null);
+    const token = accessToken || publicAnonKey;
+    fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules?language=${selectedLanguage}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+      .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+      .then(data => {
+        if (Array.isArray(data?.modules) && data.modules.length > 0) {
+          // Sort by id to get a consistent order (module-1 before module-2 etc.)
+          const sorted = [...data.modules].sort((a, b) =>
+            String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+          );
+          setApiModules(sorted.map((m: any, i: number) => normaliseModule(m, i)));
+        } else {
+          // No modules for this language in DB — show built-in defaults
+          setApiModules(selectedLanguage === 'en' ? null : []);
+        }
+      })
+      .catch(() => setApiModules(null));
+  }, [accessToken, selectedLanguage]);
+
+  // Fetch progress for whatever module list we're showing
+  useEffect(() => {
+    const modList = apiModules ?? DEFAULT_MODULES;
     const fetchProgress = async () => {
       setIsLoadingProgress(true);
       const map: Record<string, number> = {};
       await Promise.allSettled(
-        DEFAULT_MODULES.map(async (m) => {
+        modList.map(async (m: any) => {
           try {
             const res = await fetch(
               `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${m.id}/progress`,
@@ -419,9 +482,12 @@ export function PreMarriageHub({ onModuleClick, accessToken, onBack }: PreMarria
       setIsLoadingProgress(false);
     };
     fetchProgress();
-  }, [accessToken]);
+  }, [accessToken, apiModules]);
 
-  const modules = DEFAULT_MODULES; // always 5, no API override
+  // null  → still loading or use defaults (English)
+  // []    → explicitly empty (non-English lang has no uploaded modules)
+  // [...] → API returned modules
+  const modules: any[] = apiModules === null ? DEFAULT_MODULES : apiModules;
   const completedCount = modules.filter((m) => (progressMap[m.id] || 0) === 100).length;
   const overallProgress = modules.length
     ? Math.round(modules.reduce((acc, m) => acc + (progressMap[m.id] || 0), 0) / modules.length)
@@ -503,13 +569,17 @@ export function PreMarriageHub({ onModuleClick, accessToken, onBack }: PreMarria
       </div>
 
       {/* ── Language toggle ── */}
-      <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
-        {(['en', 'am'] as const).map((lang) => {
-          const active = selectedLanguage === lang;
+      <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+        {([
+          { code: 'en' as const, label: 'English', flag: '🇺🇸' },
+          { code: 'am' as const, label: 'አማርኛ', flag: '🇪🇹' },
+          { code: 'om' as const, label: 'Oromiffa', flag: '🇪🇹' },
+        ]).map(({ code, label, flag }) => {
+          const active = selectedLanguage === code;
           return (
             <button
-              key={lang}
-              onClick={() => setSelectedLanguage(lang)}
+              key={code}
+              onClick={() => setSelectedLanguage(code)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 'var(--spacing-1)',
                 padding: 'var(--spacing-2) var(--spacing-3)',
@@ -523,8 +593,8 @@ export function PreMarriageHub({ onModuleClick, accessToken, onBack }: PreMarria
                 transition: 'all 0.15s ease',
               }}
             >
-              <Globe style={{ width: 14, height: 14 }} />
-              {lang === 'en' ? 'English' : 'አማርኛ'}
+              <span>{flag}</span>
+              <span>{label}</span>
             </button>
           );
         })}
@@ -539,6 +609,22 @@ export function PreMarriageHub({ onModuleClick, accessToken, onBack }: PreMarria
           {modules.length} modules · Work through them in order
         </p>
       </div>
+
+      {/* ── Empty state for non-English when no modules uploaded ── */}
+      {modules.length === 0 && (
+        <div style={{
+          textAlign: 'center', padding: 'var(--spacing-10) var(--spacing-4)',
+          backgroundColor: 'var(--neutral-50)', borderRadius: 'var(--radius-lg)',
+          border: '1px dashed var(--border)',
+        }}>
+          <p style={{ fontSize: 'var(--text-body)', fontWeight: 'var(--font-weight-semibold)', color: 'var(--neutral-700)', margin: '0 0 var(--spacing-2) 0' }}>
+            No modules yet in this language
+          </p>
+          <p style={{ fontSize: 'var(--text-callout)', color: 'var(--neutral-500)', margin: 0 }}>
+            Upload modules in Admin → Learning Modules → Import
+          </p>
+        </div>
+      )}
 
       {/* ── Module cards ── */}
       {modules.map((module, index) => (

@@ -1,21 +1,15 @@
 {
-  "name": "TwoBeOne — Christian Couples App",
+  "name": "TwoBeOne - Christian Couples App",
   "short_name": "TwoBeOne",
-  "description": "Free app for Christian couples — daily devotionals, shared prayer, journaling, and 1,000+ faith-based conversation questions. Supports English, Amharic & Afan Oromo.",
+  "description": "Strengthen your relationship through Bible-based guidance, shared reflection, and spiritual growth together",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#e11d48",
+  "background_color": "#f43f5e",
+  "theme_color": "#f43f5e",
   "orientation": "portrait-primary",
   "scope": "/",
   "categories": ["lifestyle", "social", "productivity"],
   "icons": [
-    {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
     {
       "src": "/icons/icon-72x72.png",
       "sizes": "72x72",
@@ -47,6 +41,12 @@
       "purpose": "any"
     },
     {
+      "src": "/icons/icon-167x167.png",
+      "sizes": "167x167",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icons/icon-180x180.png",
       "sizes": "180x180",
       "type": "image/png",
@@ -69,21 +69,20 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-1024x1024.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
     }
   ],
   "screenshots": [
     {
-      "src": "/og-image.svg",
-      "sizes": "1200x630",
-      "type": "image/svg+xml",
-      "form_factor": "wide",
-      "label": "TwoBeOne — Grow Together in Faith"
+      "src": "/screenshots/screenshot1.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/screenshot2.png",
+      "sizes": "2048x1536",
+      "type": "image/png",
+      "form_factor": "wide"
     }
   ],
   "related_applications": [],

@@ -203,27 +203,26 @@ export default function App() {
   // const devotional = getTodaysDevotional();
 
   // Register service worker for PWA / offline support.
-  // Probe the file first: if /service-worker.js returns HTML (404 page) instead of
-  // JavaScript we must NOT register — the browser throws a SecurityError with MIME-type
-  // 'text/html'. This happens in the Figma preview iframe where the file isn't served.
-  // In the installed PWA (served via publicDir) the probe returns JS and registration proceeds.
+  // Try to register directly — catch SecurityError (MIME mismatch in preview) silently.
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-
-    fetch("/service-worker.js", { method: "HEAD" })
-      .then((res) => {
-        const ct = res.headers.get("content-type") ?? "";
-        const isJs =
-          ct.includes("javascript") ||
-          ct.includes("application/x-javascript") ||
-          ct.includes("text/js");
-        if (res.ok && isJs) {
-          registerServiceWorker(); // intentionally not awaited — fire-and-forget
-        }
-        // If the file returns HTML/404, silently skip — no SecurityError
+    navigator.serviceWorker
+      .register("/service-worker.js", { scope: "/" })
+      .then((reg) => {
+        console.log("[PWA] Service Worker registered:", reg.scope);
+        if (reg.waiting) reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        reg.addEventListener("updatefound", () => {
+          const w = reg.installing;
+          if (w) w.addEventListener("statechange", () => {
+            if (w.state === "installed" && navigator.serviceWorker.controller)
+              w.postMessage({ type: "SKIP_WAITING" });
+          });
+        });
       })
-      .catch(() => {
-        // Network error probing — skip silently
+      .catch((err) => {
+        // SecurityError = SW file served as HTML (preview env) — safe to ignore
+        if (!String(err).includes("SecurityError"))
+          console.warn("[PWA] Service Worker registration failed:", err);
       });
   }, []);
 
@@ -470,6 +469,10 @@ export default function App() {
     };
 
     const checkForProfileUpdates = async () => {
+      // Never trigger a data reload while the admin panel is open —
+      // it would cause the admin screens to flash/re-render unexpectedly.
+      if (selectedScreen === 'admin') return;
+
       try {
         const {
           profile: updatedProfile,
@@ -1800,7 +1803,7 @@ export default function App() {
                   <PreMarriageHub
                     onModuleClick={(id) => {
                       setSelectedModuleId(id);
-                      setSelectedLessonId("1");
+                      setSelectedLessonId(null); // LessonScreen defaults to first lesson
                       setSelectedScreen("lesson");
                     }}
                     accessToken={accessToken}
@@ -1812,11 +1815,10 @@ export default function App() {
 
               {activeTab === "home" &&
                 selectedScreen === "lesson" &&
-                selectedModuleId &&
-                selectedLessonId && (
+                selectedModuleId && (
                   <LessonScreen
                     moduleId={selectedModuleId}
-                    lessonId={selectedLessonId}
+                    lessonId={selectedLessonId ?? undefined}
                     onBack={() => setSelectedScreen("guidance")}
                     accessToken={accessToken}
                   />
@@ -2123,6 +2125,7 @@ export default function App() {
                         found.reflection || found.content || "",
                       prayer: found.prayerPrompt || "",
                       audioUrl: found.audioUrl,
+                      language: found.language,
                     };
                   }
                 }

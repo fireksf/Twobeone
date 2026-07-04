@@ -75,7 +75,8 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [importCategory, setImportCategory] = useState('daily-life');
+  const [importCategory, setImportCategory] = useState('all');
+  const [importLanguage, setImportLanguage] = useState<'auto' | 'en' | 'am' | 'om'>('auto');
   const [importPreview, setImportPreview] = useState<Partial<Question>[] | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -410,25 +411,59 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const json = JSON.parse(ev.target?.result as string);
-        // Accept either array or { questions: [...] } format
-        const raw: any[] = Array.isArray(json) ? json : (json.questions || []);
-        if (!Array.isArray(raw) || raw.length === 0) {
-          setImportError('No valid questions found in this file.');
+        const text = ev.target?.result as string;
+        let json: any;
+        try {
+          json = JSON.parse(text);
+        } catch (parseErr: any) {
+          setImportError(`JSON syntax error: ${parseErr.message}. Fix the file and try again.`);
           return;
         }
-        // Basic validation
-        const valid = raw.filter(q => q.title && Array.isArray(q.prompts));
+
+        // Accept: array at root, { questions: [...] }, { data: [...] }, { items: [...] }
+        let raw: any[] = [];
+        if (Array.isArray(json)) {
+          raw = json;
+        } else if (Array.isArray(json.questions)) {
+          raw = json.questions;
+        } else if (Array.isArray(json.data)) {
+          raw = json.data;
+        } else if (Array.isArray(json.items)) {
+          raw = json.items;
+        } else {
+          const keys = Object.keys(json);
+          const arrKey = keys.find(k => Array.isArray(json[k]));
+          if (arrKey) raw = json[arrKey];
+        }
+
+        if (raw.length === 0) {
+          const topKeys = Object.keys(json).join(', ');
+          setImportError(`No question array found. File has keys: [${topKeys}]. Expected a "questions" array.`);
+          return;
+        }
+
+        // Accept questions with title+prompts, or title alone (prompts optional)
+        const valid = raw.filter(q => q.title);
+        const withPrompts = valid.filter(q => Array.isArray(q.prompts) && q.prompts.length > 0);
+
         if (valid.length === 0) {
-          setImportError('Questions must have a title and prompts array.');
+          setImportError(`Found ${raw.length} items but none have a "title" field.`);
           return;
         }
-        setImportPreview(valid);
-      } catch {
-        setImportError('Invalid JSON file. Please upload a valid export file.');
+
+        // Auto-detect language
+        const detectedLang = valid.find(q => q.language)?.language;
+        if (detectedLang && importLanguage === 'auto') {
+          setImportLanguage(detectedLang as 'en' | 'am' | 'om');
+        }
+
+        // Use questions with prompts if available, otherwise all valid ones
+        setImportPreview(withPrompts.length > 0 ? withPrompts : valid);
+      } catch (err: any) {
+        setImportError(`Unexpected error: ${err?.message || err}`);
       }
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   };
 
   const handleImportSubmit = async () => {
@@ -440,12 +475,16 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
 
     for (const q of importPreview) {
       try {
+        const resolvedLang = importLanguage === 'auto'
+          ? (q.language || 'en')
+          : importLanguage;
         const payload = {
           ...q,
-          id: undefined, // let server generate
-          category: importCategory, // override with chosen category
+          id: undefined,
+          // Only override category if a specific one was chosen
+          category: importCategory === 'all' ? (q.category || 'daily-life') : importCategory,
           status: q.status || 'active',
-          language: q.language || 'en',
+          language: resolvedLang,
         };
         const resp = await fetch(
           `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/admin/questions`,
@@ -551,44 +590,96 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
           {/* Import Dialog */}
           <Dialog open={isImportDialogOpen} onOpenChange={(open) => {
             setIsImportDialogOpen(open);
-            if (!open) { setImportPreview(null); setImportError(null); }
+            if (!open) { setImportPreview(null); setImportError(null); setImportLanguage('auto'); }
           }}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2 border-primary-300 text-primary-700 hover:bg-primary-50">
                 <Upload className="w-4 h-4" />
-                Import
+                Upload JSON
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
+            <DialogContent className="max-w-lg flex flex-col max-h-[90vh]">
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle className="flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-sky-600" />
-                  Import Q&A Questions
+                  <FileJson className="w-5 h-5 text-primary-600" />
+                  Upload Q&A Questions JSON
                 </DialogTitle>
                 <DialogDescription>
-                  Upload a JSON export file to bulk-add questions into a category.
+                  Upload Amharic, Afan Oromo, or English Q&A questions from a JSON file.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 pt-2">
+              <div className="flex-1 overflow-y-auto pr-1">
+              <div className="space-y-4 pt-2 pb-1">
+
+                {/* Language selector */}
                 <div>
-                  <Label>Target Category</Label>
+                  <Label className="text-sm font-semibold mb-2 block">Content Language</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      { code: 'auto' as const, label: 'Auto-detect', flag: '🔍' },
+                      { code: 'en' as const, label: 'English', flag: '🇺🇸' },
+                      { code: 'am' as const, label: 'Amharic — አማርኛ', flag: '🇪🇹' },
+                      { code: 'om' as const, label: 'Afan Oromo', flag: '🇪🇹' },
+                    ]).map(lang => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => setImportLanguage(lang.code)}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 'var(--radius-md)',
+                          border: `2px solid ${importLanguage === lang.code ? 'var(--primary-500)' : 'var(--border)'}`,
+                          backgroundColor: importLanguage === lang.code ? 'var(--primary-50)' : 'transparent',
+                          color: importLanguage === lang.code ? 'var(--primary-700)' : 'var(--neutral-600)',
+                          fontSize: 'var(--text-label)',
+                          fontWeight: importLanguage === lang.code ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                        }}
+                      >
+                        <span>{lang.flag}</span><span>{lang.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Auto-detect reads the <code>language</code> field from each question in the JSON.
+                  </p>
+                </div>
+
+                {/* Category override */}
+                <div>
+                  <Label>Category Override <span className="text-muted-foreground font-normal">(optional)</span></Label>
                   <select
                     value={importCategory}
                     onChange={(e) => setImportCategory(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-border text-sm mt-1"
                   >
+                    <option value="all">Keep each question's own category</option>
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.label}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-muted-foreground mt-1">All imported questions will be assigned to this category.</p>
                 </div>
 
+                {/* Drop zone */}
                 <div>
-                  <Label>Upload JSON File</Label>
-                  <label className="mt-1 flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-sky-400 hover:bg-sky-50 transition-colors">
-                    <Upload className="w-6 h-6 text-muted-foreground mb-1" />
-                    <span className="text-sm text-muted-foreground">Click to select a .json file</span>
+                  <Label>JSON File</Label>
+                  <label className="mt-1 flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary-400 hover:bg-primary-50 transition-colors">
+                    {importPreview ? (
+                      <CheckCircle2 className="w-7 h-7 text-success-600 mb-1" />
+                    ) : (
+                      <FileJson className="w-7 h-7 text-muted-foreground mb-1" />
+                    )}
+                    <span className="text-sm font-medium" style={{ color: importPreview ? 'var(--success-700)' : 'var(--neutral-600)' }}>
+                      {importPreview
+                        ? `${importPreview.length} question${importPreview.length !== 1 ? 's' : ''} ready`
+                        : 'Click to select a .json file'}
+                    </span>
+                    {importPreview && (
+                      <span className="text-xs text-muted-foreground mt-0.5">
+                        Language: {importLanguage === 'auto' ? `auto (${importPreview.find(q => q.language)?.language || 'en'})` : importLanguage.toUpperCase()}
+                      </span>
+                    )}
                     <input
                       type="file"
                       accept=".json,application/json"
@@ -599,43 +690,42 @@ export function QuestionsManager({ accessToken: propAccessToken }: QuestionsMana
                 </div>
 
                 {importError && (
-                  <div className="flex items-start gap-2 bg-error-50 border border-error-500/30 rounded-lg p-3">
+                  <div className="flex items-start gap-2 bg-error-50 border border-error-200 rounded-lg p-3">
                     <AlertCircle className="w-4 h-4 text-error-500 flex-shrink-0 mt-0.5" />
                     <p className="text-sm text-error-700">{importError}</p>
                   </div>
                 )}
 
-                {importPreview && (
-                  <div className="bg-success-50 border border-success-500/30 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-success-700" />
-                      <p className="text-sm font-medium text-success-700">
-                        {importPreview.length} question(s) ready to import
-                      </p>
-                    </div>
-                    <div className="max-h-40 overflow-y-auto space-y-1">
+                {importPreview && importPreview.length > 0 && (
+                  <ScrollArea className="h-48 border border-border rounded-lg">
+                    <div className="divide-y divide-border">
                       {importPreview.map((q, i) => (
-                        <div key={i} className="text-xs text-success-700 flex items-center gap-1">
-                          <span className="font-medium">{i + 1}.</span>
-                          <span className="truncate">{q.title}</span>
-                          <span className="text-success-500 flex-shrink-0">({q.prompts?.length || 0} prompts)</span>
+                        <div key={i} className="px-3 py-2 text-xs flex items-center gap-2">
+                          <span className="text-muted-foreground font-medium w-5 flex-shrink-0">{i + 1}.</span>
+                          <span className="flex-1 min-w-0 truncate font-medium" lang={q.language === 'am' || q.language === 'om' ? q.language : undefined}>
+                            {q.title}
+                          </span>
+                          <Badge variant="outline" className="text-[10px] flex-shrink-0">{q.category || importCategory}</Badge>
+                          <span className="text-muted-foreground flex-shrink-0">{q.prompts?.length || 0}p</span>
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </ScrollArea>
                 )}
+              </div>{/* end scrollable body */}
+              </div>{/* end pb wrapper */}
 
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => setIsImportDialogOpen(false)} className="flex-1">Cancel</Button>
-                  <Button
-                    onClick={handleImportSubmit}
-                    disabled={!importPreview || isImporting}
-                    className="flex-1 bg-sky-600 hover:bg-sky-700 gap-2"
-                  >
-                    {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    {isImporting ? 'Importing...' : `Import ${importPreview?.length || 0} Questions`}
-                  </Button>
-                </div>
+              {/* Sticky footer — always visible */}
+              <div className="flex-shrink-0 flex gap-2 pt-3 border-t border-border mt-1">
+                <Button variant="outline" onClick={() => setIsImportDialogOpen(false)} className="flex-1">Cancel</Button>
+                <Button
+                  onClick={handleImportSubmit}
+                  disabled={!importPreview || importPreview.length === 0 || isImporting}
+                  className="flex-1 bg-primary-600 hover:bg-primary-700 gap-2"
+                >
+                  {isImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {isImporting ? 'Saving…' : `Save ${importPreview?.length ?? 0} Questions`}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

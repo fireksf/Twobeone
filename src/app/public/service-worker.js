@@ -17,7 +17,8 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('[Service Worker] Precaching app shell');
-        return cache.addAll(PRECACHE_URLS);
+        // Cache individually — addAll fails entirely if any URL 404s
+        return Promise.allSettled(PRECACHE_URLS.map(url => cache.add(url).catch(e => console.warn("[SW] Skip:", url))));
       })
       .then(() => self.skipWaiting())
   );

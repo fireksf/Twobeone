@@ -342,6 +342,14 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Ethiopic script fallback for Amharic / Afan Oromo content */
+    font-family: inherit, 'Noto Sans Ethiopic', sans-serif;
+  }
+
+  /* Explicit Ethiopic font on elements that may contain non-Latin text */
+  [lang="am"], [lang="om"],
+  .ethiopic-text {
+    font-family: 'Noto Sans Ethiopic', inherit, sans-serif;
   }
 }
 

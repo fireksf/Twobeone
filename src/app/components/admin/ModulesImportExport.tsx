@@ -11,8 +11,11 @@ import {
   ChevronDown,
   ChevronUp,
   BookOpen,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
+import { STATIC_MODULES } from '../../data/modules';
 import { toast } from 'sonner@2.0.3';
 
 /* ─── Types ─────────────────────────────────── */
@@ -157,7 +160,42 @@ export function ModulesImportExport({ modules, accessToken, onImportComplete }: 
   const [importResults, setImportResults] = useState<ImportResult[] | null>(null);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const [expandedPreview, setExpandedPreview] = useState(false);
+  const [importLanguage, setImportLanguage] = useState<'auto' | 'en' | 'am' | 'om'>('auto');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedBuiltIn = async () => {
+    setIsSeeding(true);
+    try {
+      const modulesToSeed = STATIC_MODULES.map(m => ({
+        id: m.id,
+        title: m.title,
+        subtitle: m.subtitle,
+        description: m.description,
+        lessons: m.lessons.map(l => ({ id: l.id, title: l.title, duration: l.duration, content: l.content })),
+        icon: m.iconKey,
+        color: m.accentColor,
+        status: 'published',
+        language: 'en',
+      }));
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/admin/modules/import`,
+        {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${accessToken || publicAnonKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ modules: modulesToSeed, overwrite: false }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Seed failed');
+      toast.success(`Seeded ${data.summary.created} module(s). ${data.summary.skipped} already existed.`);
+      onImportComplete();
+    } catch (err: any) {
+      toast.error(err.message || 'Seed failed');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   /* ── Export ── */
   const handleExport = () => {
@@ -210,6 +248,12 @@ export function ModulesImportExport({ modules, accessToken, onImportComplete }: 
           else errs.push(`Module ${i + 1} (${item?.title ?? 'untitled'}): ${errors.join(', ')}`);
         });
 
+        // Auto-detect language from first module that has one set
+        const detected = valid.find(m => m.language)?.language;
+        if (detected && importLanguage === 'auto') {
+          setImportLanguage(detected as 'en' | 'am' | 'om');
+        }
+
         setParsedModules(valid);
         setParseErrors(errs);
       } catch {
@@ -245,7 +289,18 @@ export function ModulesImportExport({ modules, accessToken, onImportComplete }: 
             'Authorization': `Bearer ${accessToken || publicAnonKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ modules: parsedModules, overwrite: overwriteMode === 'overwrite' }),
+          body: JSON.stringify({
+        modules: parsedModules.map(m => {
+          const lang = importLanguage === 'auto' ? (m.language || 'en') : importLanguage;
+          // Prefix IDs with language code for non-English to avoid collisions
+          // e.g. "module-1" → "am-module-1" so English & Amharic coexist
+          const prefixedId = lang !== 'en' && m.id && !m.id.startsWith(`${lang}-`)
+            ? `${lang}-${m.id}`
+            : m.id;
+          return { ...m, id: prefixedId, language: lang };
+        }),
+        overwrite: overwriteMode === 'overwrite',
+      }),
         }
       );
       const data = await res.json();
@@ -276,6 +331,28 @@ export function ModulesImportExport({ modules, accessToken, onImportComplete }: 
 
       {/* ── Trigger bar ── */}
       <div style={{ display: 'flex', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
+        {/* Seed built-in */}
+        <button
+          onClick={handleSeedBuiltIn}
+          disabled={isSeeding}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)',
+            padding: 'var(--spacing-2) var(--spacing-4)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--primary-300)',
+            backgroundColor: 'var(--primary-50)',
+            color: 'var(--primary-700)',
+            fontSize: 'var(--text-callout)',
+            fontWeight: 'var(--font-weight-semibold)',
+            cursor: isSeeding ? 'not-allowed' : 'pointer',
+            opacity: isSeeding ? 0.7 : 1,
+            transition: 'all 0.15s ease',
+          }}
+        >
+          {isSeeding
+            ? <><Loader2 style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} /> Seeding…</>
+            : <><Sparkles style={{ width: 16, height: 16 }} /> Seed 5 Built-In Modules</>}
+        </button>
         {/* Export trigger */}
         <button
           onClick={() => setActivePanel(activePanel === 'export' ? 'none' : 'export')}
@@ -492,6 +569,52 @@ export function ModulesImportExport({ modules, accessToken, onImportComplete }: 
             </div>
           ) : (
             <>
+              {/* ── Language selector ── */}
+              <div>
+                <SectionTitle>Content Language</SectionTitle>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-2)', marginBottom: 'var(--spacing-1)' }}>
+                  {([
+                    { code: 'auto', label: 'Auto-detect', flag: '🔍' },
+                    { code: 'en',   label: 'English',           flag: '🇺🇸' },
+                    { code: 'am',   label: 'Amharic — አማርኛ',   flag: '🇪🇹' },
+                    { code: 'om',   label: 'Afan Oromo',        flag: '🇪🇹' },
+                  ] as const).map(lang => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setImportLanguage(lang.code);
+                        // Re-stamp already-parsed modules
+                        if (parsedModules.length > 0 && lang.code !== 'auto') {
+                          setParsedModules(parsedModules.map(m => {
+                            const baseId = m.id?.replace(/^(en|am|om)-/, '') ?? m.id;
+                            const newId = lang.code !== 'en' && baseId && !baseId.startsWith(`${lang.code}-`)
+                              ? `${lang.code}-${baseId}`
+                              : baseId;
+                            return { ...m, id: newId, language: lang.code };
+                          }));
+                        }
+                      }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '5px 12px',
+                        borderRadius: 'var(--radius-md)',
+                        border: `2px solid ${importLanguage === lang.code ? 'var(--primary-500)' : 'var(--border)'}`,
+                        backgroundColor: importLanguage === lang.code ? 'var(--primary-50)' : 'transparent',
+                        color: importLanguage === lang.code ? 'var(--primary-700)' : 'var(--neutral-600)',
+                        fontSize: 'var(--text-label)',
+                        fontWeight: importLanguage === lang.code ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span>{lang.flag}</span><span>{lang.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize: 'var(--text-label)', color: 'var(--neutral-400)', margin: 0 }}>
+                  Auto-detect reads the <code>language</code> field from each module. Override to force all modules to one language.
+                </p>
+              </div>
+
               {/* ── Drop zone ── */}
               <div>
                 <SectionTitle>Select file</SectionTitle>
@@ -607,11 +730,11 @@ export function ModulesImportExport({ modules, accessToken, onImportComplete }: 
                               {m.title}
                             </p>
                             <p style={{ fontSize: 'var(--text-label)', color: 'var(--neutral-500)', margin: 0 }}>
-                              {m.lessons?.length ?? 0} lesson{(m.lessons?.length ?? 0) !== 1 ? 's' : ''} · {m.status ?? 'draft'}
+                              {m.lessons?.length ?? 0} lesson{(m.lessons?.length ?? 0) !== 1 ? 's' : ''} · {m.status ?? 'draft'} · ID: {m.id}
                             </p>
                           </div>
                           <Pill
-                            label={m.language === 'am' ? 'አማርኛ' : 'EN'}
+                            label={m.language === 'am' ? '🇪🇹 AM' : m.language === 'om' ? '🇪🇹 OM' : '🇺🇸 EN'}
                             color="var(--neutral-600)"
                             bg="var(--neutral-100)"
                           />

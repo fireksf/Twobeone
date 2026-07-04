@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Search, Calendar, BookOpen, RefreshCw, Upload, Music, X, Play, Pause, ArrowDownUp } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Calendar, BookOpen, RefreshCw, Upload, Music, X, Play, Pause, Copy, FileJson, CheckCircle2 } from 'lucide-react';
 import { DevotionalsImportExport } from './DevotionalsImportExport';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -43,7 +43,18 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [isPlayingPreview, setIsPlayingPreview] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const uploadFileRef = useRef<HTMLInputElement>(null);
   const contentLanguage = useContentLanguage();
+
+  // Upload JSON dialog state
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadLanguage, setUploadLanguage] = useState<'en' | 'am' | 'om'>('am');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadData, setUploadData] = useState<any[] | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadOverwrite, setUploadOverwrite] = useState(false);
+  const [uploadSummary, setUploadSummary] = useState<{ created: number; updated: number; skipped: number } | null>(null);
 
   useEffect(() => {
     loadDevotionals();
@@ -107,6 +118,23 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
     setEditingDevotional(devotional);
     setFormData(devotional);
     setIsDialogOpen(true);
+  };
+
+  const handleDuplicate = (devotional: Devotional) => {
+    setEditingDevotional(null); // treat as new
+    setFormData({
+      title: `Copy of ${devotional.title}`,
+      verse: devotional.verse,
+      reference: devotional.reference,
+      reflection: devotional.reflection,
+      prayerPrompt: devotional.prayerPrompt,
+      date: new Date().toISOString().split('T')[0],
+      tags: [...(devotional.tags || [])],
+      status: 'draft',
+      // audioUrl intentionally excluded — audio stays on original
+    });
+    setIsDialogOpen(true);
+    toast.info('Devotional duplicated — review and save as a new draft.');
   };
 
   const handleDelete = async (id: string) => {
@@ -333,6 +361,62 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
     }
   };
 
+  const handleUploadFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadFile(file);
+    setUploadData(null);
+    setUploadError(null);
+    setUploadSummary(null);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const json = JSON.parse(ev.target?.result as string);
+        const raw = json.devotionals ?? (Array.isArray(json) ? json : null);
+        if (!raw) throw new Error('JSON must contain a "devotionals" array');
+        const stamped = raw.map((d: any) => ({
+          ...d,
+          language: uploadLanguage,
+          id: d.id.startsWith(`${uploadLanguage}-`) ? d.id : `${uploadLanguage}-${d.id}`,
+        }));
+        setUploadData(stamped);
+      } catch (err: any) {
+        setUploadError(err.message || 'Invalid JSON');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleUploadSave = async () => {
+    if (!uploadData?.length) return;
+    setIsUploading(true);
+    try {
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/admin/devotionals/import`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken || publicAnonKey}`,
+          },
+          body: JSON.stringify({ devotionals: uploadData, overwrite: uploadOverwrite }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Server error ${res.status}`);
+      }
+      const { summary } = await res.json();
+      setUploadSummary(summary);
+      toast.success(`Saved: ${summary.created} created, ${summary.updated} updated, ${summary.skipped} skipped`);
+      loadDevotionals();
+    } catch (err: any) {
+      toast.error(err.message || 'Upload failed');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const filteredDevotionals = devotionals.filter(d =>
     d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.reference.toLowerCase().includes(searchQuery.toLowerCase())
@@ -353,9 +437,165 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
           <h2 className="text-xl sm:text-2xl font-bold mb-2 text-[24px]">Daily Devotionals</h2>
           <p className="text-sm text-muted-foreground text-[15px]">Manage daily devotional content for couples</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+
+        <div className="flex flex-wrap gap-2 sm:flex-nowrap">
+          {/* Upload JSON button */}
+          <Dialog open={isUploadDialogOpen} onOpenChange={(open) => {
+            setIsUploadDialogOpen(open);
+            if (!open) { setUploadFile(null); setUploadData(null); setUploadError(null); setUploadSummary(null); }
+          }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto text-sm border-primary-300 text-primary-700 hover:bg-primary-50">
+                <Upload className="w-4 h-4 mr-2" />
+                Upload JSON
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[95vw] sm:max-w-lg w-full">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+                  <FileJson className="w-5 h-5 text-primary-600" />
+                  Upload Devotionals JSON
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  Select the content language, then upload a JSON file to save devotionals to the database.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 pt-2">
+                {/* Language selector */}
+                <div>
+                  <Label className="text-sm font-semibold mb-2 block">Content Language</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {([
+                      { code: 'en' as const, label: 'English', flag: '🇺🇸' },
+                      { code: 'am' as const, label: 'Amharic — አማርኛ', flag: '🇪🇹' },
+                      { code: 'om' as const, label: 'Afan Oromo', flag: '🇪🇹' },
+                    ]).map(lang => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => {
+                          setUploadLanguage(lang.code);
+                          if (uploadData) {
+                            setUploadData(uploadData.map((d: any) => ({
+                              ...d,
+                              language: lang.code,
+                              id: d.id.replace(/^(en|am|om)-/, `${lang.code}-`),
+                            })));
+                          }
+                        }}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 'var(--radius-md)',
+                          border: `2px solid ${uploadLanguage === lang.code ? 'var(--primary-500)' : 'var(--border)'}`,
+                          backgroundColor: uploadLanguage === lang.code ? 'var(--primary-50)' : 'transparent',
+                          color: uploadLanguage === lang.code ? 'var(--primary-700)' : 'var(--neutral-600)',
+                          fontSize: 'var(--text-callout)',
+                          fontWeight: uploadLanguage === lang.code ? 'var(--font-weight-semibold)' : 'var(--font-weight-normal)',
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                        }}
+                      >
+                        <span>{lang.flag}</span><span>{lang.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* File drop zone */}
+                <div
+                  onClick={() => uploadFileRef.current?.click()}
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => {
+                    e.preventDefault();
+                    const f = e.dataTransfer.files?.[0];
+                    if (f) {
+                      const dt = new DataTransfer(); dt.items.add(f);
+                      if (uploadFileRef.current) { uploadFileRef.current.files = dt.files; uploadFileRef.current.dispatchEvent(new Event('change', { bubbles: true })); }
+                    }
+                  }}
+                  style={{
+                    border: `2px dashed ${uploadError ? 'var(--error-400)' : uploadData ? 'var(--success-400)' : 'var(--border)'}`,
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--spacing-6)',
+                    textAlign: 'center', cursor: 'pointer',
+                    backgroundColor: uploadData ? 'var(--success-50)' : 'var(--neutral-50)',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {uploadData ? (
+                    <CheckCircle2 className="w-9 h-9 mx-auto mb-2 text-success-600" />
+                  ) : (
+                    <FileJson className="w-9 h-9 mx-auto mb-2" style={{ color: 'var(--neutral-400)' }} />
+                  )}
+                  <p className="text-sm font-medium" style={{ color: 'var(--neutral-700)' }}>
+                    {uploadFile ? uploadFile.name : 'Drop JSON file here or click to browse'}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--neutral-400)' }}>
+                    {uploadData
+                      ? `${uploadData.length} devotional${uploadData.length !== 1 ? 's' : ''} ready — language: ${uploadLanguage.toUpperCase()}`
+                      : 'Accepts .json in TwoBeOne export format'}
+                  </p>
+                </div>
+                <input ref={uploadFileRef} type="file" accept=".json" className="hidden" onChange={handleUploadFileChange} />
+
+                {uploadError && (
+                  <p className="text-xs text-error-600 bg-error-50 rounded-md p-3 border border-error-200">{uploadError}</p>
+                )}
+
+                {/* Overwrite toggle */}
+                {uploadData && (
+                  <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--neutral-700)' }}>
+                    <input
+                      type="checkbox"
+                      checked={uploadOverwrite}
+                      onChange={e => setUploadOverwrite(e.target.checked)}
+                      style={{ accentColor: 'var(--primary-500)' }}
+                    />
+                    Overwrite existing devotionals with same ID
+                  </label>
+                )}
+
+                {/* Success summary */}
+                {uploadSummary && (
+                  <div className="flex gap-3 flex-wrap">
+                    {[
+                      { label: 'Created', val: uploadSummary.created, color: 'var(--success-700)', bg: 'var(--success-50)' },
+                      { label: 'Updated', val: uploadSummary.updated, color: 'var(--sky-700)', bg: 'var(--sky-50)' },
+                      { label: 'Skipped', val: uploadSummary.skipped, color: 'var(--neutral-500)', bg: 'var(--neutral-100)' },
+                    ].map(s => (
+                      <div key={s.label} style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', backgroundColor: s.bg }}>
+                        <p className="text-xl font-bold" style={{ color: s.color }}>{s.val}</p>
+                        <p className="text-xs" style={{ color: s.color }}>{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div className="flex gap-2 justify-end pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsUploadDialogOpen(false)}>Cancel</Button>
+                  <Button
+                    size="sm"
+                    className="bg-primary-600 hover:bg-primary-700"
+                    onClick={handleUploadSave}
+                    disabled={!uploadData || isUploading}
+                  >
+                    {isUploading ? (
+                      <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Saving…</>
+                    ) : (
+                      <><Upload className="w-4 h-4 mr-2" />Save {uploadData?.length ?? 0} Devotionals</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* New Devotional button */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button 
+            <Button
               className="bg-primary-600 hover:bg-primary-700 w-full sm:w-auto text-sm"
               size="sm"
               onClick={() => {
@@ -379,10 +619,14 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
           <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] w-full">
             <DialogHeader>
               <DialogTitle className="text-xl sm:text-2xl font-bold">
-                {editingDevotional ? 'Edit Devotional' : 'Create New Devotional'}
+                {editingDevotional ? 'Edit Devotional' : formData.title?.startsWith('Copy of') ? 'Duplicate Devotional' : 'Create New Devotional'}
               </DialogTitle>
               <DialogDescription className="text-sm">
-                {editingDevotional ? 'Update the details of this devotional.' : 'Enter the details for the new devotional.'}
+                {editingDevotional
+                  ? 'Update the details of this devotional.'
+                  : formData.title?.startsWith('Copy of')
+                  ? 'Review the duplicated content and adjust before saving as a new draft.'
+                  : 'Enter the details for the new devotional.'}
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[70vh] pr-2 sm:pr-4">
@@ -491,6 +735,7 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
             </ScrollArea>
           </DialogContent>
         </Dialog>
+        </div>{/* end button group */}
       </div>
 
       {/* Stats Cards */}
@@ -645,14 +890,25 @@ export function DevotionalsManager({ accessToken }: DevotionalsManagerProps) {
                     variant="outline"
                     onClick={() => handleEdit(devotional)}
                     className="text-xs"
+                    title="Edit"
                   >
                     <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => handleDuplicate(devotional)}
+                    className="text-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200"
+                    title="Duplicate"
+                  >
+                    <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => handleDelete(devotional.id)}
                     className="text-error-500 hover:bg-error-50 text-xs"
+                    title="Delete"
                   >
                     <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>

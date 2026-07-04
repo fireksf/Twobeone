@@ -3839,6 +3839,40 @@ app.post('/make-server-6d579fee/admin/modules/import', async (c) => {
   }
 });
 
+// Public: list published modules, optionally filtered by language
+app.get('/make-server-6d579fee/modules', async (c) => {
+  try {
+    const userId = await getUserFromToken(c.req.header('Authorization'));
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const lang = c.req.query('language') || 'en';
+    const all = await kv.getByPrefix('module:');
+    const published = all.filter((m: any) => m.status === 'published');
+
+    // Match by language field OR by ID prefix (handles imports where language field was missing)
+    const matchesLang = (m: any) =>
+      m.language === lang ||
+      (!m.language && lang === 'en') ||
+      (lang !== 'en' && m.id?.startsWith(`${lang}-`));
+
+    // Exclude modules that belong to a different non-English language
+    const isEnglish = (m: any) =>
+      m.language === 'en' ||
+      (!m.language && !m.id?.match(/^(am|om)-/));
+
+    let filtered = published.filter(matchesLang);
+
+    // Fallback to English-only (exclude other language modules)
+    if (filtered.length === 0 && lang !== 'en') {
+      filtered = published.filter(isEnglish);
+    }
+
+    return c.json({ modules: filtered });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 app.get('/make-server-6d579fee/admin/modules/list', async (c) => {
   try {
     const userId = await getUserFromToken(c.req.header('Authorization'));

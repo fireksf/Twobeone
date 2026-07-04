@@ -70,7 +70,7 @@ export function QADiscussionHub({
   selectedCategory,
   onBack
 }: QADiscussionHubProps) {
-  const { t } = useLanguage();
+  const { t, language: appLanguage } = useLanguage();
   const [activeCategory, setActiveCategory] = useState(selectedCategory || 'all');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
@@ -82,17 +82,21 @@ export function QADiscussionHub({
   const [overallLoading, setOverallLoading] = useState(false);
   const [overallLoaded, setOverallLoaded] = useState(false);
   
-  // Language filter state - initialize from localStorage or default to 'en'
-  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'am'>(
-    (localStorage.getItem('twobeone_language') as 'en' | 'am') || 'en'
+  // Language filter — default to app-level language so it's always in sync
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'am' | 'om'>(
+    (localStorage.getItem('twobeone_language') as 'en' | 'am' | 'om') || 'en'
   );
 
-  // Update localStorage when language changes
+  // When the app UI language changes, update the Q&A language to match
   useEffect(() => {
-    localStorage.setItem('twobeone_language', selectedLanguage);
-    // Reset to first question when language changes
+    if (appLanguage && appLanguage !== selectedLanguage) {
+      setSelectedLanguage(appLanguage as 'en' | 'am' | 'om');
+    }
+  }, [appLanguage]);
+
+  // Reload questions and reset index when language changes
+  useEffect(() => {
     setCurrentQuestionIndex(0);
-    // Force reload questions when language changes
     loadQuestions();
   }, [selectedLanguage]);
 
@@ -389,27 +393,23 @@ export function QADiscussionHub({
 
 
       {/* Language Filter */}
-      <div className="space-y-2">
-        <div className="flex justify-center gap-2">
+      <div className="flex justify-center gap-2 flex-wrap">
+        {([
+          { code: 'en' as const, label: 'English', flag: '🇺🇸' },
+          { code: 'am' as const, label: 'አማርኛ', flag: '🇪🇹' },
+          { code: 'om' as const, label: 'Oromiffa', flag: '🇪🇹' },
+        ]).map(lang => (
           <Button
-            variant={selectedLanguage === 'en' ? 'default' : 'outline'}
+            key={lang.code}
+            variant={selectedLanguage === lang.code ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setSelectedLanguage('en')}
-            className="flex items-center gap-2"
+            onClick={() => setSelectedLanguage(lang.code)}
+            className={`flex items-center gap-1.5 text-xs px-3 ${selectedLanguage === lang.code ? 'bg-primary-600 hover:bg-primary-700' : ''}`}
           >
-            <Globe className="w-4 h-4" />
-            English
+            <span>{lang.flag}</span>
+            <span>{lang.label}</span>
           </Button>
-          <Button
-            variant={selectedLanguage === 'am' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedLanguage('am')}
-            className="flex items-center gap-2"
-          >
-            <Globe className="w-4 h-4" />
-            አማርኛ
-          </Button>
-        </div>
+        ))}
       </div>
 
       {/* AI Assistant Button */}

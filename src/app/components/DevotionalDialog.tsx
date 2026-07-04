@@ -14,6 +14,7 @@ interface Devotional {
   reflection: string;
   prayer: string;
   audioUrl?: string;
+  language?: string;
 }
 
 interface DevotionalDialogProps {
@@ -129,7 +130,11 @@ export function DevotionalDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 gap-0" aria-describedby="devotional-description">
+      <DialogContent
+        className="max-w-2xl h-[90vh] flex flex-col p-0 gap-0"
+        aria-describedby="devotional-description"
+        lang={devotional.language === 'am' || devotional.language === 'om' ? devotional.language : undefined}
+      >
         {/* Fixed Header - 8dp spacing system */}
         <DialogHeader className="px-4 pt-4 pb-4 border-b flex-shrink-0">
           <div className="flex items-center justify-between">

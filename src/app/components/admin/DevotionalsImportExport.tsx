@@ -60,6 +60,7 @@ export function DevotionalsImportExport({ devotionals, accessToken, onImportComp
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
 
   const [isSeedLoading, setIsSeedLoading] = useState(false);
+  const [importLanguage, setImportLanguage] = useState<'en' | 'am' | 'om'>('en');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,12 +109,18 @@ export function DevotionalsImportExport({ devotionals, accessToken, onImportComp
     reader.onload = (ev) => {
       try {
         const json = JSON.parse(ev.target?.result as string);
-        const list: DevotionalRecord[] = json.devotionals ?? (Array.isArray(json) ? json : null);
-        if (!list) throw new Error('JSON must have a "devotionals" array');
-        const invalid = list.filter(d => !d.id || !d.title);
+        const raw: DevotionalRecord[] = json.devotionals ?? (Array.isArray(json) ? json : null);
+        if (!raw) throw new Error('JSON must have a "devotionals" array');
+        const invalid = raw.filter(d => !d.id || !d.title);
         if (invalid.length > 0) {
           setImportError(`${invalid.length} item(s) missing required fields (id, title)`);
         }
+        // Stamp language + prefix ID to avoid collision with English content
+        const list = raw.map(d => ({
+          ...d,
+          language: importLanguage,
+          id: d.id.startsWith(`${importLanguage}-`) ? d.id : `${importLanguage}-${d.id}`,
+        }));
         setImportData(list);
       } catch (err: any) {
         setImportError(err.message || 'Invalid JSON file');
@@ -298,6 +305,52 @@ export function DevotionalsImportExport({ devotionals, accessToken, onImportComp
           </span>
         </div>
         <div style={{ padding: VAR('--spacing-5') }}>
+          {/* Language selector */}
+          <div style={{ marginBottom: VAR('--spacing-4') }}>
+            <p style={{ fontSize: VAR('--text-callout'), fontWeight: VAR('--font-weight-semibold'), color: VAR('--neutral-800'), margin: `0 0 ${VAR('--spacing-2')} 0` }}>
+              Content Language
+            </p>
+            <div style={{ display: 'flex', gap: VAR('--spacing-2'), flexWrap: 'wrap' }}>
+              {([
+                { code: 'en', label: 'English', flag: '🇺🇸' },
+                { code: 'am', label: 'Amharic — አማርኛ', flag: '🇪🇹' },
+                { code: 'om', label: 'Afan Oromo — Oromiffa', flag: '🇪🇹' },
+              ] as const).map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => {
+                    setImportLanguage(lang.code);
+                    // Re-stamp any already-loaded data with the new language
+                    if (importData) {
+                      setImportData(importData.map(d => ({
+                        ...d,
+                        language: lang.code,
+                        id: d.id.replace(/^(en|am|om)-/, '') .replace(/^/, `${lang.code}-`),
+                      })));
+                    }
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: VAR('--spacing-2'),
+                    padding: `${VAR('--spacing-2')} ${VAR('--spacing-3')}`,
+                    borderRadius: VAR('--radius-md'),
+                    border: `2px solid ${importLanguage === lang.code ? VAR('--primary-500') : VAR('--border')}`,
+                    backgroundColor: importLanguage === lang.code ? VAR('--primary-50') : VAR('--card'),
+                    color: importLanguage === lang.code ? VAR('--primary-700') : VAR('--neutral-600'),
+                    fontSize: VAR('--text-callout'), fontWeight: importLanguage === lang.code ? VAR('--font-weight-semibold') : VAR('--font-weight-normal'),
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span>{lang.flag}</span>
+                  <span>{lang.label}</span>
+                </button>
+              ))}
+            </div>
+            <p style={{ fontSize: VAR('--text-label'), color: VAR('--neutral-400'), margin: `${VAR('--spacing-2')} 0 0 0` }}>
+              All imported devotionals will be tagged with this language. IDs are prefixed (e.g. <code>am-dev-001</code>) to avoid conflicts.
+            </p>
+          </div>
+
           {/* Drop zone */}
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -362,6 +415,11 @@ export function DevotionalsImportExport({ devotionals, accessToken, onImportComp
                         </p>
                         <p style={{ fontSize: 10, color: VAR('--neutral-400'), margin: 0 }}>{d.reference || d.id}</p>
                       </div>
+                      {d.language && (
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 999, backgroundColor: VAR('--primary-50'), color: VAR('--primary-700'), fontWeight: VAR('--font-weight-semibold'), flexShrink: 0 }}>
+                          {d.language.toUpperCase()}
+                        </span>
+                      )}
                       {d.date && <span style={{ fontSize: 10, color: VAR('--neutral-400'), flexShrink: 0 }}>{d.date}</span>}
                     </div>
                   ))}

@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Quote,
+  Loader2,
 } from 'lucide-react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner';
@@ -20,6 +21,30 @@ interface LessonScreenProps {
   accessToken?: string;
 }
 
+// Normalise an API/KV module to the StaticModule shape
+function toStaticModule(m: any): StaticModule {
+  return {
+    id: m.id,
+    title: m.title || '',
+    subtitle: m.subtitle || '',
+    description: m.description || '',
+    scripture: m.verse || m.scripture || '',
+    scriptureRef: m.verseReference || m.scriptureRef || '',
+    iconKey: m.iconKey || 'book',
+    accentColor: m.accentColor || 'var(--primary-600)',
+    accentBg: m.accentBg || 'var(--primary-50)',
+    accentBorder: m.accentBorder || 'var(--primary-200)',
+    duration: m.duration || `${(m.lessons?.length || 1) * 20} min`,
+    isLocked: false,
+    lessons: (m.lessons || []).map((l: any) => ({
+      id: String(l.id),
+      title: l.title || '',
+      duration: l.duration || '20 min',
+      content: l.content || '',
+    })),
+  } as StaticModule;
+}
+
 export function LessonScreen({ moduleId, lessonId, onBack, accessToken }: LessonScreenProps) {
   const [notes, setNotes] = useState('');
   const [isCompleted, setIsCompleted] = useState(false);
@@ -28,16 +53,35 @@ export function LessonScreen({ moduleId, lessonId, onBack, accessToken }: Lesson
   const [moduleProgress, setModuleProgress] = useState(0);
   const { t } = useLanguage();
   const [isSaving, setIsSaving] = useState(false);
+  const [apiModule, setApiModule] = useState<StaticModule | null>(null);
+  const [isLoadingModule, setIsLoadingModule] = useState(false);
 
-  const module: StaticModule | undefined = getStaticModule(moduleId);
+  // Try static lookup first; fall back to API for uploaded (non-English) modules
+  const staticModule = getStaticModule(moduleId);
+  const module: StaticModule | undefined = staticModule ?? apiModule ?? undefined;
+
+  useEffect(() => {
+    if (staticModule) return; // already have it
+    setIsLoadingModule(true);
+    fetch(
+      `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/modules/${moduleId}`,
+      { headers: { Authorization: `Bearer ${accessToken || publicAnonKey}` } }
+    )
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.module) setApiModule(toStaticModule(data.module));
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingModule(false));
+  }, [moduleId, accessToken, staticModule]);
 
   // Set initial lesson index from lessonId prop
   useEffect(() => {
     if (module && lessonId) {
-      const idx = module.lessons.findIndex((l) => l.id === lessonId);
+      const idx = module.lessons.findIndex((l) => l.id === lessonId || l.id === String(lessonId));
       if (idx >= 0) setCurrentLessonIndex(idx);
     }
-  }, [moduleId, lessonId]);
+  }, [moduleId, lessonId, module]);
 
   // Load progress overlay from API (non-blocking)
   useEffect(() => {
@@ -54,6 +98,15 @@ export function LessonScreen({ moduleId, lessonId, onBack, accessToken }: Lesson
   }, [currentLessonIndex, module, completedLessonIds]);
 
   const authHeader = () => ({ Authorization: `Bearer ${accessToken || publicAnonKey}` });
+
+  // Show spinner while API is loading the module
+  if (isLoadingModule) {
+    return (
+      <div style={{ padding: 'var(--spacing-10)', textAlign: 'center' }}>
+        <Loader2 style={{ width: 32, height: 32, margin: '0 auto', animation: 'spin 1s linear infinite', color: 'var(--primary-500)' }} />
+      </div>
+    );
+  }
 
   const loadModuleProgress = async () => {
     try {

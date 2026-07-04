@@ -55,10 +55,53 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
         return;
       }
 
-      // Check if Service Worker is registered
-      const swRegistration = await navigator.serviceWorker.getRegistration();
+      // Resolve the active SW registration — three paths in priority order:
+      // 1. Already controlling (fast path for installed PWA)
+      // 2. Existing registration in any state (installing / waiting / active)
+      // 3. Register fresh after confirming the file is real JS
+      let swRegistration: ServiceWorkerRegistration | null = null;
+
+      if (navigator.serviceWorker.controller) {
+        // Fast path — SW is already controlling this page
+        swRegistration = await navigator.serviceWorker.ready;
+      } else {
+        // Check for any existing registration first
+        const existing = await navigator.serviceWorker.getRegistration('/');
+        if (existing) {
+          swRegistration = existing;
+        } else {
+          // No registration — verify the file is actually JS before registering
+          try {
+            const probe = await fetch('/service-worker.js', { method: 'HEAD' });
+            const ct = probe.headers.get('content-type') || '';
+            const isJs = ct.includes('javascript') || ct.includes('text/js') || probe.url.endsWith('.js');
+            if (!probe.ok || (!isJs && ct.includes('html'))) {
+              toast.error(
+                'The service worker file is not accessible in this environment. ' +
+                'Push notifications require the app to be opened from its direct URL, not embedded.'
+              );
+              setIsLoading(false);
+              return;
+            }
+          } catch { /* fetch failed — proceed and let register() surface the real error */ }
+
+          try {
+            swRegistration = await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+          } catch (regErr: any) {
+            const msg = String(regErr?.message || regErr);
+            console.error('[PushNotification] SW register failed:', msg);
+            toast.error(
+              'Could not register service worker. ' +
+              'Try reloading the app or opening it in Chrome on Android / Safari on iOS.'
+            );
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
       if (!swRegistration) {
-        toast.error('Service Worker not registered. Please refresh the page and try again.');
+        toast.error('Service worker unavailable. Please reload the app and try again.');
         setIsLoading(false);
         return;
       }
@@ -75,9 +118,33 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
 
       setNotificationStatus('granted');
 
-      // Subscribe to push notifications
-      const subscription = await subscribeToPushNotifications();
-      
+      // Subscribe to push notifications using the resolved registration directly
+      const vapidPublicKey = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDCoXjbK3s9gE8ZCXzp8zQJZs8qI67y_NvZy7p3kk0z0';
+      const urlBase64ToUint8Array = (base64String: string) => {
+        const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+        return outputArray;
+      };
+
+      let subscription: PushSubscription | null = null;
+      try {
+        subscription = await swRegistration.pushManager.getSubscription();
+        if (!subscription) {
+          subscription = await swRegistration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+          });
+        }
+      } catch (subErr: any) {
+        console.error('[PushNotification] Subscribe failed:', subErr);
+        toast.error('Failed to subscribe to push notifications: ' + (subErr?.message || subErr));
+        setIsLoading(false);
+        return;
+      }
+
       if (!subscription) {
         toast.error('Failed to subscribe to notifications');
         setIsLoading(false);

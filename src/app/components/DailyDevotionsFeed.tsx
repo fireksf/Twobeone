@@ -60,7 +60,7 @@ interface DailyDevotionsFeedProps {
 }
 
 export function DailyDevotionsFeed({ onDevotionalClick, accessToken, projectId, onBackToHome }: DailyDevotionsFeedProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('devotionals');
   const [devotionals, setDevotionals] = useState<Devotional[]>([]);
   const [isLoadingDevotionals, setIsLoadingDevotionals] = useState(false);
@@ -72,25 +72,22 @@ export function DailyDevotionsFeed({ onDevotionalClick, accessToken, projectId, 
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(null);
   const [audioElements, setAudioElements] = useState<Map<string, HTMLAudioElement>>(new Map());
   
-  // Language filter state - initialize from localStorage or default to 'en'
-  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'am'>(() => {
-    const saved = localStorage.getItem('twobeone_language');
-    return (saved === 'am' ? 'am' : 'en') as 'en' | 'am';
-  });
-
-  // Update localStorage when language changes
-  useEffect(() => {
-    localStorage.setItem('twobeone_language', selectedLanguage);
-  }, [selectedLanguage]);
-
-  // Filter devotionals by selected language
-  const filteredDevotionals = devotionals.filter(d => 
-    !d.language || d.language === selectedLanguage
+  // Devotional content language — defaults to app UI language but independently switchable
+  const [devotionalLanguage, setDevotionalLanguage] = useState<'en' | 'am' | 'om'>(
+    (language as 'en' | 'am' | 'om') || 'en'
   );
 
-  // Filter audio devotionals by selected language
-  const filteredAudioDevotionals = audioDevotionals.filter(d => 
-    !d.language || d.language === selectedLanguage
+  // Filter by selected content language; untagged devotionals treated as English
+  const filteredDevotionals = devotionals.filter(d =>
+    devotionalLanguage === 'en'
+      ? !d.language || d.language === 'en'
+      : d.language === devotionalLanguage
+  );
+
+  const filteredAudioDevotionals = audioDevotionals.filter(d =>
+    devotionalLanguage === 'en'
+      ? !d.language || d.language === 'en'
+      : d.language === devotionalLanguage
   );
 
   // Load devotionals from backend (admin-created only)
@@ -409,26 +406,36 @@ export function DailyDevotionsFeed({ onDevotionalClick, accessToken, projectId, 
         <p className="text-muted-foreground">{t.dashboard.growingTogetherInFaith}</p>
       </div>
 
-      {/* Language Filter */}
+      {/* Devotional language switcher */}
       <div className="flex justify-center gap-2 pb-2">
-        <Button
-          variant={selectedLanguage === 'en' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSelectedLanguage('en')}
-          className="flex items-center gap-2"
-        >
-          <Globe className="w-4 h-4" />
-          English
-        </Button>
-        <Button
-          variant={selectedLanguage === 'am' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setSelectedLanguage('am')}
-          className="flex items-center gap-2"
-        >
-          <Globe className="w-4 h-4" />
-          አማርኛ
-        </Button>
+        {([
+          { code: 'en' as const, label: 'English', flag: '🇺🇸' },
+          { code: 'am' as const, label: 'አማርኛ', flag: '🇪🇹' },
+          { code: 'om' as const, label: 'Oromiffa', flag: '🇪🇹' },
+        ]).map(lang => {
+          const count = devotionals.filter(d =>
+            lang.code === 'en' ? !d.language || d.language === 'en' : d.language === lang.code
+          ).length;
+          const isActive = devotionalLanguage === lang.code;
+          return (
+            <Button
+              key={lang.code}
+              size="sm"
+              variant={isActive ? 'default' : 'outline'}
+              onClick={() => setDevotionalLanguage(lang.code)}
+              className={isActive
+                ? 'bg-primary-600 hover:bg-primary-700 text-white text-xs px-3'
+                : 'text-xs px-3 text-muted-foreground hover:text-foreground'
+              }
+            >
+              <span className="mr-1">{lang.flag}</span>
+              {lang.label}
+              <span className={`ml-1.5 text-xs font-bold ${isActive ? 'text-white/80' : 'text-muted-foreground'}`}>
+                {count}
+              </span>
+            </Button>
+          );
+        })}
       </div>
 
       {/* Tabs */}
@@ -465,6 +472,7 @@ export function DailyDevotionsFeed({ onDevotionalClick, accessToken, projectId, 
               return (
                 <Card
                   key={devotional.id}
+                  lang={devotional.language === 'am' || devotional.language === 'om' ? devotional.language : undefined}
                   className="p-5 cursor-pointer hover:shadow-lg transition-shadow"
                   onClick={() => onDevotionalClick(devotional.id)}
                 >
