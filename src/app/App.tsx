@@ -226,6 +226,25 @@ export default function App() {
       });
   }, []);
 
+  // Proactively warm up the Edge Function the moment the app mounts —
+  // before auth completes so the server is ready when the profile fetch fires.
+  useEffect(() => { warmUpServer(); }, []);
+
+  // Load Ethiopic font only when the app language requires it
+  useEffect(() => {
+    const lang = localStorage.getItem('twobeone_language');
+    if (lang === 'am' || lang === 'om') {
+      const id = 'ethiopic-font';
+      if (!document.getElementById(id)) {
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wdth,wght@75..125,100..900&display=swap';
+        document.head.appendChild(link);
+      }
+    }
+  }, []);
+
   // Stable ref so the auth listener can always call the latest loadUserData
   // without the listener itself needing to be recreated on every render.
   const loadUserDataRef = useRef<
@@ -556,8 +575,7 @@ export default function App() {
     setIsLoading(true);
     setLoadError(null);
 
-    // Fire-and-forget warm-up — never block data loading on this
-    warmUpServer();
+    // warm-up already fired on mount — no need to repeat here
 
     try {
       // Profile must load first (partner sync depends on it)

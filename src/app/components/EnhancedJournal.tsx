@@ -9,8 +9,8 @@ import { Switch } from './ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { 
-  Plus, 
+import {
+  Plus,
   Image as ImageIcon,
   Video,
   Mic,
@@ -28,7 +28,10 @@ import {
   MapPin,
   Sparkles,
   BookOpen,
-  Home
+  Home,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
 } from 'lucide-react';
 import { JournalEntry } from '../types';
 import { toast } from 'sonner@2.0.3';
@@ -116,6 +119,20 @@ export function EnhancedJournal({
   const [isShared, setIsShared] = useState(true);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   
+  // Lightbox state
+  const [lightboxImages, setLightboxImages] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  const openLightbox = (images: string[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+  const closeLightbox = () => setLightboxOpen(false);
+  const prevImage = () => setLightboxIndex(i => (i - 1 + lightboxImages.length) % lightboxImages.length);
+  const nextImage = () => setLightboxIndex(i => (i + 1) % lightboxImages.length);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -560,6 +577,40 @@ export function EnhancedJournal({
                             </div>
                           )}
 
+                          {/* Photo Grid — clickable thumbnails */}
+                          {(() => {
+                            const imgs = entry.mediaFiles?.filter(m => m.type === 'image') ?? [];
+                            if (imgs.length === 0) return null;
+                            const shown = imgs.slice(0, 4);
+                            const extra = imgs.length - 4;
+                            return (
+                              <div className={`grid gap-1.5 mb-4 ${shown.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                {shown.map((img, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="relative rounded-lg overflow-hidden cursor-pointer group"
+                                    style={{ aspectRatio: '1/1' }}
+                                    onClick={() => openLightbox(imgs.map(i => i.url), idx)}
+                                  >
+                                    <img
+                                      src={img.url}
+                                      alt=""
+                                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                    />
+                                    {idx === 3 && extra > 0 && (
+                                      <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                                        <span className="text-white text-xl font-bold">+{extra}</span>
+                                      </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                      <ZoomIn className="w-6 h-6 text-white drop-shadow" />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+
                           {/* Media Grid (non-image) */}
                           {hasMedia && entry.mediaFiles!.filter(m => m.type !== 'image').length > 0 && (
                             <div className="grid grid-cols-2 gap-2 mb-4">
@@ -961,6 +1012,70 @@ export function EnhancedJournal({
       >
         <Plus className="w-8 h-8" />
       </button>
+
+      {/* Lightbox */}
+      {lightboxOpen && lightboxImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95"
+          onClick={closeLightbox}
+        >
+          {/* Close */}
+          <button
+            className="absolute top-4 right-4 text-white/80 hover:text-white z-10 p-2 rounded-full bg-white/10"
+            onClick={closeLightbox}
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Counter */}
+          {lightboxImages.length > 1 && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 text-white/70 text-sm font-medium bg-black/40 px-3 py-1 rounded-full">
+              {lightboxIndex + 1} / {lightboxImages.length}
+            </div>
+          )}
+
+          {/* Main image */}
+          <img
+            src={lightboxImages[lightboxIndex]}
+            alt=""
+            className="max-h-[85vh] max-w-[92vw] object-contain rounded-lg shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          />
+
+          {/* Prev / Next */}
+          {lightboxImages.length > 1 && (
+            <>
+              <button
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                onClick={e => { e.stopPropagation(); prevImage(); }}
+              >
+                <ChevronLeft className="w-7 h-7" />
+              </button>
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                onClick={e => { e.stopPropagation(); nextImage(); }}
+              >
+                <ChevronRight className="w-7 h-7" />
+              </button>
+            </>
+          )}
+
+          {/* Thumbnail strip */}
+          {lightboxImages.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2" onClick={e => e.stopPropagation()}>
+              {lightboxImages.map((src, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLightboxIndex(i)}
+                  className={`w-12 h-12 rounded-md overflow-hidden border-2 transition-all ${i === lightboxIndex ? 'border-white scale-110' : 'border-white/30 opacity-60'}`}
+                >
+                  <img src={src} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

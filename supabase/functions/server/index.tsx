@@ -2460,6 +2460,7 @@ app.get('/make-server-6d579fee/devotions', async (c) => {
       })
     );
 
+    c.header('Cache-Control', 'private, max-age=120');
     return c.json({ devotions });
   } catch (error: any) {
     console.error('Devotions fetch error:', error);
@@ -4182,6 +4183,8 @@ app.get('/make-server-6d579fee/questions', async (c) => {
       questions = langQ.length > 0 ? langQ : questions.filter((q: any) => !q.language || q.language === 'en');
     }
 
+    // Cache for 5 minutes — questions change rarely; this avoids a full KV scan per category switch
+    c.header('Cache-Control', 'private, max-age=300');
     return c.json({ questions });
   } catch (error: any) {
     console.error('Get questions error:', error);
@@ -5934,7 +5937,7 @@ setupAdminRoutes(app, getSupabase());
 // Single serialized startup sequence — prevents DB connection pool exhaustion.
 // If Supabase is unreachable on boot, the entire chain is skipped silently.
 async function runStartupSequence() {
-  // Reachability probe — one cheap KV get. Bail out if DB is down.
+  // Reachability probe — bail out immediately if DB is down.
   try {
     await kv.get('system:startup-probe');
   } catch {
@@ -5942,9 +5945,16 @@ async function runStartupSequence() {
     return;
   }
 
-  // Non-blocking: admin + audio bucket
+  // Non-blocking: admin + audio bucket (fire and forget)
   initializeAdminSystem().catch(() => {});
   initAudioBucket().catch(() => {});
+
+  // Skip heavy seeders entirely if they've already run — one flag check avoids 500+ KV reads
+  const alreadySeeded = await kv.get('system:all-seeds-complete').catch(() => null);
+  if (alreadySeeded) {
+    console.log('[Startup] Seeds already complete — skipping seeders');
+    return;
+  }
 
   // Dedup pass
   try {
@@ -5961,6 +5971,9 @@ async function runStartupSequence() {
 
   await new Promise(r => setTimeout(r, 2000));
   try { await seedAllCategoryQuestions(); } catch { /* non-fatal */ }
+
+  // Mark seeds as complete so future cold boots skip all of this
+  await kv.set('system:all-seeds-complete', { completedAt: new Date().toISOString() }).catch(() => {});
 }
 
 setTimeout(runStartupSequence, 5000);

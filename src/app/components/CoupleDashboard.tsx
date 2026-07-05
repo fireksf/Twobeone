@@ -304,10 +304,13 @@ export function CoupleDashboard({
     };
 
     if (profile?.id) {
-      fetchMilestones();
-      // Poll for partner milestone updates every 30 seconds (reduced from 15s)
+      // Defer 1s so it doesn't compete with the critical first render
+      const t = setTimeout(() => {
+        fetchMilestones();
+        // Poll for partner milestone updates every 30 seconds (reduced from 15s)
+      }, 1000);
       const interval = setInterval(fetchMilestones, 30000);
-      return () => clearInterval(interval);
+      return () => { clearTimeout(t); clearInterval(interval); };
     }
   }, [profile?.id, partner?.id]);
 
@@ -391,7 +394,8 @@ export function CoupleDashboard({
     };
 
     if (profile?.id) {
-      fetchMoods();
+      // Defer 1.5s — mood data is non-critical for initial render
+      setTimeout(() => fetchMoods(), 1500);
       // Poll for partner mood updates every 60 seconds (reduced from 10s to ease cold-start pressure)
       const interval = setInterval(fetchMoods, 60000);
       return () => clearInterval(interval);
@@ -587,8 +591,8 @@ export function CoupleDashboard({
           ) : (
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-3">{t.dashboard.connectWithPartner} to begin your journey together</p>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="outline"
                 onClick={() => onNavigate?.('profile')}
                 className="bg-card/80 backdrop-blur-sm"
@@ -598,6 +602,43 @@ export function CoupleDashboard({
               </Button>
             </div>
           )}
+
+          {/* Upcoming Event Countdown */}
+          {(() => {
+            const now = new Date();
+            const upcoming = milestones
+              .filter(m => m.date && new Date(m.date) > now)
+              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+            if (!upcoming) return null;
+            const diff = new Date(upcoming.date).getTime() - now.getTime();
+            const days = Math.floor(diff / 86_400_000);
+            const hours = Math.floor((diff % 86_400_000) / 3_600_000);
+            const mins = Math.floor((diff % 3_600_000) / 60_000);
+            return (
+              <div className="mt-4 mx-auto max-w-xs rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--primary-600)', marginBottom: 'var(--spacing-1)' }}>
+                  {upcoming.icon || '🗓️'} {upcoming.title}
+                </p>
+                <div className="flex items-center justify-center gap-3 mt-1">
+                  {[
+                    { val: days,  label: 'days' },
+                    { val: hours, label: 'hrs'  },
+                    { val: mins,  label: 'min'  },
+                  ].map(({ val, label }) => (
+                    <div key={label} className="flex flex-col items-center">
+                      <span className="text-2xl font-bold" style={{ color: 'var(--primary-700)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                        {String(val).padStart(2, '0')}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{label}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {new Date(upcoming.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+              </div>
+            );
+          })()}
         </CardContent>
       </Card>
 
