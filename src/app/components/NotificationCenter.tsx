@@ -1,16 +1,32 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useLanguage } from '../contexts/LanguageContext';
-import { Bell, X, Check, Heart, MessageCircle, Users, MessageSquareDot } from 'lucide-react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { ScrollArea } from './ui/scroll-area';
-import { toast } from 'sonner';
+import { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
+import {
+  Bell,
+  X,
+  Check,
+  Heart,
+  MessageCircle,
+  Users,
+  MessageSquareDot,
+  Trash2,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { ScrollArea } from "./ui/scroll-area";
+import { toast } from "sonner";
 
 interface Notification {
   id: string;
   recipientId: string;
   senderId: string;
-  type: 'devotional' | 'journal' | 'prayer' | 'question' | 'question_answered' | 'partner_link' | 'general';
+  type:
+    | "devotional"
+    | "journal"
+    | "prayer"
+    | "question"
+    | "question_answered"
+    | "partner_link"
+    | "general";
   title: string;
   message: string;
   data?: any;
@@ -26,42 +42,22 @@ interface NotificationCenterProps {
   onNotificationClick?: (notification: Notification) => void;
 }
 
-const SESSION_KEY = 'dismissed_notification_ids';
-
-function getSessionDismissed(): Set<string> {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function addSessionDismissed(ids: string[]) {
-  try {
-    const existing = getSessionDismissed();
-    ids.forEach(id => existing.add(id));
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify([...existing]));
-  } catch {
-    // sessionStorage unavailable — no-op
-  }
-}
-
 export function NotificationCenter({
   accessToken,
   projectId,
   publicAnonKey,
-  onNotificationClick
+  onNotificationClick,
 }: NotificationCenterProps) {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<
+    Notification[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
-  const autoDismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Filter out session-dismissed notifications before displaying
-  const visible = notifications.filter(n => !getSessionDismissed().has(n.id));
-  const unreadCount = visible.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(
+    (n) => !n.isRead,
+  ).length;
 
   const fetchNotifications = useCallback(async () => {
     if (!accessToken) return;
@@ -69,12 +65,16 @@ export function NotificationCenter({
     try {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications`,
-        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+        { headers: { Authorization: `Bearer ${accessToken}` } },
       );
 
       if (!response.ok) {
         if (response.status !== 401) {
-          console.warn('Failed to fetch notifications (status:', response.status, ')');
+          console.warn(
+            "Failed to fetch notifications (status:",
+            response.status,
+            ")",
+          );
         }
         setNotifications([]);
         return;
@@ -83,15 +83,7 @@ export function NotificationCenter({
       const data = await response.json();
       setNotifications(data.notifications || []);
     } catch (error: any) {
-      const isNetworkErr =
-        error?.message?.includes('Unable to connect') ||
-        error?.message?.includes('Failed to fetch') ||
-        error?.message?.includes('Unauthorized') ||
-        error?.message?.includes('timeout') ||
-        error instanceof TypeError;
-      if (!isNetworkErr) {
-        console.warn('Could not load notifications:', error);
-      }
+      console.warn("Could not load notifications:", error);
       setNotifications([]);
     }
   }, [accessToken, projectId]);
@@ -99,148 +91,162 @@ export function NotificationCenter({
   useEffect(() => {
     if (!accessToken) return;
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(fetchNotifications, 45000);
     return () => clearInterval(interval);
   }, [accessToken, fetchNotifications]);
 
-  // Auto-dismiss: when panel opens, mark all currently visible unread notifications
-  // as read after a 2.5s view delay, then remove them from the panel.
-  useEffect(() => {
-    if (!isOpen) {
-      if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current);
-      return;
-    }
-
-    const unreadVisible = visible.filter(n => !n.isRead);
-    if (unreadVisible.length === 0) return;
-
-    autoDismissTimer.current = setTimeout(async () => {
-      const ids = unreadVisible.map(n => n.id);
-
-      // Optimistically remove from panel immediately
-      addSessionDismissed(ids);
-      setNotifications(prev => prev.filter(n => !ids.includes(n.id)));
-
-      // Persist read state server-side (fire-and-forget)
-      ids.forEach(id => {
-        fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${id}/read`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        ).catch(err => console.warn('Auto-dismiss mark-read failed for', id, err));
-      });
-    }, 2500);
-
-    return () => {
-      if (autoDismissTimer.current) clearTimeout(autoDismissTimer.current);
-    };
-  }, [isOpen]);
-
-  const dismissNotification = useCallback((notificationId: string) => {
-    // Optimistic removal
-    addSessionDismissed([notificationId]);
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-
-    // Persist server-side
-    fetch(
-      `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}/read`,
-      {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    ).catch(err => console.warn('Mark-read failed for', notificationId, err));
-  }, [accessToken, projectId]);
-
-  const deleteNotification = useCallback(async (notificationId: string) => {
-    // Optimistic removal
-    addSessionDismissed([notificationId]);
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-
-    try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}`,
-        {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        }
+  const markAsRead = useCallback(
+    async (notificationId: string) => {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, isRead: true } : n,
+        ),
       );
-      if (!response.ok) throw new Error('Delete failed');
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      toast.error('Failed to delete notification');
-    }
-  }, [accessToken, projectId]);
+
+      try {
+        await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}/read`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+      } catch (err) {
+        console.warn(
+          "Mark-read failed for",
+          notificationId,
+          err,
+        );
+      }
+    },
+    [accessToken, projectId],
+  );
+
+  const deleteNotification = useCallback(
+    async (notificationId: string) => {
+      setNotifications((prev) =>
+        prev.filter((n) => n.id !== notificationId),
+      );
+
+      try {
+        const response = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/${notificationId}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        );
+        if (!response.ok) throw new Error("Delete failed");
+        toast.success("Notification removed");
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+        toast.error("Failed to delete notification");
+      }
+    },
+    [accessToken, projectId],
+  );
 
   const markAllAsRead = async () => {
     setIsLoading(true);
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, isRead: true })),
+    );
+
     try {
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/notifications/read-all`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        },
       );
-      if (!response.ok) throw new Error('Failed to mark all as read');
-
-      // Optimistically remove all unread from panel for this session
-      const unreadIds = visible.filter(n => !n.isRead).map(n => n.id);
-      addSessionDismissed(unreadIds);
-      setNotifications(prev => prev.filter(n => n.isRead));
-      toast.success('All notifications marked as read');
+      if (!response.ok)
+        throw new Error("Failed to mark all as read");
+      toast.success("All marked as read");
     } catch (error) {
-      console.error('Error marking all as read:', error);
-      toast.error('Failed to mark all as read');
+      console.error("Error marking all as read:", error);
+      toast.error("Failed to update notifications");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    dismissNotification(notification.id);
+  const handleNotificationClick = (
+    notification: Notification,
+  ) => {
+    if (!notification.isRead) {
+      markAsRead(notification.id);
+    }
     setIsOpen(false);
     if (onNotificationClick) onNotificationClick(notification);
   };
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationDetails = (type: string) => {
+    const iconClass = "w-4 h-4";
     switch (type) {
-      case 'devotional': return <Heart style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} className="fill-current" />;
-      case 'journal':    return <MessageCircle style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
-      case 'prayer':     return <Heart style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
-      case 'question':   return <MessageCircle style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
-      case 'question_answered': return <MessageSquareDot style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
-      case 'partner_link': return <Users style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
-      default: return <Bell style={{ width: 'var(--icon-xs)', height: 'var(--icon-xs)' }} />;
-    }
-  };
-
-  const getIconStyle = (type: string): React.CSSProperties => {
-    switch (type) {
-      case 'devotional':
-        return { background: 'var(--primary-50)', color: 'var(--primary-600)' };
-      case 'journal':
-        return { background: 'var(--secondary-50)', color: 'var(--secondary-600)' };
-      case 'prayer':
-        return { background: 'var(--primary-100)', color: 'var(--primary-500)' };
-      case 'question':
-        return { background: 'var(--success-50)', color: 'var(--success-700)' };
-      case 'question_answered':
-        return { background: 'var(--success-50)', color: 'var(--success-700)' };
-      case 'partner_link':
-        return { background: 'var(--warning-50)', color: 'var(--warning-700)' };
+      case "devotional":
+        return {
+          icon: (
+            <Heart
+              className={`${iconClass} fill-rose-600 text-rose-600`}
+            />
+          ),
+          bg: "bg-rose-100 border border-rose-200",
+        };
+      case "journal":
+        return {
+          icon: (
+            <MessageCircle
+              className={`${iconClass} text-violet-600`}
+            />
+          ),
+          bg: "bg-violet-100 border border-violet-200",
+        };
+      case "prayer":
+        return {
+          icon: (
+            <Heart className={`${iconClass} text-pink-600`} />
+          ),
+          bg: "bg-pink-100 border border-pink-200",
+        };
+      case "question":
+        return {
+          icon: (
+            <MessageCircle
+              className={`${iconClass} text-emerald-600`}
+            />
+          ),
+          bg: "bg-emerald-100 border border-emerald-200",
+        };
+      case "question_answered":
+        return {
+          icon: (
+            <MessageSquareDot
+              className={`${iconClass} text-teal-600`}
+            />
+          ),
+          bg: "bg-teal-100 border border-teal-200",
+        };
+      case "partner_link":
+        return {
+          icon: (
+            <Users className={`${iconClass} text-amber-700`} />
+          ),
+          bg: "bg-amber-100 border border-amber-200",
+        };
       default:
-        return { background: 'var(--neutral-100)', color: 'var(--neutral-600)' };
+        return {
+          icon: (
+            <Bell className={`${iconClass} text-slate-700`} />
+          ),
+          bg: "bg-slate-100 border border-slate-200",
+        };
     }
   };
 
@@ -250,286 +256,175 @@ export function NotificationCenter({
     const diffInMins = Math.floor(diffInMs / 60000);
     const diffInHours = Math.floor(diffInMs / 3600000);
     const diffInDays = Math.floor(diffInMs / 86400000);
-    if (diffInMins < 1) return 'Just now';
+    if (diffInMins < 1) return "Just now";
     if (diffInMins < 60) return `${diffInMins}m ago`;
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    return date.toLocaleDateString();
+    return date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   return (
-    <div className="relative">
-      {/* Bell trigger */}
+    <>
+      {/* Bell Trigger */}
       <button
-        onClick={() => setIsOpen(prev => !prev)}
-        style={{
-          padding: 'var(--spacing-2)',
-          borderRadius: 'var(--radius-full)',
-          transition: 'background 150ms',
-          color: 'var(--neutral-700)',
-          background: 'transparent',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--neutral-100)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="relative p-2.5 text-slate-700 hover:text-slate-900 rounded-full hover:bg-slate-100 transition-all duration-200 focus:outline-none"
         aria-label="Notifications"
       >
-        <Bell style={{ width: 'var(--icon-md)', height: 'var(--icon-md)' }} />
+        <Bell className="w-5 h-5 stroke-[2]" />
         {unreadCount > 0 && (
-          <Badge
-            style={{
-              position: 'absolute',
-              top: '-2px',
-              right: '-2px',
-              height: '20px',
-              minWidth: '20px',
-              padding: '0 var(--spacing-1)',
-              fontSize: 'var(--text-label)',
-              fontWeight: 'var(--font-weight-bold)',
-              background: 'var(--error-500)',
-              color: '#ffffff',
-              borderRadius: 'var(--radius-full)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {unreadCount > 9 ? '9+' : unreadCount}
+          <Badge className="absolute -top-0.5 -right-0.5 h-5 min-w-[20px] px-1 bg-rose-600 hover:bg-rose-600 text-white text-[11px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm animate-pulse">
+            {unreadCount > 9 ? "9+" : unreadCount}
           </Badge>
         )}
       </button>
 
       {isOpen && (
         <>
-          {/* Backdrop */}
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-
-          {/* Panel */}
+          {/* Dimmed Backdrop */}
           <div
-            style={{
-              position: 'absolute',
-              right: 0,
-              top: 'calc(100% + var(--spacing-2))',
-              width: 'min(calc(100vw - var(--spacing-8)), 384px)',
-              background: 'var(--card)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-xl)',
-              border: '1px solid var(--border)',
-              zIndex: 50,
-              maxHeight: '600px',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            {/* Header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 'var(--spacing-4)',
-                borderBottom: '1px solid var(--border)',
-              }}
-            >
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsOpen(false)}
+          />
+
+          {/* Full Screen Height Drawer Panel */}
+          <div className="fixed right-0 top-0 bottom-0 w-full max-w-[400px] bg-white shadow-2xl z-50 flex flex-col overflow-hidden border-l border-slate-200 animate-in slide-in-from-right duration-300">
+            {/* High Contrast Header Area */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
               <div>
-                <h3
-                  style={{
-                    fontSize: 'var(--text-body)',
-                    fontWeight: 'var(--font-weight-semibold)',
-                    color: 'var(--foreground)',
-                    margin: 0,
-                  }}
-                >
-                  {t.notifications.title}
+                <h3 className="text-base font-bold text-slate-950">
+                  {t?.notifications?.title || "Notifications"}
                 </h3>
                 {unreadCount > 0 && (
-                  <p
-                    style={{
-                      fontSize: 'var(--text-caption-small)',
-                      color: 'var(--muted-foreground)',
-                      margin: 0,
-                    }}
-                  >
-                    {unreadCount} unread · auto-dismissing in a moment
+                  <p className="text-xs font-semibold text-rose-600 mt-0.5">
+                    {unreadCount} unread items
                   </p>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+              <div className="flex items-center gap-1">
                 {unreadCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={markAllAsRead}
                     disabled={isLoading}
-                    style={{ fontSize: 'var(--text-caption-small)' }}
+                    className="h-8 text-xs text-slate-800 hover:text-slate-950 font-bold px-2.5 hover:bg-slate-200/80 border border-slate-200 bg-white"
                   >
-                    <Check style={{ width: 12, height: 12, marginRight: 4 }} />
+                    <Check className="w-3.5 h-3.5 mr-1 text-slate-900" />
                     Mark all read
                   </Button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  style={{
-                    padding: 'var(--spacing-1)',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'transparent',
-                    color: 'var(--muted-foreground)',
-                    transition: 'background 150ms',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-200 transition-colors border border-transparent hover:border-slate-300"
                 >
-                  <X style={{ width: 16, height: 16 }} />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* List */}
-            <ScrollArea className="flex-1">
-              {visible.length === 0 ? (
-                <div
-                  style={{
-                    textAlign: 'center',
-                    padding: 'var(--spacing-12) var(--spacing-4)',
-                    color: 'var(--muted-foreground)',
-                  }}
-                >
-                  <Bell
-                    style={{
-                      width: 'var(--icon-2xl)',
-                      height: 'var(--icon-2xl)',
-                      margin: '0 auto var(--spacing-3)',
-                      color: 'var(--neutral-300)',
-                    }}
-                  />
-                  <p
-                    style={{
-                      fontSize: 'var(--text-callout)',
-                      margin: '0 0 var(--spacing-1)',
-                    }}
-                  >
-                    All caught up
+            {/* Scrollable List container matching absolute layout boundaries */}
+            <ScrollArea className="flex-1 w-full h-full min-h-0 divide-y divide-slate-200 overflow-y-auto bg-white">
+              {notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-20 px-4 text-center">
+                  <div className="p-4 bg-slate-100 rounded-2xl mb-3 border border-slate-200">
+                    <Bell className="w-8 h-8 text-slate-400" />
+                  </div>
+                  <p className="text-base font-bold text-slate-900">
+                    All caught up!
                   </p>
-                  <p style={{ fontSize: 'var(--text-caption-small)', margin: 0 }}>
-                    You'll be notified when your partner completes activities
+                  <p className="text-xs text-slate-500 max-w-[240px] mt-1.5 leading-relaxed">
+                    You'll be notified here when your partner
+                    updates records or interacts.
                   </p>
                 </div>
               ) : (
-                <div>
-                  {visible.map(notification => (
-                    <div
-                      key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      style={{
-                        padding: 'var(--spacing-3) var(--spacing-4)',
-                        borderBottom: '1px solid var(--border)',
-                        cursor: 'pointer',
-                        background: !notification.isRead ? 'var(--secondary-50)' : 'transparent',
-                        transition: 'background 150ms',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--muted)')}
-                      onMouseLeave={e =>
-                        (e.currentTarget.style.background = !notification.isRead
-                          ? 'var(--secondary-50)'
-                          : 'transparent')
-                      }
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-3)' }}>
-                        {/* Icon bubble */}
+                <div className="flex flex-col">
+                  {notifications.map((notification) => {
+                    const design = getNotificationDetails(
+                      notification.type,
+                    );
+                    return (
+                      <div
+                        key={notification.id}
+                        onClick={() =>
+                          handleNotificationClick(notification)
+                        }
+                        className={`group relative p-4 flex gap-3.5 cursor-pointer transition-all duration-150 border-l-4 select-none ${
+                          !notification.isRead
+                            ? "bg-slate-50/90 border-l-rose-600 hover:bg-slate-100/80"
+                            : "border-l-transparent hover:bg-slate-50"
+                        }`}
+                      >
+                        {/* High Contrast Icon Container */}
                         <div
-                          style={{
-                            flexShrink: 0,
-                            width: 'var(--icon-xl)',
-                            height: 'var(--icon-xl)',
-                            borderRadius: 'var(--radius-full)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            ...getIconStyle(notification.type),
-                          }}
+                          className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center shadow-sm ${design.bg}`}
                         >
-                          {getNotificationIcon(notification.type)}
+                          {design.icon}
                         </div>
 
-                        {/* Text */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--spacing-2)' }}>
-                            <div style={{ flex: 1 }}>
-                              <p
-                                style={{
-                                  fontSize: 'var(--text-callout)',
-                                  fontWeight: !notification.isRead
-                                    ? 'var(--font-weight-semibold)'
-                                    : 'var(--font-weight-medium)',
-                                  color: 'var(--foreground)',
-                                  margin: 0,
-                                }}
-                              >
-                                {notification.title}
-                              </p>
-                              <p
-                                style={{
-                                  fontSize: 'var(--text-caption)',
-                                  color: 'var(--neutral-600)',
-                                  margin: 'var(--spacing-1) 0 0',
-                                }}
-                              >
-                                {notification.message}
-                              </p>
-                            </div>
-                            {/* Delete button */}
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                deleteNotification(notification.id);
-                              }}
-                              style={{
-                                flexShrink: 0,
-                                padding: 'var(--spacing-1)',
-                                borderRadius: 'var(--radius-sm)',
-                                background: 'transparent',
-                                color: 'var(--muted-foreground)',
-                                transition: 'background 150ms',
-                              }}
-                              onMouseEnter={e => (e.currentTarget.style.background = 'var(--neutral-200)')}
-                              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                              aria-label="Dismiss"
+                        {/* Title & Message text fields */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p
+                              className={`text-sm text-slate-950 truncate leading-tight tracking-tight ${
+                                !notification.isRead
+                                  ? "font-bold"
+                                  : "font-medium text-slate-800"
+                              }`}
                             >
-                              <X style={{ width: 12, height: 12 }} />
+                              {notification.title}
+                            </p>
+                            <span className="text-[11px] text-slate-500 flex-shrink-0 font-bold whitespace-nowrap bg-slate-100 px-1.5 py-0.5 rounded">
+                              {formatTime(
+                                notification.createdAt,
+                              )}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-700 font-medium mt-1.5 line-clamp-3 leading-relaxed">
+                            {notification.message}
+                          </p>
+
+                          {/* Quick Actions Action bar */}
+                          <div className="flex items-center gap-3 mt-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-150">
+                            {!notification.isRead && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  markAsRead(notification.id);
+                                }}
+                                className="text-xs text-rose-700 hover:text-rose-900 font-bold flex items-center gap-0.5 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded shadow-sm"
+                              >
+                                Mark read
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteNotification(
+                                  notification.id,
+                                );
+                              }}
+                              className="text-xs text-slate-600 hover:text-slate-900 font-bold flex items-center gap-1 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded shadow-sm ml-auto"
+                            >
+                              <Trash2 className="w-3 h-3 text-slate-500" />
+                              Delete
                             </button>
                           </div>
-                          <p
-                            style={{
-                              fontSize: 'var(--text-label)',
-                              color: 'var(--muted-foreground)',
-                              marginTop: 'var(--spacing-1)',
-                            }}
-                          >
-                            {formatTime(notification.createdAt)}
-                          </p>
                         </div>
-
-                        {/* Unread dot */}
-                        {!notification.isRead && (
-                          <div
-                            style={{
-                              flexShrink: 0,
-                              width: 8,
-                              height: 8,
-                              borderRadius: 'var(--radius-full)',
-                              background: 'var(--secondary-500)',
-                              marginTop: 'var(--spacing-2)',
-                            }}
-                          />
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }
