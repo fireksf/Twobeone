@@ -7,10 +7,9 @@ import { Separator } from './ui/separator';
 import { Card } from './ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { User as UserType } from '../types';
 import { LogOut, Shield, Trash2, HelpCircle, Camera, User, Heart, Bell, Sparkles } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
-import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { toast } from 'sonner';
+import { projectId } from '../utils/supabase/info';
 import { createClient } from '../utils/supabase/client';
 import {
   AlertDialog,
@@ -23,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from './ui/alert-dialog';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ProfileSettingsProps {
   profile?: {
@@ -37,6 +37,7 @@ interface ProfileSettingsProps {
 }
 
 export function ProfileSettings({ profile, onSignOut, onUpdateProfile, onAdminAccess }: ProfileSettingsProps) {
+  const { t } = useLanguage();
   const [name, setName] = useState(profile?.name || '');
   const [notifications, setNotifications] = useState(true);
   const [prayerReminders, setPrayerReminders] = useState(true);
@@ -48,38 +49,20 @@ export function ProfileSettings({ profile, onSignOut, onUpdateProfile, onAdminAc
   const handleClearJournals = async () => {
     try {
       setIsClearing(true);
-      
-      // Get access token
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        toast.error('Not authenticated');
-        return;
-      }
+      if (!session?.access_token) { toast.error(t.auth.signIn); return; }
 
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/admin/clear-journals`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        }
+        { method: 'DELETE', headers: { 'Authorization': `Bearer ${session.access_token}` } }
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to clear journals');
-      }
-
+      if (!response.ok) throw new Error();
       const result = await response.json();
-      toast.success(`Cleared ${result.deletedCount} journal entries!`);
-      
-      // Reload the page to refresh data
+      toast.success(`${t.messages.deletedSuccessfully}: ${result.deletedCount} ${t.journal.myEntries}`);
       setTimeout(() => window.location.reload(), 1500);
-    } catch (error) {
-      console.error('Failed to clear journals:', error);
-      toast.error('Failed to clear journals');
+    } catch {
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsClearing(false);
     }
@@ -88,38 +71,20 @@ export function ProfileSettings({ profile, onSignOut, onUpdateProfile, onAdminAc
   const handleSeedJournals = async () => {
     try {
       setIsSeeding(true);
-      
-      // Get access token
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        toast.error('Not authenticated');
-        return;
-      }
+      if (!session?.access_token) { toast.error(t.auth.signIn); return; }
 
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/make-server-6d579fee/admin/seed-journals`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        }
+        { method: 'POST', headers: { 'Authorization': `Bearer ${session.access_token}` } }
       );
-
-      if (!response.ok) {
-        throw new Error('Failed to seed journals');
-      }
-
+      if (!response.ok) throw new Error();
       const result = await response.json();
-      toast.success(`Created ${result.createdCount} sample journal entries!`);
-      
-      // Reload the page to refresh data
+      toast.success(`${t.messages.savedSuccessfully}: ${result.createdCount} ${t.journal.myEntries}`);
       setTimeout(() => window.location.reload(), 1500);
-    } catch (error) {
-      console.error('Failed to seed journals:', error);
-      toast.error('Failed to seed journals');
+    } catch {
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsSeeding(false);
     }
@@ -130,21 +95,18 @@ export function ProfileSettings({ profile, onSignOut, onUpdateProfile, onAdminAc
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="relative inline-block">
-          <Avatar className="w-24 h-24 border-4 border-white shadow-lg">
-            <AvatarImage src={profile?.profilePicture || ""} alt={profile?.name} />
-            <AvatarFallback className="bg-primary-100 text-primary-700 text-2xl">
+          <Avatar className="w-24 h-24 border-4 border-background shadow-lg">
+            <AvatarImage src={profile?.profilePicture || ''} alt={profile?.name} />
+            <AvatarFallback className="text-2xl" style={{ background: 'color-mix(in srgb, var(--primary) 15%, var(--background))', color: 'var(--primary)' }}>
               {userInitials}
             </AvatarFallback>
           </Avatar>
-          <Button
-            size="sm"
-            className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0 shadow-md"
-          >
+          <Button size="sm" className="absolute bottom-0 right-0 rounded-full w-8 h-8 p-0 shadow-md" style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
             <Camera className="w-4 h-4" />
           </Button>
         </div>
         <div>
-          <h1 className="text-2xl">{profile?.name || 'Your Profile'}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{profile?.name || t.profile.myProfile}</h1>
           <p className="text-muted-foreground">{profile?.email}</p>
         </div>
       </div>
@@ -152,246 +114,154 @@ export function ProfileSettings({ profile, onSignOut, onUpdateProfile, onAdminAc
       {/* Tabs */}
       <Tabs defaultValue="personal" className="w-full">
         <TabsList className="w-full grid grid-cols-4">
-          <TabsTrigger value="personal">
-            <User className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Personal</span>
-          </TabsTrigger>
-          <TabsTrigger value="couple">
-            <Heart className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Couple</span>
-          </TabsTrigger>
-          <TabsTrigger value="privacy">
-            <Shield className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Privacy</span>
-          </TabsTrigger>
-          <TabsTrigger value="notifications">
-            <Bell className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Alerts</span>
-          </TabsTrigger>
+          <TabsTrigger value="personal"><User className="w-4 h-4 mr-1" /><span className="hidden sm:inline">{t.common.edit}</span></TabsTrigger>
+          <TabsTrigger value="couple"><Heart className="w-4 h-4 mr-1" /><span className="hidden sm:inline">{t.profile.partnerCode}</span></TabsTrigger>
+          <TabsTrigger value="privacy"><Shield className="w-4 h-4 mr-1" /></TabsTrigger>
+          <TabsTrigger value="notifications"><Bell className="w-4 h-4 mr-1" /></TabsTrigger>
         </TabsList>
 
-        {/* Personal Settings */}
+        {/* Personal */}
         <TabsContent value="personal" className="space-y-4">
           <Card className="p-6">
-            <h3 className="font-semibold mb-4">Personal Information</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t.profile.myProfile}</h3>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                />
+                <Label htmlFor="name">{t.auth.name}</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.auth.enterName} />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={profile?.email}
-                  disabled
-                  className="bg-muted"
-                />
+                <Label htmlFor="email">{t.auth.email}</Label>
+                <Input id="email" type="email" value={profile?.email} disabled className="bg-muted" />
               </div>
-              <Button onClick={() => onUpdateProfile({ name })}>
-                Save Changes
+              <Button onClick={() => onUpdateProfile({ name })} style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}>
+                {t.common.save}
               </Button>
             </div>
           </Card>
 
           <Card className="p-6">
-            <h3 className="font-semibold mb-4">Account Actions</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t.profile.about}</h3>
             <div className="space-y-3">
               <Button variant="outline" className="w-full justify-start">
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Help & Support
+                <HelpCircle className="w-4 h-4 mr-2" />Help &amp; Support
               </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start text-error-500 hover:text-error-700"
-                onClick={onSignOut}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+              <Button variant="outline" className="w-full justify-start" style={{ color: 'var(--error-500)' }} onClick={onSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />{t.auth.signOut}
               </Button>
               {onAdminAccess && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-sky-600 hover:text-sky-700"
-                  onClick={onAdminAccess}
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  Admin Access
+                <Button variant="outline" className="w-full justify-start" onClick={onAdminAccess}>
+                  <Shield className="w-4 h-4 mr-2" />Admin
                 </Button>
               )}
             </div>
           </Card>
         </TabsContent>
 
-        {/* Couple Settings */}
+        {/* Couple */}
         <TabsContent value="couple" className="space-y-4">
           <Card className="p-6">
-            <h3 className="font-semibold mb-4">Couple Information</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t.profile.partnerCode}</h3>
             <div className="space-y-4">
               <div>
-                <Label>Partner Email</Label>
-                <Input
-                  value={profile?.partnerEmail || 'Not connected'}
-                  disabled
-                  className="bg-muted"
-                />
+                <Label>{t.auth.email} ({t.profile.linkedWith})</Label>
+                <Input value={profile?.partnerEmail || t.profile.notLinked} disabled className="bg-muted" />
               </div>
               <div>
-                <Label htmlFor="anniversary">Relationship Started</Label>
-                <Input
-                  id="anniversary"
-                  type="date"
-                  placeholder="Select date"
-                />
+                <Label htmlFor="anniversary">{t.partner.relationshipStarted}</Label>
+                <Input id="anniversary" type="date" />
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 border-error-500/30 bg-error-50/50">
-            <h3 className="font-semibold mb-4 text-error-500 flex items-center gap-2">
-              <Shield className="w-5 h-5" />
-              Danger Zone
+          <Card className="p-6 border" style={{ borderColor: 'color-mix(in srgb, var(--error-500) 30%, transparent)', background: 'color-mix(in srgb, var(--error-500) 4%, var(--background))' }}>
+            <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--error-500)' }}>
+              <Shield className="w-5 h-5" />Danger Zone
             </h3>
             <div className="space-y-3">
-              {/* Seed Sample Journals Button */}
-              <Button 
-                variant="outline" 
-                className="w-full border-success-500/50 text-success-700 hover:bg-success-50 bg-success-50/50"
-                onClick={handleSeedJournals}
-                disabled={isSeeding}
-              >
+              <Button variant="outline" className="w-full" style={{ borderColor: 'color-mix(in srgb, var(--success-500) 50%, transparent)', color: 'var(--success-700)' }} onClick={handleSeedJournals} disabled={isSeeding}>
                 <Sparkles className="w-4 h-4 mr-2" />
-                {isSeeding ? 'Creating...' : 'Create 7 Sample Journal Entries'}
+                {isSeeding ? t.common.loading : `Create 7 Sample ${t.journal.myEntries}`}
               </Button>
-              <p className="text-xs text-success-700">
-                ✨ This will add 7 beautifully crafted sample journal entries to see the journal in action
+              <p className="text-xs" style={{ color: 'var(--success-700)' }}>
+                ✨ {t.journal.noEntries} — {t.journal.startWriting}
               </p>
-
               <Separator className="my-4" />
-
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" className="w-full" disabled={isClearing}>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    {isClearing ? 'Clearing...' : 'Clear All Journal Entries'}
+                    {isClearing ? t.common.loading : `${t.common.delete} ${t.journal.myEntries}`}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete all of your
-                      journal entries from the database. This is useful for starting fresh with
-                      an empty journal.
-                    </AlertDialogDescription>
+                    <AlertDialogTitle>{t.messages.areYouSure}</AlertDialogTitle>
+                    <AlertDialogDescription>{t.messages.cannotUndo}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleClearJournals}
-                      className="bg-error-500 hover:bg-error-700"
-                    >
-                      Yes, delete all entries
+                    <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearJournals} style={{ background: 'var(--error-500)' }}>
+                      {t.common.yes}, {t.common.delete}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              <p className="text-xs text-error-500">
-                ⚠️ This will permanently delete all your journal entries, events, photos, videos, and comments
-              </p>
-              
+              <p className="text-xs text-muted-foreground">⚠️ {t.messages.cannotUndo}</p>
               <Separator className="my-4" />
-              
-              <Button variant="outline" className="w-full border-error-500/50 text-error-500 hover:bg-error-50">
-                Disconnect from Partner
+              <Button variant="outline" className="w-full" style={{ borderColor: 'color-mix(in srgb, var(--error-500) 50%, transparent)', color: 'var(--error-500)' }}>
+                {t.profile.notLinked}
               </Button>
-              <p className="text-xs text-muted-foreground">
-                This will remove all shared data and disconnect you from your partner
-              </p>
             </div>
           </Card>
         </TabsContent>
 
-        {/* Privacy Settings */}
+        {/* Privacy */}
         <TabsContent value="privacy" className="space-y-4">
           <Card className="p-6">
-            <h3 className="font-semibold mb-4">Privacy & Sharing</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t.profile.preferences}</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Share Journal Entries</p>
-                  <p className="text-sm text-muted-foreground">Allow partner to view your entries</p>
+              {[
+                { label: t.journal.shareWithPartner, desc: t.questions.shareYourAnswer },
+                { label: t.prayer.prayerRequests, desc: t.questions.shareYourAnswer },
+                { label: t.dashboard.recentActivity, desc: t.questions.shareYourAnswer },
+              ].map((item, i) => (
+                <div key={i}>
+                  {i > 0 && <Separator className="mb-4" />}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-foreground">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Share Prayer Requests</p>
-                  <p className="text-sm text-muted-foreground">Allow partner to see your prayers</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Share Progress</p>
-                  <p className="text-sm text-muted-foreground">Show your progress to partner</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
+              ))}
             </div>
           </Card>
         </TabsContent>
 
-        {/* Notification Settings */}
+        {/* Notifications */}
         <TabsContent value="notifications" className="space-y-4">
           <Card className="p-6">
-            <h3 className="font-semibold mb-4">Notification Preferences</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t.notifications.title}</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Daily Devotional</p>
-                  <p className="text-sm text-muted-foreground">Receive daily devotional reminders</p>
+              {[
+                { label: t.devotionals.title, desc: t.notifications.devotionalComplete, state: notifications, setState: setNotifications },
+                { label: t.prayer.prayTogether, desc: t.notifications.newPrayer, state: prayerReminders, setState: setPrayerReminders },
+                { label: t.dashboard.recentActivity, desc: t.notifications.journalEntry, state: false, setState: () => {} },
+                { label: t.community.title, desc: t.notifications.milestone, state: false, setState: () => {} },
+              ].map((item, i) => (
+                <div key={i}>
+                  {i > 0 && <Separator />}
+                  <div className="flex items-center justify-between mt-4">
+                    <div>
+                      <p className="font-medium text-foreground">{item.label}</p>
+                      <p className="text-sm text-muted-foreground">{item.desc}</p>
+                    </div>
+                    <Switch checked={item.state} onCheckedChange={item.setState} />
+                  </div>
                 </div>
-                <Switch
-                  checked={notifications}
-                  onCheckedChange={setNotifications}
-                />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Prayer Reminders</p>
-                  <p className="text-sm text-muted-foreground">Get reminded to pray together</p>
-                </div>
-                <Switch
-                  checked={prayerReminders}
-                  onCheckedChange={setPrayerReminders}
-                />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Partner Activity</p>
-                  <p className="text-sm text-muted-foreground">Notify when partner completes activities</p>
-                </div>
-                <Switch />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Community Updates</p>
-                  <p className="text-sm text-muted-foreground">Get updates from your groups</p>
-                </div>
-                <Switch />
-              </div>
+              ))}
             </div>
           </Card>
         </TabsContent>

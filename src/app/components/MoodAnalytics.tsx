@@ -29,6 +29,10 @@ import {
   ChevronRight,
   AlertCircle,
   ArrowLeft,
+  X,
+  BookOpen,
+  Star,
+  Lightbulb,
 } from "lucide-react";
 import { moods as moodsApi } from "../utils/api";
 import { toast } from "sonner";
@@ -82,6 +86,14 @@ export function MoodAnalytics({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [weeklyReportLoading, setWeeklyReportLoading] =
     useState(false);
+  const [weeklyReport, setWeeklyReport] = useState<{
+    analysis: string;
+    userAverage: string;
+    partnerAverage: string;
+    userMoodCount: number;
+    partnerMoodCount: number;
+    period?: string;
+  } | null>(null);
   const [testingOpenAI, setTestingOpenAI] = useState(false);
   const [openAIStatus, setOpenAIStatus] = useState<any>(null);
   const [hasQuotaError, setHasQuotaError] = useState(false);
@@ -97,7 +109,7 @@ export function MoodAnalytics({
       setMoods(fetchedMoods);
     } catch (error) {
       console.error("Error loading moods:", error);
-      toast.error("Failed to load mood data");
+      toast.error(t.mood.failedLoad);
     } finally {
       setLoading(false);
     }
@@ -105,19 +117,19 @@ export function MoodAnalytics({
 
   const handleSaveMood = async () => {
     if (!selectedMood) {
-      toast.error("Please select a mood");
+      toast.error(t.mood.howAreYouFeelingToday);
       return;
     }
 
     setIsSaving(true);
     try {
       await moodsApi.save(selectedMood, moodNote);
-      toast.success("Mood saved! 💝");
+      toast.success(t.mood.moodSaved);
       setMoodNote("");
       await loadMoods();
     } catch (error) {
       console.error("Error saving mood:", error);
-      toast.error("Failed to save mood");
+      toast.error(t.mood.failedSave);
     } finally {
       setIsSaving(false);
     }
@@ -125,7 +137,7 @@ export function MoodAnalytics({
 
   const handleAnalyze = async () => {
     if (!partner) {
-      toast.error("You need a partner to generate AI analysis");
+      toast.error(t.mood.needPartnerForAnalysis);
       return;
     }
 
@@ -136,51 +148,13 @@ export function MoodAnalytics({
       setHasQuotaError(false);
       toast.success(t.mood.analysisGenerated);
     } catch (error: any) {
-      console.warn(
-        "Mood AI analysis unavailable:",
-        error?.message,
-      );
-
-      // Generate a helpful stats-based fallback so the user still sees value
-      const moodValues: Record<string, number> = {
-        great: 4,
-        good: 3,
-        okay: 2,
-        sad: 1,
-      };
-      const userAvg =
-        userMoods.length > 0
-          ? (
-              userMoods.reduce(
-                (s, m) => s + (moodValues[m.mood] || 0),
-                0,
-              ) / userMoods.length
-            ).toFixed(1)
-          : "—";
-      const partnerAvg =
-        partnerMoods.length > 0
-          ? (
-              partnerMoods.reduce(
-                (s, m) => s + (moodValues[m.mood] || 0),
-                0,
-              ) / partnerMoods.length
-            ).toFixed(1)
-          : "—";
-
-      // Use same object shape as the API response so the render doesn't break
-      setAnalysis({
-        analysis:
-          `📊 Mood Summary — Last 30 Days\n\n` +
-          `${profile?.name || "You"}: ${userMoods.length} entries · Average ${userAvg}/4\n` +
-          `${partner?.name || "Partner"}: ${partnerMoods.length} entries · Average ${partnerAvg}/4\n\n` +
-          `✨ Keep checking in daily — consistent mood tracking helps reveal your emotional patterns together.\n\n` +
-          `📖 "Carry each other's burdens, and in this way you will fulfill the law of Christ." — Galatians 6:2\n\n` +
-          `🙏 Prayer: Lord, help us be present to each other's hearts and respond with grace and understanding.`,
-        createdAt: new Date().toISOString(),
-        isFallback: true,
-      });
-      setHasQuotaError(false);
-      // Don't show an error toast — the fallback text in the UI is sufficient
+      console.error("Mood AI analysis failed:", error?.message);
+      const msg = error?.message || "Failed to generate AI analysis";
+      if (msg.includes("not configured")) {
+        toast.error(t.messages.errorOccurred + ': ' + msg, { duration: 8000 });
+      } else {
+        toast.error(msg, { duration: 6000 });
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -188,18 +162,20 @@ export function MoodAnalytics({
 
   const handleGenerateWeeklyReport = async () => {
     if (!partner) {
-      toast.error(
-        "You need a partner to generate weekly reports",
-      );
+      toast.error(t.mood.needPartnerForAnalysis);
       return;
     }
 
     setWeeklyReportLoading(true);
     try {
       const { report } = await moodsApi.generateWeeklyReport();
-      toast.success(
-        "Weekly report sent to both of you! Check notifications 💝",
-      );
+      const now = new Date();
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      setWeeklyReport({
+        ...report,
+        period: `${weekAgo.toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+      });
     } catch (error: any) {
       console.error("Error generating weekly report:", error);
 
@@ -209,26 +185,11 @@ export function MoodAnalytics({
         (error.message.includes("quota") ||
           error.message.includes("billing"))
       ) {
-        toast.error(
-          "Weekly report created with basic stats. AI analysis unavailable due to quota limits.",
-          {
-            duration: 6000,
-          },
-        );
-      } else if (
-        error.message &&
-        error.message.includes("rate_limit")
-      ) {
-        toast.error(
-          "Rate limit reached. Please try again in a few moments.",
-          {
-            duration: 4000,
-          },
-        );
+        toast.error(t.messages.tryAgainLater, { duration: 6000 });
+      } else if (error.message && error.message.includes("rate_limit")) {
+        toast.error(t.messages.tryAgainLater, { duration: 4000 });
       } else {
-        toast.error(
-          error.message || "Failed to generate weekly report",
-        );
+        toast.error(error.message || t.messages.errorOccurred);
       }
     } finally {
       setWeeklyReportLoading(false);
@@ -1175,6 +1136,153 @@ export function MoodAnalytics({
           </ScrollArea>
         </CardContent>
       </Card>
+
+      {/* Weekly Report Full-Screen Overlay */}
+      {weeklyReport && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+          style={{ background: "var(--background)" }}
+        >
+          {/* Report Header */}
+          <div
+            className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 border-b"
+            style={{
+              background: "var(--background)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center"
+                style={{ background: "color-mix(in srgb, var(--primary) 15%, transparent)" }}
+              >
+                <Heart className="w-4 h-4" style={{ color: "var(--primary)" }} />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: "var(--foreground)" }}>
+                  Weekly Report
+                </h2>
+                {weeklyReport.period && (
+                  <p className="text-xs" style={{ color: "var(--muted-foreground)" }}>
+                    {weeklyReport.period}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setWeeklyReport(null)}
+              className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+              style={{ background: "var(--muted)" }}
+              aria-label="Close report"
+            >
+              <X className="w-4 h-4" style={{ color: "var(--muted-foreground)" }} />
+            </button>
+          </div>
+
+          <div className="flex-1 max-w-xl mx-auto w-full px-5 py-6 space-y-5 pb-16">
+
+            {/* Mood Score Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { name: profile?.name ?? "You", avg: weeklyReport.userAverage, count: weeklyReport.userMoodCount },
+                { name: partner?.name ?? "Partner", avg: weeklyReport.partnerAverage, count: weeklyReport.partnerMoodCount },
+              ].map((p) => {
+                const score = parseFloat(p.avg);
+                const pct = Math.round((score / 4) * 100);
+                const label = score >= 3.5 ? "Great" : score >= 2.5 ? "Good" : score >= 1.5 ? "Okay" : "Low";
+                return (
+                  <div
+                    key={p.name}
+                    className="rounded-2xl p-4 border"
+                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                  >
+                    <p className="text-xs font-medium mb-1" style={{ color: "var(--muted-foreground)" }}>
+                      {p.name}
+                    </p>
+                    <p className="text-2xl font-bold mb-1" style={{ color: "var(--foreground)" }}>
+                      {p.avg}<span className="text-sm font-normal" style={{ color: "var(--muted-foreground)" }}>/4</span>
+                    </p>
+                    <div
+                      className="h-1.5 rounded-full mb-2"
+                      style={{ background: "var(--muted)" }}
+                    >
+                      <div
+                        className="h-1.5 rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%`, background: "var(--primary)" }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium" style={{ color: "var(--primary)" }}>{label}</span>
+                      <span className="text-xs" style={{ color: "var(--muted-foreground)" }}>{p.count} {p.count === 1 ? "entry" : "entries"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* AI Narrative — parse into sections */}
+            {(() => {
+              const text = weeklyReport.analysis;
+              // Split on numbered lines or double newlines for paragraph grouping
+              const paragraphs = text
+                .split(/\n{2,}|\d+\.\s+/)
+                .map((p) => p.trim())
+                .filter(Boolean);
+
+              const icons = [Heart, BookOpen, Star, Lightbulb];
+              const sectionTitles = ["This Week", "Spiritual Encouragement", "Bible Verse", "Action for Next Week"];
+
+              return paragraphs.map((para, i) => {
+                const Icon = icons[i % icons.length];
+                return (
+                  <div
+                    key={i}
+                    className="rounded-2xl p-5 border"
+                    style={{ background: "var(--card)", borderColor: "var(--border)" }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+                      >
+                        <Icon className="w-3.5 h-3.5" style={{ color: "var(--primary)" }} />
+                      </div>
+                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--muted-foreground)" }}>
+                        {sectionTitles[i] ?? `Insight ${i + 1}`}
+                      </span>
+                    </div>
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--foreground)" }}>
+                      {para}
+                    </p>
+                  </div>
+                );
+              });
+            })()}
+
+            {/* Closing encouragement */}
+            <div
+              className="rounded-2xl px-5 py-6 text-center"
+              style={{ background: "color-mix(in srgb, var(--primary) 8%, transparent)" }}
+            >
+              <Heart className="w-6 h-6 mx-auto mb-2" style={{ color: "var(--primary)" }} />
+              <p className="text-sm font-medium" style={{ color: "var(--foreground)" }}>
+                You are growing together in faith. 💕
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--muted-foreground)" }}>
+                This report was also sent to {partner?.name ?? "your partner"}.
+              </p>
+            </div>
+
+            <Button
+              className="w-full"
+              onClick={() => setWeeklyReport(null)}
+              style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

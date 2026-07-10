@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Bell, BellOff, Check, X, Smartphone } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { toast } from 'sonner@2.0.3';
 import { requestNotificationPermission, subscribeToPushNotifications } from '../utils/pwa';
 import { projectId } from '../utils/supabase/info';
@@ -14,6 +15,7 @@ interface PushNotificationSetupProps {
 }
 
 export function PushNotificationSetup({ userId, accessToken, onComplete }: PushNotificationSetupProps) {
+  const { t } = useLanguage();
   const [showDialog, setShowDialog] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<'unknown' | 'granted' | 'denied' | 'prompt'>('unknown');
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -50,7 +52,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
     try {
       // Check if Service Worker is supported
       if (!('serviceWorker' in navigator)) {
-        toast.error('Push notifications are not supported in your browser.');
+        toast.error(t.notifications.pushNotifications + ' — ' + t.notifications.enableInSettings);
         setIsLoading(false);
         return;
       }
@@ -76,10 +78,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
             const ct = probe.headers.get('content-type') || '';
             const isJs = ct.includes('javascript') || ct.includes('text/js') || probe.url.endsWith('.js');
             if (!probe.ok || (!isJs && ct.includes('html'))) {
-              toast.error(
-                'The service worker file is not accessible in this environment. ' +
-                'Push notifications require the app to be opened from its direct URL, not embedded.'
-              );
+              toast.error(t.notifications.enableInSettings);
               setIsLoading(false);
               return;
             }
@@ -90,10 +89,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
           } catch (regErr: any) {
             const msg = String(regErr?.message || regErr);
             console.error('[PushNotification] SW register failed:', msg);
-            toast.error(
-              'Could not register service worker. ' +
-              'Try reloading the app or opening it in Chrome on Android / Safari on iOS.'
-            );
+            toast.error(t.notifications.enableInSettings);
             setIsLoading(false);
             return;
           }
@@ -101,7 +97,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
       }
 
       if (!swRegistration) {
-        toast.error('Service worker unavailable. Please reload the app and try again.');
+        toast.error(t.messages.tryAgainLater);
         setIsLoading(false);
         return;
       }
@@ -110,7 +106,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
       const permission = await requestNotificationPermission();
       
       if (permission !== 'granted') {
-        toast.error('Notification permission denied. You can enable it later in settings.');
+        toast.error(t.notifications.permissionRequired + ' — ' + t.notifications.enableInSettings);
         setNotificationStatus('denied');
         setIsLoading(false);
         return;
@@ -140,13 +136,13 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
         }
       } catch (subErr: any) {
         console.error('[PushNotification] Subscribe failed:', subErr);
-        toast.error('Failed to subscribe to push notifications: ' + (subErr?.message || subErr));
+        toast.error(t.messages.errorOccurred + ': ' + (subErr?.message || subErr));
         setIsLoading(false);
         return;
       }
 
       if (!subscription) {
-        toast.error('Failed to subscribe to notifications');
+        toast.error(t.messages.errorOccurred);
         setIsLoading(false);
         return;
       }
@@ -178,11 +174,11 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
       } catch (apiError) {
         console.error('[PushNotification] API error:', apiError);
         // Continue anyway - subscription is local, backend can be updated later
-        toast.success('✅ Notifications enabled locally! (Backend sync pending)');
+        toast.success(t.notifications.notificationsOn);
       }
 
       setIsSubscribed(true);
-      toast.success('✅ Push notifications enabled! You\'ll receive updates from your partner.');
+      toast.success(t.notifications.notificationsOn);
       
       // Show a test notification
       setTimeout(() => {
@@ -204,7 +200,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
       onComplete?.();
     } catch (error) {
       console.error('[PushNotification] Setup error:', error);
-      toast.error('Failed to enable notifications. Please try again.');
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsLoading(false);
     }
@@ -239,11 +235,11 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
       }
 
       setIsSubscribed(false);
-      toast.success('Notifications disabled');
+      toast.success(t.notifications.notificationsOff);
       setShowDialog(false);
     } catch (error) {
       console.error('[PushNotification] Disable error:', error);
-      toast.error('Failed to disable notifications');
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsLoading(false);
     }
@@ -260,7 +256,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
         size="icon"
         onClick={() => setShowDialog(true)}
         className={`h-8 w-8 ${isSubscribed ? 'text-success-700 hover:bg-success-50' : 'text-muted-foreground hover:bg-muted'}`}
-        title={isSubscribed ? 'Notifications On' : 'Enable Notifications'}
+        title={isSubscribed ? t.notifications.notificationsOn : t.notifications.enableNotifications}
       >
         {isSubscribed ? (
           <Bell className="w-5 h-5" />
@@ -274,38 +270,38 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-primary-600" />
-              Push Notifications
+              <Bell className="w-5 h-5" style={{ color: 'var(--primary)' }} />
+              {t.notifications.pushNotifications}
             </DialogTitle>
             <DialogDescription>
-              Stay connected with your partner through instant notifications
+              {t.notifications.stayConnected}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Status Card */}
-            <Card className={isSubscribed ? 'border-success-500 bg-success-50' : 'border-border'}>
+            <Card className="border-border">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-full ${isSubscribed ? 'bg-success-50' : 'bg-muted'}`}>
+                  <div className="p-2 rounded-full bg-muted">
                     {isSubscribed ? (
-                      <Check className="w-5 h-5 text-success-700" />
+                      <Check className="w-5 h-5" style={{ color: 'var(--success-500)' }} />
                     ) : notificationStatus === 'denied' ? (
-                      <X className="w-5 h-5 text-error-700" />
+                      <X className="w-5 h-5" style={{ color: 'var(--error-500)' }} />
                     ) : (
                       <Bell className="w-5 h-5 text-foreground" />
                     )}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-sm mb-1">
-                      {isSubscribed ? 'Notifications Enabled' : 
-                       notificationStatus === 'denied' ? 'Notifications Blocked' :
-                       'Notifications Available'}
+                      {isSubscribed ? t.notifications.notificationsOn :
+                       notificationStatus === 'denied' ? t.notifications.permissionRequired :
+                       t.notifications.enableNotifications}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {isSubscribed ? 'You\'ll receive notifications when your partner shares verses, prayer requests, and more.' :
-                       notificationStatus === 'denied' ? 'You\'ve blocked notifications. Enable them in your browser settings.' :
-                       'Get notified when your partner shares content or completes devotionals.'}
+                      {isSubscribed ? t.notifications.youllBeNotified :
+                       notificationStatus === 'denied' ? t.notifications.enableInSettings :
+                       t.notifications.stayConnected}
                     </p>
                   </div>
                 </div>
@@ -314,27 +310,27 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
 
             {/* Benefits */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-sm">You'll be notified about:</h4>
+              <h4 className="font-semibold text-sm">{t.notifications.youllBeNotified}</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-primary-600" />
-                  <span>Shared Bible verses and highlights</span>
+                  <Smartphone className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+                  <span>{t.notifications.sharedVerse}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-primary-600" />
-                  <span>New prayer requests from your partner</span>
+                  <Smartphone className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+                  <span>{t.notifications.newPrayer}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-primary-600" />
-                  <span>Journal entries and devotional completions</span>
+                  <Smartphone className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+                  <span>{t.notifications.journalEntry}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-primary-600" />
-                  <span>Daily devotional reminders</span>
+                  <Smartphone className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+                  <span>{t.notifications.devotionalComplete}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-primary-600" />
-                  <span>Milestone celebrations and achievements</span>
+                  <Smartphone className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+                  <span>{t.notifications.milestone}</span>
                 </div>
               </div>
             </div>
@@ -343,12 +339,8 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
             <div className="flex gap-3 pt-4">
               {isSubscribed ? (
                 <>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowDialog(false)}
-                  >
-                    Close
+                  <Button variant="outline" className="flex-1" onClick={() => setShowDialog(false)}>
+                    {t.common.close}
                   </Button>
                   <Button
                     variant="destructive"
@@ -356,37 +348,30 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
                     onClick={handleDisableNotifications}
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Disabling...' : 'Disable Notifications'}
+                    {isLoading ? t.common.loading : t.notifications.disableNotifications}
                   </Button>
                 </>
               ) : notificationStatus === 'denied' ? (
                 <div className="w-full">
                   <p className="text-sm text-muted-foreground mb-3">
-                    To enable notifications, please allow them in your browser settings.
+                    {t.notifications.enableInSettings}
                   </p>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setShowDialog(false)}
-                  >
-                    Close
+                  <Button variant="outline" className="w-full" onClick={() => setShowDialog(false)}>
+                    {t.common.close}
                   </Button>
                 </div>
               ) : (
                 <>
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setShowDialog(false)}
-                  >
-                    Maybe Later
+                  <Button variant="outline" className="flex-1" onClick={() => setShowDialog(false)}>
+                    {t.common.cancel}
                   </Button>
                   <Button
-                    className="flex-1 bg-primary-600 hover:bg-primary-700"
+                    className="flex-1"
+                    style={{ background: 'var(--primary)', color: 'var(--primary-foreground)' }}
                     onClick={handleEnableNotifications}
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Setting up...' : 'Enable Notifications'}
+                    {isLoading ? t.common.loading : t.notifications.enableNotifications}
                   </Button>
                 </>
               )}
@@ -394,7 +379,7 @@ export function PushNotificationSetup({ userId, accessToken, onComplete }: PushN
 
             {/* Privacy note */}
             <p className="text-xs text-muted-foreground text-center">
-              We respect your privacy. You can disable notifications at any time.
+              {t.notifications.disableNotifications}
             </p>
           </div>
         </DialogContent>

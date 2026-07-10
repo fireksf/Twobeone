@@ -140,6 +140,40 @@ const REFLECTION_PROMPTS = [
   "What are you most grateful for about your partner?",
 ] as const;
 
+const APP_TRANSLATIONS: Record<
+  string,
+  Record<string, string>
+> = {
+  en: {
+    loading: "Loading...",
+    errorTitle: "Error Loading Profile",
+    retry: "Retry",
+    openingPrayer: "Opening Prayer Together... 🙏",
+    prayerTime: "Prayer time! 🙏",
+    profileSyncSuccess: "Profile updated! Syncing complete. 💕",
+    profileSuccess: "Profile updated successfully!",
+  },
+  am: {
+    loading: "በመጫን ላይ...",
+    errorTitle: "መገለጫን መጫን አልተሳካም",
+    retry: "እንደገና ሞክር",
+    openingPrayer: "የጋራ ጸሎት በመክፈት ላይ... 🙏",
+    prayerTime: "የጸሎት ጊዜ! 🙏",
+    profileSyncSuccess: "መገለጫ ተዘምኗል! ማመሳሰል ተጠናቆአል። 💕",
+    profileSuccess: "መገለጫ በትክክል ተዘምኗል!",
+  },
+  om: {
+    loading: "Fe'amaa jira...",
+    errorTitle: "Profaayilii fiduun hin danda'amne",
+    retry: "Deebisii yaali",
+    openingPrayer: "Kadhannaa waliinii banamaa jira... 🙏",
+    prayerTime: "Yeroo kadhannaa! 🙏",
+    profileSyncSuccess:
+      "Profaayilii haaromeera! Syncing xumurameera. 💕",
+    profileSuccess: "Profaayilii milkaa'inaan haaromeera!",
+  },
+};
+
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [activeTab, setActiveTab] = useState("home");
@@ -197,6 +231,11 @@ export default function App() {
     any | null
   >(null);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  const currentLangCode =
+    localStorage.getItem("twobeone_language") || "en";
+  const vocabulary =
+    APP_TRANSLATIONS[currentLangCode] || APP_TRANSLATIONS.en;
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -338,6 +377,11 @@ export default function App() {
       hasLoadedRef.current = false;
     }
   }, [user, accessToken]);
+
+  // Scroll to top on every tab / screen change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [activeTab, selectedScreen]);
 
   useEffect(() => {
     if (activeTab === "questions" && accessToken) {
@@ -1021,7 +1065,9 @@ export default function App() {
         <div className="flex items-center justify-center min-h-screen bg-background">
           <div className="text-center space-y-4">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-            <p className="text-muted-foreground">Loading...</p>
+            <p className="text-muted-foreground">
+              {vocabulary.loading}
+            </p>
           </div>
         </div>
       </LanguageProvider>
@@ -1054,6 +1100,11 @@ export default function App() {
       </LanguageProvider>
     );
   }
+
+  const todaysPrompt =
+    REFLECTION_PROMPTS[
+      new Date().getDate() % REFLECTION_PROMPTS.length
+    ];
 
   if (selectedScreen === "testing") {
     return (
@@ -1213,7 +1264,7 @@ export default function App() {
                   <AlertCircle className="w-5 h-5 text-rose-500 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-rose-800">
-                      Error Loading Profile
+                      {vocabulary.errorTitle}
                     </h3>
                     <p className="text-xs text-rose-700 mt-1">
                       {loadError}
@@ -1224,7 +1275,7 @@ export default function App() {
                       className="mt-3 text-xs bg-white border-rose-200"
                       onClick={() => loadUserData()}
                     >
-                      Retry
+                      {vocabulary.retry}
                     </Button>
                   </div>
                 </div>
@@ -1260,9 +1311,7 @@ export default function App() {
                     onPrayTogether={async () => {
                       setActiveTab("prayer");
                       setSelectedScreen("dashboard");
-                      toast.success(
-                        "Opening Prayer Together...",
-                      );
+                      toast.success(vocabulary.openingPrayer);
                     }}
                     onBack={() =>
                       setSelectedScreen("dashboard")
@@ -1356,7 +1405,7 @@ export default function App() {
                     partner={partner || undefined}
                     onPrayTogether={async () => {
                       setActiveTab("prayer");
-                      toast.success("Prayer time! 🙏");
+                      toast.success(vocabulary.prayerTime);
                     }}
                     onBack={() =>
                       setSelectedScreen("dashboard")
@@ -1385,9 +1434,7 @@ export default function App() {
                     onSaveAnswer={handleSaveQuestionResponse}
                     onPrayTogether={async () => {
                       setActiveTab("prayer");
-                      toast.success(
-                        "Opening Prayer Together...",
-                      );
+                      toast.success(vocabulary.openingPrayer);
                     }}
                     onBack={() => {
                       setSelectedScreen("category-selection");
@@ -1482,11 +1529,11 @@ export default function App() {
 
                       if (data.relationshipStart && partner) {
                         toast.success(
-                          "Profile updated! Syncing complete. 💕",
+                          vocabulary.profileSyncSuccess,
                         );
                       } else {
                         toast.success(
-                          "Profile updated successfully!",
+                          vocabulary.profileSuccess,
                         );
                       }
                     } catch (error: any) {
@@ -1532,7 +1579,6 @@ export default function App() {
               activeTab={activeTab}
               onTabChange={(tab) => {
                 setActiveTab(tab);
-                // FIX: Reset dynamic screen route whenever home selection is explicitly forced
                 if (tab === "home") {
                   setSelectedScreen("dashboard");
                 }

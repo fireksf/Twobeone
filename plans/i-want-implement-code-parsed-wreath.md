@@ -1,3 +1,43 @@
+# Learning Module Direct Navigation Fix
+
+## Context
+
+When a user clicks an individual module card inside `LearningModulesCard` (shown on the home dashboard), they land on the **guidance overview screen** (`PreMarriageHub`) instead of jumping directly into that specific module. This happens because `LearningModulesCard` only has one callback prop `onViewAll?: () => void` — every module row click calls the exact same function, discarding which module was clicked. The user has to click twice: once on the module card, then again on the same module in the overview. The individual module selection is silently **skipped**.
+
+## Root Cause
+
+`LearningModulesCard.tsx` props (line 120-123): only `onViewAll?: () => void` — every row uses `onClick={onViewAll}`, module ID never passed up.
+
+## Fix — 3 files
+
+### 1. `src/app/components/LearningModulesCard.tsx`
+- Add `onModuleClick?: (moduleId: string) => void` to props interface
+- Change each module row `onClick` to: `() => onModuleClick ? onModuleClick(m.id) : onViewAll?.()`
+- "View All" footer button keeps `onClick={onViewAll}` unchanged
+
+### 2. `src/app/components/CoupleDashboard.tsx`
+- Add `onModuleNavigate?: (moduleId: string) => void` to `CoupleDashboardProps` (line ~58)
+- Pass to `LearningModulesCard`: `onModuleClick={onModuleNavigate}`
+
+### 3. `src/app/App.tsx`
+- Pass handler to `CoupleDashboard` (around line 1297):
+```tsx
+onModuleNavigate={(moduleId) => {
+  setSelectedModuleId(moduleId);
+  setSelectedLessonId(null);
+  setSelectedScreen('lesson');
+}}
+```
+Reuses existing `setSelectedModuleId` + `setSelectedScreen` — no new state needed.
+
+## Verification
+
+1. Click individual module in dashboard card → jumps directly to `LessonScreen` for that module (no intermediate overview)
+2. Click "View All" footer → still navigates to `PreMarriageHub` overview
+3. Back in `LessonScreen` → returns to guidance overview (unchanged)
+
+---
+
 # Daily Reminder System Plan (Push + Email)
 
 ## Context

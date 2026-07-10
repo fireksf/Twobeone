@@ -143,7 +143,7 @@ export function CategorySelection({ onSelectCategory, onBack }: CategorySelectio
             {t.questions.selectCategory}
           </h1>
           <p className="text-muted-foreground max-w-md mx-auto">
-            {t.questions.knowEachOther} meaningful questions and deepen your relationship
+            {t.questions.knowEachOther}. Meaningful questions and deepen your Relationship
           </p>
         </div>
 

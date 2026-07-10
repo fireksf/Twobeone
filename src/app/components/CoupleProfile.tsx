@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { toast } from 'sonner@2.0.3';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CoupleProfileProps {
   profile?: {
@@ -40,6 +41,7 @@ interface CoupleData {
 }
 
 export function CoupleProfile({ profile, partner, accessToken, onUpdateProfile, onRefresh }: CoupleProfileProps) {
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -98,13 +100,13 @@ export function CoupleProfile({ profile, partner, accessToken, onUpdateProfile, 
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
+      toast.error(t.messages.errorOccurred);
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size must be less than 5MB');
+      toast.error(t.messages.errorOccurred);
       return;
     }
 
@@ -144,22 +146,22 @@ export function CoupleProfile({ profile, partner, accessToken, onUpdateProfile, 
         if (type === 'user') {
           setUserPicture(data.imageUrl);
           await onUpdateProfile({ profilePicture: data.imageUrl });
-          toast.success('Profile picture updated!');
+          toast.success(t.messages.savedSuccessfully);
         } else {
           setCoupleData(prev => ({ ...prev, couplePicture: data.imageUrl }));
           await saveCoupleData({ couplePicture: data.imageUrl });
-          toast.success('Couple picture updated!');
+          toast.success(t.messages.savedSuccessfully);
         }
 
         if (onRefresh) onRefresh();
       };
 
       reader.onerror = () => {
-        toast.error('Failed to read image file');
+        toast.error(t.messages.errorOccurred);
       };
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image');
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsUploading(false);
     }
@@ -167,7 +169,7 @@ export function CoupleProfile({ profile, partner, accessToken, onUpdateProfile, 
 
   const saveCoupleData = async (updates?: Partial<CoupleData>) => {
     if (!profile?.coupleId) {
-      toast.error('Please link with your partner first');
+      toast.error(t.partner.connect);
       return;
     }
 
@@ -194,12 +196,12 @@ export function CoupleProfile({ profile, partner, accessToken, onUpdateProfile, 
       }
 
       if (!updates) {
-        toast.success('Couple profile updated!');
+        toast.success(t.messages.savedSuccessfully);
         setIsEditing(false);
       }
     } catch (error) {
       console.error('Save error:', error);
-      toast.error('Failed to save couple data');
+      toast.error(t.messages.errorOccurred);
     }
   };
 
@@ -241,12 +243,12 @@ export function CoupleProfile({ profile, partner, accessToken, onUpdateProfile, 
         localStorage.setItem('twobeone_couple_id', data.coupleId);
       }
 
-      toast.success('Successfully linked with your partner!');
+      toast.success(t.partner.allSet);
       setIsLinkDialogOpen(false);
       if (onRefresh) onRefresh();
     } catch (error: any) {
       console.error('Link error:', error);
-      toast.error(error.message || 'Failed to link couple');
+      toast.error(error.message || t.partner.failedConnect);
     }
   };
 

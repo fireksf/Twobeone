@@ -1,4 +1,31 @@
 import { useState, useEffect } from "react";
+
+const mdToHtml = (md: string): string => {
+  if (!md) return '';
+  const lines = md.split('\n');
+  const out: string[] = [];
+  let inUl = false, inOl = false;
+  const closeList = () => {
+    if (inUl) { out.push('</ul>'); inUl = false; }
+    if (inOl) { out.push('</ol>'); inOl = false; }
+  };
+  for (const raw of lines) {
+    const l = raw
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/_(.*?)_/g, '<em>$1</em>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    if (/^### (.+)/.test(l)) { closeList(); out.push(`<h3 style="font-size:1em;font-weight:700;margin:8px 0 3px;color:var(--foreground)">${l.replace(/^### /, '')}</h3>`); }
+    else if (/^## (.+)/.test(l)) { closeList(); out.push(`<h2 style="font-size:1.2em;font-weight:700;margin:10px 0 4px;color:var(--foreground)">${l.replace(/^## /, '')}</h2>`); }
+    else if (/^> (.+)/.test(l)) { closeList(); out.push(`<blockquote style="border-left:3px solid var(--border);padding-left:12px;color:var(--muted-foreground);margin:6px 0;font-style:italic">${l.replace(/^> /, '')}</blockquote>`); }
+    else if (/^---$/.test(l.trim())) { closeList(); out.push(`<hr style="border:none;border-top:1px solid var(--border);margin:12px 0">`); }
+    else if (/^- (.+)/.test(l)) { if (!inUl) { if (inOl) { out.push('</ol>'); inOl = false; } out.push('<ul style="list-style:disc;padding-left:20px;margin:6px 0">'); inUl = true; } out.push(`<li style="margin:2px 0">${l.replace(/^- /, '')}</li>`); }
+    else if (/^\d+\. (.+)/.test(l)) { if (!inOl) { if (inUl) { out.push('</ul>'); inUl = false; } out.push('<ol style="list-style:decimal;padding-left:20px;margin:6px 0">'); inOl = true; } out.push(`<li style="margin:2px 0">${l.replace(/^\d+\. /, '')}</li>`); }
+    else if (l.trim() === '') { closeList(); out.push('<br>'); }
+    else { closeList(); out.push(`<p style="margin:3px 0;color:var(--foreground)">${l}</p>`); }
+  }
+  closeList();
+  return out.join('');
+};
 import { useLanguage } from "../contexts/LanguageContext";
 import {
   ArrowLeft,
@@ -603,9 +630,9 @@ export function LessonScreen({
       {/* Lesson content */}
       <div
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: "var(--background)",
           borderRadius: "12px",
-          border: "1px solid #e2e8f0",
+          border: "1px solid var(--border)",
           boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
           overflow: "hidden",
         }}
@@ -616,7 +643,7 @@ export function LessonScreen({
             alignItems: "center",
             gap: "8px",
             padding: "16px",
-            borderBottom: "1px solid #e2e8f0",
+            borderBottom: "1px solid var(--border)",
             backgroundColor: accentBg,
           }}
         >
@@ -627,7 +654,7 @@ export function LessonScreen({
             style={{
               fontSize: "14px",
               fontWeight: 600,
-              color: "#0f172a",
+              color: "var(--foreground)",
             }}
           >
             Lesson Content
@@ -638,22 +665,12 @@ export function LessonScreen({
             padding: "20px",
             maxHeight: 480,
             overflowY: "auto",
+            fontSize: "14px",
+            lineHeight: 1.75,
+            color: "var(--foreground)",
           }}
-        >
-          <pre
-            style={{
-              fontFamily: "inherit",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              fontSize: "14px",
-              color: "#334155",
-              lineHeight: 1.7,
-              margin: 0,
-            }}
-          >
-            {currentLesson.content}
-          </pre>
-        </div>
+          dangerouslySetInnerHTML={{ __html: mdToHtml(currentLesson.content) }}
+        />
       </div>
 
       {/* Notes */}

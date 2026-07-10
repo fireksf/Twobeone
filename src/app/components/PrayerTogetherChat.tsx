@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Send, Heart, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { toast } from 'sonner@2.0.3';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface PrayerMessage {
   id: string;
@@ -29,6 +30,7 @@ export function PrayerTogetherChat({
   currentUserName,
   partnerName = 'Your Partner'
 }: PrayerTogetherChatProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<PrayerMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +73,7 @@ export function PrayerTogetherChat({
       setLastMessageCount(newMessages.length);
     } catch (error) {
       console.error('Error loading prayer chat:', error);
-      toast.error('Failed to load prayer conversation');
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsLoading(false);
     }
@@ -117,7 +119,7 @@ export function PrayerTogetherChat({
 
     } catch (error) {
       console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsSending(false);
     }

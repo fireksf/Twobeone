@@ -107,6 +107,13 @@ export interface Translations {
     streak: string;
     days: string;
     keepGoing: string;
+    audioTab: string;
+    versesTab: string;
+    highlightsTab: string;
+    filter: string;
+    completed: string;
+    loading: string;
+    noDevotionals: string;
   };
 
   // Journal
@@ -125,6 +132,10 @@ export interface Translations {
     edit: string;
     noEntries: string;
     startWriting: string;
+    searchPlaceholder: string;
+    sortBy: string;
+    all: string;
+    media: string;
   };
 
   // Prayer
@@ -143,6 +154,9 @@ export interface Translations {
     addFirstPrayer: string;
     praiseReport: string;
     howAnswered: string;
+    together: string;
+    searchPrayers: string;
+    requestTitle: string;
   };
 
   // Questions
@@ -257,8 +271,53 @@ export interface Translations {
     sad: string;
     notSetYet: string;
     analytics: string;
+    analyticsDescription: string;
     weeklyReport: string;
     moodTrends: string;
+    howAreYouFeelingToday: string;
+    shareEmotionalState: string;
+    addNote: string;
+    notePlaceholder: string;
+    generating: string;
+    analysisGenerated: string;
+    saveMood: string;
+    moodSaved: string;
+    failedSave: string;
+    failedLoad: string;
+    needPartnerForAnalysis: string;
+  };
+
+  // Partner setup
+  partner: {
+    connectTitle: string;
+    connectDesc: string;
+    partnerEmail: string;
+    partnerEmailPlaceholder: string;
+    partnerName: string;
+    partnerNamePlaceholder: string;
+    relationshipStarted: string;
+    connecting: string;
+    connect: string;
+    createTitle: string;
+    createDesc: string;
+    creating: string;
+    createConnect: string;
+    back: string;
+    notFound: string;
+    failedConnect: string;
+    fillAllFields: string;
+    createdFor: string;
+    failedCreate: string;
+    allSet: string;
+    connectedWith: string;
+    tempPasswordNote: string;
+    ifNoAccount: string;
+  };
+
+  // Offline / network
+  offline: {
+    backOnline: string;
+    youreOffline: string;
   };
 
   // Messages
@@ -431,6 +490,13 @@ export const translations: Record<Language, Translations> = {
       streak: 'Streak',
       days: 'days',
       keepGoing: 'Keep going!',
+      audioTab: 'Audio',
+      versesTab: 'Verses',
+      highlightsTab: 'Highlights',
+      filter: 'Filter',
+      completed: 'Completed',
+      loading: 'Loading devotionals...',
+      noDevotionals: 'No devotionals found',
     },
 
     journal: {
@@ -448,6 +514,10 @@ export const translations: Record<Language, Translations> = {
       edit: 'Edit Entry',
       noEntries: 'No journal entries yet',
       startWriting: 'Start writing your first entry',
+      searchPlaceholder: 'Search entries...',
+      sortBy: 'Sort by',
+      all: 'All',
+      media: 'Media',
     },
 
     prayer: {
@@ -465,6 +535,9 @@ export const translations: Record<Language, Translations> = {
       addFirstPrayer: 'Add your first prayer',
       praiseReport: 'Praise Report',
       howAnswered: 'How was this prayer answered?',
+      together: 'Together',
+      searchPrayers: 'Search prayers...',
+      requestTitle: 'Prayer Title',
     },
 
     questions: {
@@ -572,9 +645,52 @@ export const translations: Record<Language, Translations> = {
       okay: 'Okay',
       sad: 'Sad',
       notSetYet: 'Not set yet',
-      analytics: 'Analytics',
+      analytics: 'Mood Analytics',
+      analyticsDescription: 'Track your emotional journey together',
       weeklyReport: 'Weekly Report',
       moodTrends: 'Mood Trends',
+      howAreYouFeelingToday: "How are you feeling today?",
+      shareEmotionalState: 'Share your emotional state with your partner',
+      addNote: 'Add a note (optional)',
+      notePlaceholder: 'What\'s on your heart today?',
+      generating: 'Generating...',
+      analysisGenerated: 'AI analysis ready! 💝',
+      saveMood: 'Save Mood',
+      moodSaved: 'Mood saved! 💝',
+      failedSave: 'Failed to save mood',
+      failedLoad: 'Failed to load mood data',
+      needPartnerForAnalysis: 'You need a partner to generate AI analysis',
+    },
+
+    partner: {
+      connectTitle: 'Connect with Your Partner',
+      connectDesc: 'Add your partner to start your journey together',
+      partnerEmail: "Partner's Email",
+      partnerEmailPlaceholder: 'partner@example.com',
+      partnerName: "Partner's Name",
+      partnerNamePlaceholder: "Enter partner's name",
+      relationshipStarted: 'Relationship Started',
+      connecting: 'Connecting...',
+      connect: 'Connect with Partner',
+      createTitle: 'Create Partner Account',
+      createDesc: 'Create an account so you can connect',
+      creating: 'Creating...',
+      createConnect: 'Create & Connect',
+      back: 'Back',
+      notFound: 'Partner account not found. Create one for them?',
+      failedConnect: 'Failed to connect with partner',
+      fillAllFields: 'Please fill in all fields',
+      createdFor: 'Created account for',
+      failedCreate: 'Failed to create partner account',
+      allSet: 'All Set! 💕',
+      connectedWith: "You're now connected with",
+      tempPasswordNote: 'A temporary password will be created. Share it with your partner so they can sign in and change it.',
+      ifNoAccount: "If your partner doesn't have an account yet, we'll help you create one for them",
+    },
+
+    offline: {
+      backOnline: 'Back online',
+      youreOffline: "You're offline. Some features may be limited.",
     },
 
     messages: {
@@ -742,6 +858,13 @@ export const translations: Record<Language, Translations> = {
       streak: 'ቀጣይነት',
       days: 'ቀናት',
       keepGoing: 'ይቀጥሉ!',
+      audioTab: 'ኦዲዮ',
+      versesTab: 'ጥቅሶች',
+      highlightsTab: 'ድምቀቶች',
+      filter: 'ማጣሪያ',
+      completed: 'ተጠናቋል',
+      loading: 'ጥናቶችን በመጫን ላይ...',
+      noDevotionals: 'ምንም ጥናቶች አልተገኙም',
     },
 
     journal: {
@@ -759,6 +882,10 @@ export const translations: Record<Language, Translations> = {
       edit: 'ግቤት አስተካክል',
       noEntries: 'እስካሁን ምንም ግቤቶች የሉም',
       startWriting: 'የመጀመሪያ ግቤትዎን ይጻፉ',
+      searchPlaceholder: 'ግቤቶች ፈልግ...',
+      sortBy: 'ደርድር',
+      all: 'ሁሉም',
+      media: 'ሚዲያ',
     },
 
     prayer: {
@@ -776,6 +903,9 @@ export const translations: Record<Language, Translations> = {
       addFirstPrayer: 'የመጀመሪያ ጸሎትዎን ይጨምሩ',
       praiseReport: 'የምስጋና ሪፖርት',
       howAnswered: 'ይህ ጸሎት እንዴት ተመልሷል?',
+      together: 'አብሮ',
+      searchPrayers: 'ጸሎቶችን ፈልግ...',
+      requestTitle: 'የጸሎት ርዕስ',
     },
 
     questions: {
@@ -883,9 +1013,52 @@ export const translations: Record<Language, Translations> = {
       okay: 'እሺ',
       sad: 'ሀዘን',
       notSetYet: 'እስካሁን አልተዘጋጀም',
-      analytics: 'ትንታኔ',
+      analytics: 'የስሜት ትንታኔ',
+      analyticsDescription: 'የስሜት ጉዟችሁን አብረን ተከታተሉ',
       weeklyReport: 'ሳምንታዊ ሪፖርት',
       moodTrends: 'የስሜት አዝማሚያዎች',
+      howAreYouFeelingToday: 'ዛሬ እንዴት ይሰማዎታል?',
+      shareEmotionalState: 'ስሜትዎን ከባልደረባዎ ጋር ያጋሩ',
+      addNote: 'ማስታወሻ ጨምር (ምርጫ)',
+      notePlaceholder: 'ዛሬ ልብዎ ምን ይላል?',
+      generating: 'በማዘጋጀት ላይ...',
+      analysisGenerated: 'AI ትንታኔ ተዘጋጅቷል! 💝',
+      saveMood: 'ስሜት አስቀምጥ',
+      moodSaved: 'ስሜት ተቀምጧል! 💝',
+      failedSave: 'ስሜት ማስቀመጥ አልተሳካም',
+      failedLoad: 'የስሜት ውሂብ መጫን አልተሳካም',
+      needPartnerForAnalysis: 'AI ትንታኔ ለማዘጋጀት ባልደረባ ያስፈልጋል',
+    },
+
+    partner: {
+      connectTitle: 'ከባልደረባዎ ጋር ይገናኙ',
+      connectDesc: 'ጉዟችሁን ለመጀመር ባልደረባዎን ያክሉ',
+      partnerEmail: 'የባልደረባ ኢሜይል',
+      partnerEmailPlaceholder: 'partner@example.com',
+      partnerName: 'የባልደረባ ስም',
+      partnerNamePlaceholder: 'የባልደረባ ስም ያስገቡ',
+      relationshipStarted: 'ግንኙነት የጀመረው',
+      connecting: 'በማገናኘት ላይ...',
+      connect: 'ከባልደረባ ጋር ተገናኝ',
+      createTitle: 'የባልደረባ መለያ ፍጠር',
+      createDesc: 'እንዲገናኙ መለያ ፍጠሩ',
+      creating: 'በመፍጠር ላይ...',
+      createConnect: 'ፍጠር እና ተገናኝ',
+      back: 'ተመለስ',
+      notFound: 'የባልደረባ መለያ አልተገኘም። ለእሱ/ለእሷ ይፍጠሩ?',
+      failedConnect: 'ከባልደረባ ጋር ማገናኘት አልተሳካም',
+      fillAllFields: 'እባክዎ ሁሉንም መስኮች ይሙሉ',
+      createdFor: 'ለ... መለያ ተፈጥሯል',
+      failedCreate: 'የባልደረባ መለያ መፍጠር አልተሳካም',
+      allSet: 'ሁሉም ዝግጁ! 💕',
+      connectedWith: 'ከ... ጋር ተገናኝተዋል',
+      tempPasswordNote: 'ጊዜያዊ የይለፍ ቃል ይፈጠራል። ለባልደረባዎ ያጋሩት።',
+      ifNoAccount: 'ባልደረባዎ መለያ ከሌለዋቸው ለእሱ/ለእሷ ለመፍጠር እንረዳዎታለን',
+    },
+
+    offline: {
+      backOnline: 'ተገናኝቷል',
+      youreOffline: 'ከኢንተርኔት ተቋርጠዋል። አንዳንድ ባህሪያት ላይሰሩ ይችላሉ።',
     },
 
     messages: {
@@ -1196,9 +1369,52 @@ export const translations: Record<Language, Translations> = {
       okay: 'Tole',
       sad: 'Gadda',
       notSetYet: "Ammaaf hin qindaa'ofne",
-      analytics: 'Xiinxala',
+      analytics: 'Xiinxala Miiraa',
+      analyticsDescription: 'Imala miiraa keessan waliin hordofaa',
       weeklyReport: 'Gabaasa Torban',
       moodTrends: 'Achiistuu Miiraa',
+      howAreYouFeelingToday: "Har'aa akkam itti dhagahama?",
+      shareEmotionalState: 'Haala miiraa kee hiriyaa keetiin qoodi',
+      addNote: 'Yaadannoo dabaluu (filannoo)',
+      notePlaceholder: "Har'aa garaan kee maal jedha?",
+      generating: 'Qopheessaa jira...',
+      analysisGenerated: "Xiinxalli AI qophaa'e! 💝",
+      saveMood: 'Miira Kuuxi',
+      moodSaved: 'Miirri kuufame! 💝',
+      failedSave: 'Miira kuuxuu dadhabame',
+      failedLoad: 'Deetaa miiraa fe\'uu dadhabame',
+      needPartnerForAnalysis: 'Xiinxala AI uumuuf hiriyaa barbaachisa',
+    },
+
+    partner: {
+      connectTitle: 'Hiriyaa Kee Waliin Quunnamaa',
+      connectDesc: 'Imala waliin jalqabuuf hiriyaa kee dabaluu',
+      partnerEmail: 'Imeelii Hiriyaa',
+      partnerEmailPlaceholder: 'partner@example.com',
+      partnerName: 'Maqaa Hiriyaa',
+      partnerNamePlaceholder: 'Maqaa hiriyaa galchi',
+      relationshipStarted: 'Hariiroon Eegale',
+      connecting: 'Quunnamaa jira...',
+      connect: 'Hiriyaa Waliin Quunnamaa',
+      createTitle: 'Herrega Hiriyaa Uumi',
+      createDesc: 'Quunnamuuf herrega uumi',
+      creating: 'Uumaa jira...',
+      createConnect: "Uumi fi Quunnamaa",
+      back: "Deebi'i",
+      notFound: "Herrega hiriyaa hin argamne. Isaaf/isheetiif uumuu?",
+      failedConnect: "Hiriyaa waliin quunnamuu dadhabame",
+      fillAllFields: "Maaloo dirreewwan hunda guuti",
+      createdFor: "Herreega uumame",
+      failedCreate: "Herrega hiriyaa uumuu dadhabame",
+      allSet: "Hunda Qophaa'e! 💕",
+      connectedWith: "...waliin quunnamte",
+      tempPasswordNote: "Jecha darbii yeroo gabaabaaf uumama. Hiriyaa keetif qoodi.",
+      ifNoAccount: "Hiriyaan kee herrega hin qabaatin yoo ta'e, isaa/isheetiif uumuuf si gargaarra",
+    },
+
+    offline: {
+      backOnline: 'Deebi\'ee quunname',
+      youreOffline: "Intarneetiin hin jiru. Muuxannooleen tokko tokko hojjechuu dhabu.",
     },
     messages: {
       savedSuccessfully: "Milkaa'inaan kuufame",

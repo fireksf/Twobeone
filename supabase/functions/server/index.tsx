@@ -1755,10 +1755,13 @@ Keep the tone warm, encouraging, and Christ-centered. Limit response to 300 word
     try {
       analysis = await callGemini(moodPrompt);
     } catch (aiError: any) {
-      // Return a 200 with a stats-based fallback instead of propagating a 500.
-      // This prevents the frontend from showing an error toast.
-      console.warn('[Mood Analysis] Gemini unavailable, using stats fallback:', aiError.message);
-      analysis = buildFallbackAnalysis();
+      console.error('[Mood Analysis] Gemini failed:', aiError.message);
+      return c.json({
+        error: aiError.message?.includes('not configured')
+          ? 'Gemini API key is not configured. Please add GEMINI_API_KEY to your Supabase secrets.'
+          : `Gemini unavailable: ${aiError.message}`,
+        retryable: true,
+      }, 503);
     }
 
     const analysisResult = {
@@ -1917,7 +1920,13 @@ Keep it under 150 words, loving and Christ-centered.`;
 
       aiAnalysis = await callGemini(weeklyPrompt);
     } catch (aiError: any) {
-      console.warn('[Weekly Report] Gemini error, using fallback:', aiError.message);
+      console.error('[Weekly Report] Gemini failed:', aiError.message);
+      return c.json({
+        error: aiError.message?.includes('not configured')
+          ? 'Gemini API key is not configured. Please add GEMINI_API_KEY to your Supabase secrets.'
+          : `AI unavailable: ${aiError.message}`,
+        retryable: true,
+      }, 503);
     }
 
     // Create notifications for both partners
@@ -5251,14 +5260,14 @@ async function callGemini(prompt: string): Promise<string> {
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
-  // Models tried in order. 429 = rate limit — move to next model immediately
-  // (all models share the same key quota, so longer waits rarely help).
+  // Models tried in order. 429 = rate limit — move to next model immediately.
+  // Ordered by free-tier quota generosity (most permissive first).
   const MODELS = [
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-latest',
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-1.0-pro',          // older model with separate quota bucket
+    'gemini-2.0-flash-lite',   // highest free RPM — try first
+    'gemini-2.0-flash',        // solid free tier, fast
+    'gemini-2.5-flash',        // latest, good free quota
+    'gemini-1.5-flash',        // fallback
+    'gemini-1.5-flash-8b',     // smallest/fastest, own quota bucket
   ];
   const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
   let lastError: Error | null = null;

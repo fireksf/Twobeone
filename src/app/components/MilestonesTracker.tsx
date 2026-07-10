@@ -47,7 +47,7 @@ export function MilestonesTracker({ onAddMilestone }: MilestonesTrackerProps) {
       setMilestones(transformedMilestones);
     } catch (error) {
       console.error('Error loading milestones:', error);
-      toast.error('Failed to load milestones');
+      toast.error(t.messages.errorOccurred);
     } finally {
       setIsLoading(false);
     }

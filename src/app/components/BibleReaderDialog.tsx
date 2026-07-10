@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import { bibleChapters } from '../data/bible-chapters';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Bible books organized by testament
 const BIBLE_BOOKS = {
@@ -99,6 +100,7 @@ export function BibleReaderDialog({
   onShareWithPartner,
   partnerName = 'Partner'
 }: BibleReaderDialogProps) {
+  const { t } = useLanguage();
   const [bookChapter, setBookChapter] = useState<any>(null);
   const [selectedVerse, setSelectedVerse] = useState<number | null>(null);
   const [highlightColor, setHighlightColor] = useState('yellow');
@@ -201,13 +203,13 @@ export function BibleReaderDialog({
         note: note || undefined
       });
 
-      toast.success('Verse highlighted!');
+      toast.success(t.messages.savedSuccessfully);
       setSelectedVerse(null);
       setNote('');
       setShowNoteInput(false);
     } catch (error) {
       console.error('Failed to save highlight:', error);
-      toast.error('Failed to save highlight');
+      toast.error(t.messages.errorOccurred);
     }
   };
 
@@ -222,13 +224,13 @@ export function BibleReaderDialog({
         note: note || undefined
       });
 
-      toast.success(`Shared with ${partnerName}!`);
+      toast.success(t.messages.sharedSuccessfully);
       setSelectedVerse(null);
       setNote('');
       setShowNoteInput(false);
     } catch (error) {
       console.error('Failed to share:', error);
-      toast.error('Failed to share with partner');
+      toast.error(t.messages.errorOccurred);
     }
   };
 

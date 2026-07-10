@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, GraduationCap, ChevronRight, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, GraduationCap, ChevronRight, X, Bold, Italic, Heading2, Quote, List, ListOrdered, Link, Minus } from 'lucide-react';
 import { ModulesImportExport } from './ModulesImportExport';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -11,6 +11,33 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { ScrollArea } from '../ui/scroll-area';
 import { toast } from 'sonner@2.0.3';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
+
+const mdToHtml = (md: string): string => {
+  if (!md) return '';
+  const lines = md.split('\n');
+  const out: string[] = [];
+  let inUl = false, inOl = false;
+  const closeList = () => {
+    if (inUl) { out.push('</ul>'); inUl = false; }
+    if (inOl) { out.push('</ol>'); inOl = false; }
+  };
+  for (const raw of lines) {
+    const l = raw
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/_(.*?)_/g, '<em>$1</em>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    if (/^### (.+)/.test(l)) { closeList(); out.push(`<h3 style="font-size:1em;font-weight:700;margin:6px 0 2px">${l.replace(/^### /, '')}</h3>`); }
+    else if (/^## (.+)/.test(l)) { closeList(); out.push(`<h2 style="font-size:1.15em;font-weight:700;margin:8px 0 3px">${l.replace(/^## /, '')}</h2>`); }
+    else if (/^> (.+)/.test(l)) { closeList(); out.push(`<blockquote style="border-left:3px solid var(--border);padding-left:10px;color:var(--muted-foreground);margin:4px 0">${l.replace(/^> /, '')}</blockquote>`); }
+    else if (/^---$/.test(l.trim())) { closeList(); out.push(`<hr style="border:none;border-top:1px solid var(--border);margin:8px 0">`); }
+    else if (/^- (.+)/.test(l)) { if (!inUl) { if (inOl) { out.push('</ol>'); inOl = false; } out.push('<ul style="list-style:disc;padding-left:18px;margin:4px 0">'); inUl = true; } out.push(`<li>${l.replace(/^- /, '')}</li>`); }
+    else if (/^\d+\. (.+)/.test(l)) { if (!inOl) { if (inUl) { out.push('</ul>'); inUl = false; } out.push('<ol style="list-style:decimal;padding-left:18px;margin:4px 0">'); inOl = true; } out.push(`<li>${l.replace(/^\d+\. /, '')}</li>`); }
+    else if (l.trim() === '') { closeList(); out.push('<br>'); }
+    else { closeList(); out.push(`<p style="margin:2px 0">${l}</p>`); }
+  }
+  closeList();
+  return out.join('');
+};
 
 interface Lesson {
   id: string;
@@ -513,15 +540,78 @@ export function ModulesManager({ accessToken }: ModulesManagerProps) {
                               <Label htmlFor={`lesson-content-${lesson.id}`} className="text-xs sm:text-sm">
                                 Content
                               </Label>
-                              <Textarea
-                                id={`lesson-content-${lesson.id}`}
-                                value={lesson.content}
-                                onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
-                                placeholder="Lesson content, scripture references, discussion questions..."
-                                rows={4}
-                                className="text-xs sm:text-sm"
-                                required
-                              />
+                              <div className="rounded-md border border-border overflow-hidden">
+                                {/* Formatting toolbar */}
+                                <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-border" style={{ background: 'var(--muted)' }}>
+                                  {[
+                                    { icon: Bold,         label: 'Bold',           wrap: ['**', '**'],         block: false },
+                                    { icon: Italic,       label: 'Italic',         wrap: ['_', '_'],           block: false },
+                                    { icon: Heading2,     label: 'Heading',        wrap: ['## ', ''],          block: true  },
+                                    { icon: Quote,        label: 'Quote',          wrap: ['> ', ''],           block: true  },
+                                    { icon: List,         label: 'Bullet list',    wrap: ['- ', ''],           block: true  },
+                                    { icon: ListOrdered,  label: 'Numbered list',  wrap: ['1. ', ''],          block: true  },
+                                    { icon: Link,         label: 'Link',           wrap: ['[', '](url)'],      block: false },
+                                    { icon: Minus,        label: 'Divider',        wrap: ['\n---\n', ''],      block: true  },
+                                  ].map(({ icon: Icon, label, wrap, block }) => (
+                                    <button
+                                      key={label}
+                                      type="button"
+                                      title={label}
+                                      aria-label={label}
+                                      className="w-7 h-7 rounded flex items-center justify-center transition-colors hover:bg-background"
+                                      style={{ color: 'var(--muted-foreground)' }}
+                                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--foreground)')}
+                                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted-foreground)')}
+                                      onClick={() => {
+                                        const ta = document.getElementById(`lesson-content-${lesson.id}`) as HTMLTextAreaElement;
+                                        if (!ta) return;
+                                        const start = ta.selectionStart;
+                                        const end = ta.selectionEnd;
+                                        const selected = lesson.content.slice(start, end);
+                                        let before = lesson.content.slice(0, start);
+                                        let after = lesson.content.slice(end);
+                                        let insertion: string;
+                                        if (block && start > 0 && !before.endsWith('\n')) {
+                                          before += '\n';
+                                        }
+                                        insertion = wrap[0] + (selected || (block ? 'text' : 'text')) + wrap[1];
+                                        const newVal = before + insertion + after;
+                                        updateLesson(lesson.id, 'content', newVal);
+                                        requestAnimationFrame(() => {
+                                          ta.focus();
+                                          const cursor = before.length + wrap[0].length + (selected || 'text').length;
+                                          ta.setSelectionRange(cursor, cursor);
+                                        });
+                                      }}
+                                    >
+                                      <Icon className="w-3.5 h-3.5" />
+                                    </button>
+                                  ))}
+                                </div>
+                                {/* Markdown textarea */}
+                                <Textarea
+                                  id={`lesson-content-${lesson.id}`}
+                                  value={lesson.content}
+                                  onChange={(e) => updateLesson(lesson.id, 'content', e.target.value)}
+                                  placeholder="Lesson content, scripture references, discussion questions..."
+                                  rows={6}
+                                  className="text-xs sm:text-sm border-0 rounded-none focus-visible:ring-0 resize-none font-mono"
+                                  required
+                                />
+                                {/* Live formatted preview */}
+                                {lesson.content.trim() && (
+                                  <div className="border-t border-border">
+                                    <div className="px-3 py-1.5 flex items-center gap-1.5 border-b border-border" style={{ background: 'var(--muted)' }}>
+                                      <span className="text-xs font-medium" style={{ color: 'var(--muted-foreground)' }}>Preview</span>
+                                    </div>
+                                    <div
+                                      className="px-3 py-2.5 text-xs sm:text-sm"
+                                      style={{ color: 'var(--foreground)', background: 'var(--background)', lineHeight: '1.65' }}
+                                      dangerouslySetInnerHTML={{ __html: mdToHtml(lesson.content) }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </Card>

@@ -6,6 +6,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { toast } from 'sonner@2.0.3';
 import { projectId } from '../utils/supabase/info';
 import { createClient } from '../utils/supabase/client';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface Question {
   id: string;
@@ -49,6 +50,7 @@ async function callAI(feature: string, questions: Question[], customPrompt?: str
 }
 
 export function AIAssistant({ questions, onClose }: AIAssistantProps) {
+  const { t } = useLanguage();
   const [activeFeature, setActiveFeature] = useState<'generate' | 'summarize' | 'verse' | 'custom' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -69,9 +71,9 @@ export function AIAssistant({ questions, onClose }: AIAssistantProps) {
         summarize: 'Discussion summary ready!',
         verse: 'Verse recommendation ready!',
       };
-      toast.success(labels[feature]);
+      toast.success(t.messages.savedSuccessfully);
     } catch (error: any) {
-      toast.error(error.message || 'AI request failed. Please try again.');
+      toast.error(error.message || t.messages.tryAgainLater);
     } finally {
       setIsLoading(false);
     }
@@ -86,9 +88,9 @@ export function AIAssistant({ questions, onClose }: AIAssistantProps) {
     try {
       const text = await callAI('custom', questions, customPrompt);
       setResult(text);
-      toast.success('AI response ready!');
+      toast.success(t.messages.savedSuccessfully);
     } catch (error: any) {
-      toast.error(error.message || 'AI request failed. Please try again.');
+      toast.error(error.message || t.messages.tryAgainLater);
     } finally {
       setIsLoading(false);
     }
