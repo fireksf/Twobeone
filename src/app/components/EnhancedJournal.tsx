@@ -758,7 +758,7 @@ export function EnhancedJournal({
       <button
         onClick={() => setIsOpen(true)}
         aria-label="New journal entry"
-        className="fixed bottom-24 right-5 w-14 h-14 rounded-full flex items my-[14px]-center justify-center z-40 transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg mx-[0px] my-[10px]"
+        className="fixed bottom-32 right-5 w-14 h-14 rounded-full flex items-center justify-center z-40 transition-all duration-200 hover:scale-105 active:scale-95"
         style={{
           background: 'var(--primary)',
           color: 'var(--primary-foreground)',

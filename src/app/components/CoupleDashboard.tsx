@@ -536,6 +536,7 @@ export function CoupleDashboard({
         )}
 
         <CardContent className="relative pt-8 pb-6">
+
           {/* Avatars */}
           <div className="flex items-center justify-center gap-6 mb-4">
             {/* User Avatar */}
@@ -602,6 +603,107 @@ export function CoupleDashboard({
               </Button>
             </div>
           )}
+
+          {/* Readiness Stage Badge — only shown when connected with a partner */}
+          {partner && (() => {
+            const STAGES = [
+              { label: 'Seed',       emoji: '🌱', minDays: 0   },
+              { label: 'Growth',     emoji: '🌿', minDays: 90  },
+              { label: 'Unity',      emoji: '💞', minDays: 180 },
+              { label: 'Commitment', emoji: '🤝', minDays: 250 },
+              { label: 'Covenant',   emoji: '👑', minDays: 360 },
+            ];
+            // Days together — mirrors calculateDaysTogether() logic
+            let daysTogether = 0;
+            const startStr = profile?.relationshipStart || coupleData?.relationshipStartDate || profile?.createdAt;
+            if (startStr) {
+              daysTogether = Math.floor((Date.now() - new Date(startStr).getTime()) / 86_400_000);
+            }
+            // Activity boost: up to +30 days equivalent so engaged couples can nudge forward
+            const streak = devotionalStreak ?? 0;
+            const activityBoost =
+              Math.min(10, streak * 1.5) +
+              Math.min(10, (responses?.user?.length ?? 0) * 0.5) +
+              Math.min(10, (prayers?.length ?? 0) * 0.5);
+            const effectiveDays = daysTogether + Math.round(activityBoost);
+            let idx = 0;
+            for (let i = STAGES.length - 1; i >= 0; i--) {
+              if (effectiveDays >= STAGES[i].minDays) { idx = i; break; }
+            }
+            const stage = STAGES[idx];
+            const accent =
+              idx === 4 ? 'var(--success-600, #16a34a)' :
+              idx === 3 ? 'var(--primary)' :
+              idx === 2 ? 'var(--info-600, #0284c7)' :
+              idx === 1 ? 'var(--warning-600, #d97706)' :
+                          'var(--muted-foreground)';
+            const nextStage = STAGES[idx + 1];
+            const pct = nextStage
+              ? Math.min(100, Math.round(((effectiveDays - stage.minDays) / (nextStage.minDays - stage.minDays)) * 100))
+              : 100;
+            return (
+              <div style={{
+                margin: '14px 0 0',
+                padding: '12px 16px 10px',
+                borderRadius: 'var(--radius-lg, 14px)',
+                border: `1.5px solid ${accent}`,
+                background: 'var(--background)',
+              }}>
+                {/* Stage header row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 22, lineHeight: 1 }}>{stage.emoji}</span>
+                    <div>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--foreground)', lineHeight: 1.2 }}>
+                        {stage.label} Stage
+                      </p>
+                      <p style={{ margin: 0, fontSize: 10, color: 'var(--muted-foreground)' }}>
+                        {daysTogether} days together
+                      </p>
+                    </div>
+                  </div>
+                  {nextStage && (
+                    <p style={{ margin: 0, fontSize: 10, color: 'var(--muted-foreground)', textAlign: 'right' }}>
+                      {nextStage.emoji} {nextStage.label}<br />
+                      <span style={{ color: accent, fontWeight: 600 }}>{nextStage.minDays - daysTogether}d to go</span>
+                    </p>
+                  )}
+                </div>
+                {/* Progress bar */}
+                <div style={{ height: 5, borderRadius: 999, background: 'var(--border)', overflow: 'hidden', marginBottom: 10 }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: accent, borderRadius: 999, transition: 'width 1s ease' }} />
+                </div>
+                {/* 5 stage nodes */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+                  {STAGES.map((s, i) => {
+                    const done = i < idx;
+                    const active = i === idx;
+                    return (
+                      <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1 }}>
+                        <div style={{
+                          width: active ? 32 : 24, height: active ? 32 : 24,
+                          borderRadius: '50%',
+                          fontSize: active ? 16 : 12,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: active ? accent : done ? 'var(--muted-foreground)' : 'var(--muted)',
+                          opacity: i > idx ? 0.35 : 1,
+                          transition: 'all 0.3s ease',
+                          boxShadow: active ? `0 0 0 3px color-mix(in srgb, ${accent} 25%, transparent)` : 'none',
+                        }}>
+                          {s.emoji}
+                        </div>
+                        <span style={{
+                          fontSize: 9, fontWeight: active ? 700 : 500,
+                          color: active ? accent : i < idx ? 'var(--foreground)' : 'var(--muted-foreground)',
+                          whiteSpace: 'nowrap',
+                        }}>{s.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Upcoming Event Countdown */}
           {(() => {
