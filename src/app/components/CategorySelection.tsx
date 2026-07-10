@@ -128,13 +128,7 @@ export function CategorySelection({ onSelectCategory, onBack }: CategorySelectio
       <div className="max-w-4xl mx-auto p-4 space-y-8">
         {/* Back Icon Button */}
         {onBack && (
-          <button
-            onClick={onBack}
-            className="p-3 rounded-full bg-card shadow-md hover:shadow-lg transition-all duration-300 hover:scale-110 border border-primary-200 hover:border-primary-400 group"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="w-6 h-6 text-primary-600 group-hover:text-primary-700" />
-          </button>
+          null
         )}
 
         {/* Header */}
@@ -206,14 +200,7 @@ export function CategorySelection({ onSelectCategory, onBack }: CategorySelectio
 
         {/* Back Button */}
         {onBack && (
-          <Button
-            variant="outline"
-            onClick={onBack}
-            className="w-full"
-            size="lg"
-          >
-            Back to Dashboard
-          </Button>
+          null
         )}
       </div>
     </div>

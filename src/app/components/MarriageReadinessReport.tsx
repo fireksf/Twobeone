@@ -251,7 +251,7 @@ export function MarriageReadinessReport({ onBack }: Props) {
           {[
             { label: 'Avg Streak', value: `${categories.devotional.streak}d`, sub: 'devotional' },
             { label: 'Prayers', value: `${categories.prayer.total}`, sub: `${categories.prayer.answered} answered` },
-            { label: 'Q&A Together', value: `${categories.qa.shared}`, sub: 'topics' },
+            { label: 'Q&A Answered', value: `${categories.qa.totalUser + categories.qa.totalPartner}`, sub: `${categories.qa.shared} shared` },
             { label: 'Lessons Done', value: `${categories.modules.completed}/${categories.modules.total}`, sub: 'pre-marriage' },
             { label: 'Devotions', value: `${categories.devotional.completions}`, sub: 'completed' },
             { label: 'Daily Entries', value: `${categories.activity.entries}`, sub: 'mood + journal' },

@@ -5573,11 +5573,13 @@ app.get('/make-server-6d579fee/ai/marriage-readiness', async (c) => {
     const partnerProfile = partnerId ? await kv.get(`user:${partnerId}`) as any : null;
 
     // ── Fetch all activity data in parallel ──
+    // Q&A uses two prefixes: legacy `response:` and current `question-response:`
     const [
       userDevotions, partnerDevotions,
       userStreakRaw, partnerStreakRaw,
       userPrayers, partnerPrayers,
-      userResponses, partnerResponses,
+      userResponsesLegacy, partnerResponsesLegacy,
+      userResponsesNew, partnerResponsesNew,
       userLessons, partnerLessons,
       userMoods, partnerMoods,
       userJournals, partnerJournals,
@@ -5589,8 +5591,12 @@ app.get('/make-server-6d579fee/ai/marriage-readiness', async (c) => {
       partnerId ? kv.get(`streak:${partnerId}:devotional`) : Promise.resolve(null),
       kv.getByPrefix(`prayer:${userId}:`),
       partnerId ? kv.getByPrefix(`prayer:${partnerId}:`) : Promise.resolve([]),
+      // legacy prefix
       kv.getByPrefix(`response:${userId}:`),
       partnerId ? kv.getByPrefix(`response:${partnerId}:`) : Promise.resolve([]),
+      // current prefix
+      kv.getByPrefix(`question-response:${userId}:`),
+      partnerId ? kv.getByPrefix(`question-response:${partnerId}:`) : Promise.resolve([]),
       kv.getByPrefix(`lesson-completion:${userId}:`),
       partnerId ? kv.getByPrefix(`lesson-completion:${partnerId}:`) : Promise.resolve([]),
       kv.getByPrefix(`mood:${userId}:`),
@@ -5599,6 +5605,11 @@ app.get('/make-server-6d579fee/ai/marriage-readiness', async (c) => {
       partnerId ? kv.getByPrefix(`journal:${partnerId}:`) : Promise.resolve([]),
       kv.getByPrefix('module:'),
     ]);
+
+    // Merge both response formats; extract questionId from either field or key
+    const extractQid = (r: any): string | null => r?.questionId || null;
+    const userResponses  = [...(userResponsesLegacy  as any[]), ...(userResponsesNew  as any[])];
+    const partnerResponses = [...(partnerResponsesLegacy as any[]), ...(partnerResponsesNew as any[])];
 
     const userStreak = (userStreakRaw as any) || {};
     const partnerStreak = (partnerStreakRaw as any) || {};
@@ -5614,11 +5625,12 @@ app.get('/make-server-6d579fee/ai/marriage-readiness', async (c) => {
     const totalPrayers = (userPrayers as any[]).length + (partnerPrayers as any[]).length;
     const prayerScore = Math.min(100, totalPrayers * 8 + answeredPrayers * 15);
 
-    // Q&A: count questions answered by BOTH partners
-    const userQids = new Set((userResponses as any[]).map(r => r?.questionId).filter(Boolean));
-    const partnerQids = new Set((partnerResponses as any[]).map(r => r?.questionId).filter(Boolean));
+    // Q&A: count unique questions answered — both individual and shared
+    const userQids = new Set(userResponses.map(extractQid).filter(Boolean) as string[]);
+    const partnerQids = new Set(partnerResponses.map(extractQid).filter(Boolean) as string[]);
     const sharedQA = [...userQids].filter(id => partnerQids.has(id)).length;
-    const qaScore = Math.min(100, sharedQA * 4 + (userQids.size + partnerQids.size) * 1);
+    // Score: 3pts per shared Q&A + 1pt per answered (either partner) — cap 100
+    const qaScore = Math.min(100, sharedQA * 3 + (userQids.size + partnerQids.size) * 1);
 
     const completedLessons = new Set([
       ...(userLessons as any[]).map(l => l?.lessonId),
