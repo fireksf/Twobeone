@@ -71,6 +71,7 @@ import { RecentMilestones } from "./components/RecentMilestones";
 import { PreMarriageGuidance } from "./components/PreMarriageGuidance";
 import { MoodTracker } from "./components/MoodTracker";
 import { MoodAnalytics } from "./components/MoodAnalytics";
+import { MarriageReadinessReport } from "./components/MarriageReadinessReport";
 import { DailyQuestion } from "./components/DailyQuestion";
 import { createClient } from "./utils/supabase/client";
 import {
@@ -1345,6 +1346,9 @@ export default function App() {
                     onBack={() =>
                       setSelectedScreen("dashboard")
                     }
+                    onViewReadiness={() =>
+                      setSelectedScreen("marriage-readiness")
+                    }
                   />
                 )}
 
@@ -1391,6 +1395,13 @@ export default function App() {
                     onClose={() =>
                       setSelectedScreen("dashboard")
                     }
+                  />
+                )}
+
+              {activeTab === "home" &&
+                selectedScreen === "marriage-readiness" && (
+                  <MarriageReadinessReport
+                    onBack={() => setSelectedScreen("guidance")}
                   />
                 )}
 

@@ -5284,7 +5284,7 @@ async function callGemini(prompt: string): Promise<string> {
             headers: { 'Content-Type': 'application/json', 'X-goog-api-key': apiKey },
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
+              generationConfig: { maxOutputTokens: 2048, temperature: 0.7 },
             }),
           }
         );
@@ -5542,6 +5542,166 @@ Return ONLY valid JSON, no markdown fences.`;
     return c.json({ ...result, cached: false });
   } catch (error: any) {
     console.error('[Compatibility] Error:', error.message);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ── Marriage Readiness Report ─────────────────────────────────────────────────
+
+app.get('/make-server-6d579fee/ai/marriage-readiness', async (c) => {
+  try {
+    const userId = await getUserFromToken(c.req.header('Authorization'));
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+
+    const profile = await kv.get(`user:${userId}`) as any;
+    const partnerId = profile?.partnerId;
+    const coupleId = profile?.coupleId;
+    const force = c.req.query('force') === 'true';
+
+    // Cache key — canonical order so both partners get same key
+    const cacheBase = coupleId || (partnerId && partnerId < userId ? partnerId : userId);
+    const cacheKey = `marriage-readiness:${cacheBase}`;
+
+    if (!force) {
+      const cached = await kv.get(cacheKey) as any;
+      if (cached && cached.generatedAt) {
+        const age = Date.now() - new Date(cached.generatedAt).getTime();
+        if (age < 24 * 60 * 60 * 1000) return c.json({ result: cached, cached: true });
+      }
+    }
+
+    const partnerProfile = partnerId ? await kv.get(`user:${partnerId}`) as any : null;
+
+    // ── Fetch all activity data in parallel ──
+    const [
+      userDevotions, partnerDevotions,
+      userStreakRaw, partnerStreakRaw,
+      userPrayers, partnerPrayers,
+      userResponses, partnerResponses,
+      userLessons, partnerLessons,
+      userMoods, partnerMoods,
+      userJournals, partnerJournals,
+      allModules,
+    ] = await Promise.all([
+      kv.getByPrefix(`completion:${userId}:`),
+      partnerId ? kv.getByPrefix(`completion:${partnerId}:`) : Promise.resolve([]),
+      kv.get(`streak:${userId}:devotional`),
+      partnerId ? kv.get(`streak:${partnerId}:devotional`) : Promise.resolve(null),
+      kv.getByPrefix(`prayer:${userId}:`),
+      partnerId ? kv.getByPrefix(`prayer:${partnerId}:`) : Promise.resolve([]),
+      kv.getByPrefix(`response:${userId}:`),
+      partnerId ? kv.getByPrefix(`response:${partnerId}:`) : Promise.resolve([]),
+      kv.getByPrefix(`lesson-completion:${userId}:`),
+      partnerId ? kv.getByPrefix(`lesson-completion:${partnerId}:`) : Promise.resolve([]),
+      kv.getByPrefix(`mood:${userId}:`),
+      partnerId ? kv.getByPrefix(`mood:${partnerId}:`) : Promise.resolve([]),
+      kv.getByPrefix(`journal:${userId}:`),
+      partnerId ? kv.getByPrefix(`journal:${partnerId}:`) : Promise.resolve([]),
+      kv.getByPrefix('module:'),
+    ]);
+
+    const userStreak = (userStreakRaw as any) || {};
+    const partnerStreak = (partnerStreakRaw as any) || {};
+    const publishedModules = (allModules as any[]).filter(m => m?.status === 'published');
+    const totalLessons = publishedModules.reduce((sum: number, m: any) => sum + (m?.lessons?.length || 0), 0) || 20;
+
+    // ── Scoring (0–100 per category) ──
+    const avgStreak = Math.round(((userStreak.current_streak || 0) + (partnerStreak.current_streak || 0)) / 2);
+    const totalDevotions = (userDevotions as any[]).length + (partnerDevotions as any[]).length;
+    const devotionalScore = Math.min(100, avgStreak * 6 + Math.round(totalDevotions * 1.5));
+
+    const answeredPrayers = [...(userPrayers as any[]), ...(partnerPrayers as any[])].filter(p => p?.answered).length;
+    const totalPrayers = (userPrayers as any[]).length + (partnerPrayers as any[]).length;
+    const prayerScore = Math.min(100, totalPrayers * 8 + answeredPrayers * 15);
+
+    // Q&A: count questions answered by BOTH partners
+    const userQids = new Set((userResponses as any[]).map(r => r?.questionId).filter(Boolean));
+    const partnerQids = new Set((partnerResponses as any[]).map(r => r?.questionId).filter(Boolean));
+    const sharedQA = [...userQids].filter(id => partnerQids.has(id)).length;
+    const qaScore = Math.min(100, sharedQA * 4 + (userQids.size + partnerQids.size) * 1);
+
+    const completedLessons = new Set([
+      ...(userLessons as any[]).map(l => l?.lessonId),
+      ...(partnerLessons as any[]).map(l => l?.lessonId),
+    ]).size;
+    const moduleScore = totalLessons > 0 ? Math.min(100, Math.round((completedLessons / totalLessons) * 100)) : 0;
+
+    const totalActivity = (userMoods as any[]).length + (partnerMoods as any[]).length +
+                          (userJournals as any[]).length + (partnerJournals as any[]).length;
+    const activityScore = Math.min(100, Math.round(totalActivity * 2.5));
+
+    const overallScore = Math.round(
+      devotionalScore * 0.25 +
+      prayerScore    * 0.20 +
+      qaScore        * 0.25 +
+      moduleScore    * 0.20 +
+      activityScore  * 0.10
+    );
+
+    const eligible = overallScore >= 75 && moduleScore >= 80;
+
+    // ── Gemini narrative ──
+    const userName = profile?.name || 'Partner 1';
+    const partnerName = partnerProfile?.name || 'Partner 2';
+
+    const prompt = `You are a compassionate Christian marriage counselor and mentor. Analyze this couple's journey and write a comprehensive Marriage Readiness Report.
+
+COUPLE: ${userName} & ${partnerName}
+OVERALL READINESS SCORE: ${overallScore}/100
+CERTIFICATE ELIGIBLE: ${eligible ? 'YES' : 'NOT YET'}
+
+CATEGORY SCORES:
+- Daily Devotions & Spiritual Discipline: ${devotionalScore}/100 (avg streak: ${avgStreak} days, total completions: ${totalDevotions})
+- Prayer Life Together: ${prayerScore}/100 (${totalPrayers} prayers, ${answeredPrayers} answered)
+- Knowing Each Other (Q&A): ${qaScore}/100 (${sharedQA} questions explored together)
+- Pre-Marriage Learning Modules: ${moduleScore}/100 (${completedLessons}/${totalLessons} lessons complete)
+- Daily Spiritual Activities: ${activityScore}/100 (${totalActivity} combined mood/journal entries)
+
+Write a warm, Christ-centered report in JSON format with these exact fields:
+{
+  "headline": "A short inspiring headline for this couple (max 10 words)",
+  "overallNarrative": "2–3 sentences summarizing their overall readiness journey with warmth and faith",
+  "devotionalInsight": "1–2 sentences about their spiritual discipline and daily devotion habit",
+  "prayerInsight": "1–2 sentences about their prayer life together",
+  "qaInsight": "1–2 sentences about how well they are getting to know each other",
+  "moduleInsight": "1–2 sentences about their progress through the pre-marriage learning curriculum",
+  "activityInsight": "1 sentence about their daily spiritual engagement",
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "growthAreas": ["growth area 1", "growth area 2"],
+  "bibleVerse": "A relevant Bible verse about marriage or commitment (book chapter:verse — full text)",
+  "closingEncouragement": "A warm closing paragraph with a blessing over their relationship",
+  "certificateMessage": "${eligible ? 'A formal congratulatory message for their marriage readiness certificate' : 'An encouraging message about continuing the journey toward readiness'}"
+}
+Return ONLY valid JSON. Keep each field concise but meaningful.`;
+
+    let aiReport: any = null;
+    try {
+      const raw = await callGemini(prompt);
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) aiReport = JSON.parse(jsonMatch[0]);
+    } catch (aiErr: any) {
+      console.error('[MarriageReadiness] Gemini failed:', aiErr.message);
+    }
+
+    const result = {
+      score: overallScore,
+      eligible,
+      categories: {
+        devotional: { score: devotionalScore, streak: avgStreak, completions: totalDevotions },
+        prayer:     { score: prayerScore, total: totalPrayers, answered: answeredPrayers },
+        qa:         { score: qaScore, shared: sharedQA, totalUser: userQids.size, totalPartner: partnerQids.size },
+        modules:    { score: moduleScore, completed: completedLessons, total: totalLessons },
+        activity:   { score: activityScore, entries: totalActivity },
+      },
+      couple: { userName, partnerName },
+      report: aiReport,
+      generatedAt: new Date().toISOString(),
+    };
+
+    await kv.set(cacheKey, result);
+    return c.json({ result, cached: false });
+  } catch (error: any) {
+    console.error('[MarriageReadiness] Error:', error);
     return c.json({ error: error.message }, 500);
   }
 });

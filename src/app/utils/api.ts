@@ -545,6 +545,16 @@ export const partnerApi = {
 
 // ── Overall (General) Compatibility ─────────────────────────────────────────
 
+export const marriageReadiness = {
+  get: (force = false) =>
+    apiCall<{ result: any; cached: boolean }>(
+      `/ai/marriage-readiness${force ? '?force=true' : ''}`,
+      {},
+      1,   // 1 retry
+      90000 // 90s — Gemini cold start + 5 model attempts
+    ),
+};
+
 export const compatibility = {
   getOverall: async () =>
     apiCall<{ result: any | null; cached: boolean }>('/ai/compatibility/overall', {}, 0, 10000),

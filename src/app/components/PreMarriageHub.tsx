@@ -296,6 +296,7 @@ interface PreMarriageHubProps {
   onModuleClick: (moduleId: string) => void;
   accessToken?: string;
   onBack?: () => void;
+  onViewReadiness?: () => void;
 }
 
 function ModuleIcon({
@@ -676,6 +677,7 @@ export function PreMarriageHub({
   onModuleClick,
   accessToken,
   onBack,
+  onViewReadiness,
 }: PreMarriageHubProps) {
   const { t, language: appLanguage } = useLanguage();
   const [progressMap, setProgressMap] = useState<
@@ -975,6 +977,36 @@ export function PreMarriageHub({
         </div>
       </div>
 
+      {/* Marriage Readiness CTA */}
+      {onViewReadiness && (
+        <button
+          onClick={onViewReadiness}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+            padding: "16px 20px",
+            borderRadius: "14px",
+            border: "2px solid var(--primary)",
+            background: "color-mix(in srgb, var(--primary) 8%, var(--background))",
+            cursor: "pointer",
+            textAlign: "left",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontSize: 20 }}>💑</span>
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "var(--foreground)" }}>Marriage Readiness Analysis</p>
+              <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted-foreground)" }}>AI-powered report · Score · Certificate</p>
+            </div>
+          </div>
+          <ChevronLeft style={{ width: 18, height: 18, color: "var(--primary)", transform: "rotate(180deg)" }} />
+        </button>
+      )}
+
       {/* Language Toggle Options */}
       <div
         style={{
@@ -1121,16 +1153,20 @@ export function PreMarriageHub({
         </div>
       )}
 
-      {/* Module Rendering Array Loop */}
-      {modules.map((module, index) => (
-        <ModuleCard
-          key={module.id}
-          module={module}
-          index={index}
-          progress={progressMap[module.id] || 0}
-          onModuleClick={onModuleClick}
-        />
-      ))}
+      {/* Module Rendering Array Loop — sequential unlock */}
+      {modules.map((module, index) => {
+        const prevModule = index > 0 ? modules[index - 1] : null;
+        const isLocked = prevModule ? (progressMap[prevModule.id] ?? 0) < 100 : false;
+        return (
+          <ModuleCard
+            key={module.id}
+            module={{ ...module, isLocked }}
+            index={index}
+            progress={progressMap[module.id] || 0}
+            onModuleClick={onModuleClick}
+          />
+        );
+      })}
 
       {/* Certificate Confirmation Row */}
       {completedCount === modules.length &&

@@ -36,6 +36,7 @@ import {
   ChevronRight,
   Quote,
   Loader2,
+  Lock,
 } from "lucide-react";
 import {
   projectId,
@@ -303,12 +304,24 @@ export function LessonScreen({
 
   const goTo = (idx: number) => {
     if (idx >= 0 && idx < totalLessons) {
+      // Lessons unlock sequentially — lesson N requires lesson N-1 completed
+      const prevLesson = idx > 0 ? module.lessons[idx - 1] : null;
+      if (prevLesson && !completedLessonIds.has(prevLesson.id)) {
+        toast.error("Complete the previous lesson first.");
+        return;
+      }
       setCurrentLessonIndex(idx);
       setNotes("");
     }
   };
 
+  const MIN_NOTE_LENGTH = 100;
+
   const handleMarkComplete = async () => {
+    if (notes.trim().length < MIN_NOTE_LENGTH) {
+      toast.error(`Please write at least ${MIN_NOTE_LENGTH} characters in your notes before completing this lesson.`);
+      return;
+    }
     setIsSaving(true);
     try {
       if (notes.trim()) {
@@ -709,14 +722,14 @@ export function LessonScreen({
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Reflect on what you've learned. How will you apply this together?"
+            placeholder="Reflect on what you've learned. How will you apply this together? (minimum 100 characters)"
             style={{
               width: "100%",
               minHeight: 120,
               fontSize: "14px",
-              color: "#334155",
-              backgroundColor: "#f8fafc",
-              border: "1px solid #e2e8f0",
+              color: "var(--foreground)",
+              backgroundColor: "var(--muted)",
+              border: `1px solid ${notes.trim().length >= 100 ? 'var(--success-500, #22c55e)' : 'var(--border)'}`,
               borderRadius: "6px",
               padding: "12px",
               resize: "vertical",
@@ -724,47 +737,73 @@ export function LessonScreen({
               lineHeight: 1.6,
               outline: "none",
               boxSizing: "border-box",
+              transition: "border-color 0.2s",
             }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = accent;
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = "#e2e8f0";
-            }}
+            onFocus={(e) => { if (notes.trim().length < 100) e.currentTarget.style.borderColor = accent; }}
+            onBlur={(e) => { if (notes.trim().length < 100) e.currentTarget.style.borderColor = 'var(--border)'; }}
           />
+          {/* Character counter */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "6px" }}>
+            <span style={{ fontSize: "11px", color: notes.trim().length >= 100 ? "var(--success-700, #15803d)" : "var(--muted-foreground)" }}>
+              {notes.trim().length >= 100 ? "✓ Minimum reached" : `${100 - notes.trim().length} more characters needed`}
+            </span>
+            <span style={{ fontSize: "11px", color: notes.trim().length >= 100 ? "var(--success-700, #15803d)" : "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" }}>
+              {notes.trim().length} / 100
+            </span>
+          </div>
+          {/* Progress bar */}
+          <div style={{ marginTop: "4px", height: "3px", borderRadius: "2px", backgroundColor: "var(--border)", overflow: "hidden" }}>
+            <div style={{
+              height: "100%",
+              width: `${Math.min(100, (notes.trim().length / 100) * 100)}%`,
+              backgroundColor: notes.trim().length >= 100 ? "var(--success-500, #22c55e)" : accent,
+              borderRadius: "2px",
+              transition: "width 0.2s ease, background-color 0.3s ease",
+            }} />
+          </div>
         </div>
       </div>
 
       {/* Mark complete */}
-      <button
-        onClick={handleMarkComplete}
-        disabled={isCompleted || isSaving}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-          width: "100%",
-          padding: "16px",
-          borderRadius: "6px",
-          border: "none",
-          cursor:
-            isCompleted || isSaving ? "not-allowed" : "pointer",
-          backgroundColor: isCompleted ? "#f0fdf4" : accent,
-          color: isCompleted ? "#166534" : "#ffffff",
-          fontSize: "14px",
-          fontWeight: 600,
-          transition: "opacity 0.15s ease",
-          opacity: isSaving ? 0.7 : 1,
-        }}
-      >
-        <CheckCircle2 style={{ width: 18, height: 18 }} />
-        {isSaving
-          ? t?.common?.saving || "Saving..."
-          : isCompleted
-            ? `${t?.devotionals?.completed || "Completed"} ✓`
-            : t?.devotionals?.markComplete || "Mark Complete"}
-      </button>
+      {(() => {
+        const notesReady = notes.trim().length >= 100;
+        const disabled = isCompleted || isSaving || !notesReady;
+        return (
+          <button
+            onClick={handleMarkComplete}
+            disabled={disabled}
+            title={!notesReady && !isCompleted ? `Write at least 100 characters in your notes (${notes.trim().length}/100)` : undefined}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              width: "100%",
+              padding: "16px",
+              borderRadius: "6px",
+              border: "none",
+              cursor: disabled ? "not-allowed" : "pointer",
+              backgroundColor: isCompleted ? "var(--success-50, #f0fdf4)" : notesReady ? accent : "var(--muted)",
+              color: isCompleted ? "var(--success-700, #166534)" : notesReady ? "#ffffff" : "var(--muted-foreground)",
+              fontSize: "14px",
+              fontWeight: 600,
+              transition: "opacity 0.15s ease, background-color 0.2s ease",
+              opacity: isSaving ? 0.7 : 1,
+            }}
+          >
+            {!notesReady && !isCompleted
+              ? <Lock style={{ width: 16, height: 16 }} />
+              : <CheckCircle2 style={{ width: 18, height: 18 }} />}
+            {isSaving
+              ? t?.common?.saving || "Saving..."
+              : isCompleted
+                ? `${t?.devotionals?.completed || "Completed"} ✓`
+                : notesReady
+                  ? t?.devotionals?.markComplete || "Mark Complete"
+                  : `Notes required (${notes.trim().length}/100)`}
+          </button>
+        );
+      })()}
 
       {/* All lessons list */}
       <div
@@ -796,10 +835,14 @@ export function LessonScreen({
           {module.lessons.map((lesson, idx) => {
             const done = completedLessonIds.has(lesson.id);
             const active = idx === currentLessonIndex;
+            const prevLesson = idx > 0 ? module.lessons[idx - 1] : null;
+            const locked = prevLesson ? !completedLessonIds.has(prevLesson.id) : false;
             return (
               <button
                 key={lesson.id}
                 onClick={() => goTo(idx)}
+                disabled={locked}
+                title={locked ? "Complete the previous lesson first" : undefined}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -808,12 +851,13 @@ export function LessonScreen({
                   padding: "12px 16px",
                   background: active ? accentBg : "none",
                   border: "none",
-                  cursor: "pointer",
+                  cursor: locked ? "not-allowed" : "pointer",
                   textAlign: "left",
                   borderLeft: active
                     ? `3px solid ${accent}`
                     : "3px solid transparent",
                   transition: "background 0.15s ease",
+                  opacity: locked ? 0.45 : 1,
                 }}
               >
                 <div
@@ -822,14 +866,13 @@ export function LessonScreen({
                     height: 32,
                     borderRadius: "50%",
                     backgroundColor: done
-                      ? "#22c55e"
-                      : active
-                        ? accent
-                        : "#f1f5f9",
-                    border:
-                      done || active
-                        ? "none"
-                        : "2px solid #cbd5e1",
+                      ? "var(--success-500, #22c55e)"
+                      : locked
+                        ? "var(--muted)"
+                        : active
+                          ? accent
+                          : "var(--muted)",
+                    border: done || active || locked ? "none" : "2px solid var(--border)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -837,21 +880,11 @@ export function LessonScreen({
                   }}
                 >
                   {done ? (
-                    <CheckCircle2
-                      style={{
-                        width: 16,
-                        height: 16,
-                        color: "#ffffff",
-                      }}
-                    />
+                    <CheckCircle2 style={{ width: 16, height: 16, color: "#ffffff" }} />
+                  ) : locked ? (
+                    <Lock style={{ width: 14, height: 14, color: "var(--muted-foreground)" }} />
                   ) : (
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        fontWeight: 600,
-                        color: active ? "#ffffff" : "#64748b",
-                      }}
-                    >
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: active ? "#ffffff" : "var(--muted-foreground)" }}>
                       {idx + 1}
                     </span>
                   )}
@@ -863,10 +896,12 @@ export function LessonScreen({
                       fontSize: "14px",
                       fontWeight: active ? 600 : 500,
                       color: done
-                        ? "#166534"
-                        : active
-                          ? accent
-                          : "#1e293b",
+                        ? "var(--success-700, #166534)"
+                        : locked
+                          ? "var(--muted-foreground)"
+                          : active
+                            ? accent
+                            : "var(--foreground)",
                       margin: 0,
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -875,28 +910,18 @@ export function LessonScreen({
                   >
                     {lesson.title}
                   </p>
-                  <p
-                    style={{
-                      fontSize: "12px",
-                      color: "#94a3b8",
-                      margin: 0,
-                    }}
-                  >
-                    {lesson.duration}
+                  <p style={{ fontSize: "12px", color: "var(--muted-foreground)", margin: 0 }}>
+                    {locked ? "Locked" : lesson.duration}
                   </p>
                 </div>
 
                 {done && (
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      color: "#16a34a",
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}
-                  >
+                  <span style={{ fontSize: "12px", color: "var(--success-700, #16a34a)", fontWeight: 600, flexShrink: 0 }}>
                     Done ✓
                   </span>
+                )}
+                {locked && (
+                  <Lock style={{ width: 14, height: 14, color: "var(--muted-foreground)", flexShrink: 0 }} />
                 )}
               </button>
             );
