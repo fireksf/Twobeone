@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Menu,
   X,
+  ClipboardList,
 } from "lucide-react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
@@ -23,6 +24,7 @@ import { GroupsManager } from "./admin/GroupsManager";
 import { UsersManager } from "./admin/UsersManager";
 import { LandingPageManager } from "./admin/LandingPageManager";
 import { PrivilegeManager } from "./admin/PrivilegeManager";
+import { AuditLog } from "./admin/AuditLog";
 import { ContentLanguageProvider } from "../contexts/ContentLanguageContext";
 
 interface AdminPanelProps {
@@ -69,6 +71,11 @@ export function AdminPanel({
       id: "privileges",
       label: "Privileges",
       icon: ShieldCheck,
+    },
+    {
+      id: "auditLog",
+      label: "Audit Log",
+      icon: ClipboardList,
     },
   ];
 
@@ -226,6 +233,9 @@ export function AdminPanel({
               )}
               {activeSection === "privileges" && (
                 <PrivilegeManager accessToken={accessToken} />
+              )}
+              {activeSection === "auditLog" && (
+                <AuditLog accessToken={accessToken || ''} />
               )}
             </div>
           </div>

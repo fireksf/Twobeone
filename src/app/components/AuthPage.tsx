@@ -137,34 +137,29 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
         throw new Error(data.error || 'Sign up failed');
       }
 
-      console.log('[AuthPage] Sign up successful, now signing in...');
-      
-      // After successful sign up, sign in
+      console.log('[AuthPage] Sign up successful');
+
+      if (data.emailVerificationRequired) {
+        // Email verification required — show pending screen
+        toast.success('Account created! Please verify your email.');
+        setVerificationSent(true);
+        setEmailSent(true);
+        return;
+      }
+
+      // Fallback: if email confirm is disabled server-side, sign in directly
       const supabase = createClient();
       const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
         email: pendingSignupData.email,
         password: pendingSignupData.password
       });
 
-      console.log('[AuthPage] Sign in response:', { 
-        hasSession: !!sessionData.session, 
-        hasAccessToken: !!sessionData.session?.access_token, 
-        error: signInError?.message 
-      });
-
       if (signInError) throw signInError;
 
       if (sessionData.session?.access_token) {
-        // Store user ID and couple ID in localStorage for secure access
         const userId = sessionData.user?.id;
-        if (userId) {
-          localStorage.setItem('twobeone_user_id', userId);
-          console.log('[AuthPage] User ID stored:', userId);
-        }
-        
-        console.log('[AuthPage] Calling onAuthSuccess with access token');
+        if (userId) localStorage.setItem('twobeone_user_id', userId);
         toast.success('Account created successfully!');
-        setEmailSent(true);
         onAuthSuccess(sessionData.session.access_token, sessionData.user!);
       }
     } catch (err: any) {
@@ -320,6 +315,62 @@ export function AuthPage({ onAuthSuccess }: AuthPageProps) {
   };
 
   const { t } = useLanguage();
+
+  // Email verification pending screen
+  if (emailSent && verificationSent && pendingSignupData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--background)' }}>
+        <div className="w-full max-w-md text-center space-y-6">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Heart className="w-8 h-8" style={{ color: 'var(--primary-500)', fill: 'var(--primary-500)' }} />
+            <span className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>TwoBeOne</span>
+          </div>
+
+          <div className="rounded-2xl p-8 space-y-4" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: 'var(--primary-50)' }}>
+              <Mail className="w-8 h-8" style={{ color: 'var(--primary-500)' }} />
+            </div>
+
+            <h2 className="text-xl font-semibold" style={{ color: 'var(--foreground)' }}>Check your email</h2>
+
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+              We sent a verification link to
+            </p>
+            <p className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>
+              {pendingSignupData.email}
+            </p>
+            <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+              Click the link in your email to verify your account and sign in.
+            </p>
+
+            <div className="pt-2 space-y-3">
+              <Button
+                onClick={handleResendVerification}
+                variant="outline"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Resend verification email
+              </Button>
+              <button
+                onClick={() => {
+                  setEmailSent(false);
+                  setVerificationSent(false);
+                  setAuthMode('signin');
+                  setEmail(pendingSignupData.email);
+                }}
+                className="text-sm w-full"
+                style={{ color: 'var(--muted-foreground)' }}
+              >
+                Already verified? <span style={{ color: 'var(--primary-500)' }}>Sign in</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-sky-50 p-4">

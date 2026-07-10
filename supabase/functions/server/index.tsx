@@ -130,12 +130,65 @@ async function touchActivity(userId: string): Promise<void> {
 }
 
 app.get('/make-server-6d579fee/health', (c) => {
-  return c.json({ 
-    status: 'ok', 
+  return c.json({
+    status: 'ok',
     message: 'TwoBeOne API is running',
     timestamp: new Date().toISOString()
   });
 });
+
+// ── Audit Log Helper ──────────────────────────────────────────────────────────
+// Fire-and-forget — never throws, never blocks the parent request
+
+type AuditCategory = 'auth' | 'social' | 'content' | 'admin';
+type AuditEvent =
+  | 'user.signup' | 'user.email_verified'
+  | 'couple.linked' | 'couple.unlinked'
+  | 'devotional.completed'
+  | 'prayer.created' | 'prayer.answered'
+  | 'journal.created'
+  | 'qa.answered'
+  | 'mood.logged'
+  | 'admin.privilege_granted' | 'admin.privilege_revoked'
+  | 'profile.updated';
+
+const AUDIT_CATEGORY: Record<AuditEvent, AuditCategory> = {
+  'user.signup': 'auth', 'user.email_verified': 'auth',
+  'couple.linked': 'social', 'couple.unlinked': 'social',
+  'devotional.completed': 'content',
+  'prayer.created': 'content', 'prayer.answered': 'content',
+  'journal.created': 'content',
+  'qa.answered': 'content',
+  'mood.logged': 'content',
+  'admin.privilege_granted': 'admin', 'admin.privilege_revoked': 'admin',
+  'profile.updated': 'social',
+};
+
+async function logAudit(
+  event: AuditEvent,
+  userId: string,
+  metadata: Record<string, any> = {}
+): Promise<void> {
+  try {
+    const profile = await kv.get(`user:${userId}`) as any;
+    const id = generateId();
+    const timestamp = new Date().toISOString();
+    const entry = {
+      id,
+      event,
+      category: AUDIT_CATEGORY[event],
+      userId,
+      userName: profile?.name || 'Unknown',
+      userEmail: profile?.email || '',
+      metadata,
+      timestamp,
+    };
+    // Key includes ISO timestamp for natural chronological ordering
+    await kv.set(`audit:${timestamp}:${id}`, entry);
+  } catch {
+    // Non-critical — never block the parent request
+  }
+}
 
 // ============================================
 // AUTHENTICATION
@@ -151,11 +204,11 @@ app.post('/make-server-6d579fee/signup', async (c) => {
 
     const supabase = getSupabase();
 
-    // Create auth user
+    // Create auth user — email_confirm: false so Supabase sends a verification email
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm since we don't have email server
+      email_confirm: false,
       user_metadata: { name }
     });
 
@@ -202,10 +255,14 @@ app.post('/make-server-6d579fee/signup', async (c) => {
 
     console.log('User created:', { userId, email, name, inviteCode });
 
+    // Audit log — fire-and-forget
+    logAudit('user.signup', userId, { email, name });
+
     return c.json({
       success: true,
       user: userProfile,
-      inviteCode
+      inviteCode,
+      emailVerificationRequired: true,
     });
   } catch (error: any) {
     console.error('Signup error:', error);
@@ -533,6 +590,9 @@ app.post('/make-server-6d579fee/profile/link-by-code', async (c) => {
     await kv.set(`user:${partnerId}`, partnerProfile);
 
     console.log(`✅ Couple created! CoupleId: ${coupleId}, User1: ${userId}, User2: ${partnerId}`);
+
+    logAudit('couple.linked', userId, { partnerId, coupleId });
+    logAudit('couple.linked', partnerId, { partnerId: userId, coupleId });
 
     return c.json({ success: true, partner: partnerProfile });
   } catch (error: any) {
@@ -1335,6 +1395,7 @@ app.post('/make-server-6d579fee/journal', async (c) => {
 
     await kv.set(`journal:${userId}:${entryId}`, entry);
     touchActivity(userId); // lets partner's poll detect this change
+    logAudit('journal.created', userId, { entryId, title, isShared: isShared || false });
 
     return c.json({ success: true, entry });
   } catch (error: any) {
@@ -1526,6 +1587,7 @@ app.post('/make-server-6d579fee/prayer', async (c) => {
 
     await kv.set(`prayer:${userId}:${prayerId}`, prayer);
     touchActivity(userId);
+    logAudit('prayer.created', userId, { prayerId, title, isShared: isShared || false });
 
     return c.json({ success: true, prayer });
   } catch (error: any) {
@@ -1556,6 +1618,9 @@ app.put('/make-server-6d579fee/prayer/:id', async (c) => {
     };
 
     await kv.set(`prayer:${userId}:${prayerId}`, updatedPrayer);
+    if (updates.isAnswered && !prayer.isAnswered) {
+      logAudit('prayer.answered', userId, { prayerId, title: prayer.title });
+    }
 
     return c.json({ success: true, prayer: updatedPrayer });
   } catch (error: any) {
@@ -2183,6 +2248,7 @@ app.post('/make-server-6d579fee/question-responses', async (c) => {
 
     await kv.set(`response:${userId}:${question_id}`, responseEntry);
     touchActivity(userId);
+    logAudit('qa.answered', userId, { questionId: question_id, isPrivate: is_private || false });
 
     return c.json({ success: true, response: responseEntry });
   } catch (error: any) {
@@ -2599,6 +2665,8 @@ app.post('/make-server-6d579fee/devotional-completions', async (c) => {
       console.log('[Devotional Completion] Saving updated streak:', updatedStreak);
       await kv.set(streakKey, updatedStreak);
     }
+
+    logAudit('devotional.completed', userId, { devotionId: devotion_id });
 
     return c.json({ success: true, completion });
   } catch (error: any) {
@@ -3360,6 +3428,39 @@ app.get('/make-server-6d579fee/admin/recent-activity', async (c) => {
     return c.json({ activities: activities.slice(0, 20) });
   } catch (error: any) {
     console.error('Admin activity fetch error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get audit log (admin only)
+app.get('/make-server-6d579fee/admin/audit-log', async (c) => {
+  try {
+    const userId = await getUserFromToken(c.req.header('Authorization'));
+    if (!userId) return c.json({ error: 'Unauthorized' }, 401);
+    if (!(await isAdminUser(userId))) return c.json({ error: 'Forbidden - Admin access required' }, 403);
+
+    const category = c.req.query('category');
+    const event = c.req.query('event');
+    const filterUserId = c.req.query('userId');
+    const limit = parseInt(c.req.query('limit') || '50', 10);
+    const offset = parseInt(c.req.query('offset') || '0', 10);
+
+    const rawEntries = await kv.getByPrefix('audit:');
+    // KV prefix returns values; sort by ISO timestamp key (natural order)
+    let entries: any[] = rawEntries
+      .filter((e: any) => e && e.timestamp)
+      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    if (category) entries = entries.filter((e: any) => e.category === category);
+    if (event) entries = entries.filter((e: any) => e.event === event);
+    if (filterUserId) entries = entries.filter((e: any) => e.userId === filterUserId);
+
+    const total = entries.length;
+    const page = entries.slice(offset, offset + limit);
+
+    return c.json({ entries: page, total, offset, limit });
+  } catch (error: any) {
+    console.error('Audit log fetch error:', error);
     return c.json({ error: error.message }, 500);
   }
 });
